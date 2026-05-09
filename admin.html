@@ -97,6 +97,7 @@
                 <th class="px-3 py-2 font-medium">分類</th>
                 <th class="px-3 py-2 font-medium">建議交貨日</th>
                 <th class="px-3 py-2 font-medium">客戶交貨日</th>
+                <th class="px-3 py-2 font-medium">工廠</th>
                 <th class="px-3 py-2 text-right font-medium">操作</th>
               </tr>
             </thead>
@@ -343,6 +344,15 @@
     const copyInfo = document.getElementById('copyInfo');
     const copyMsg = document.getElementById('copyMsg');
     let copySourceOrderId = null;
+    let factoryUsers = [];
+
+    async function loadFactoryUsers() {
+      if (sessionRole() !== 'admin') return;
+      const res = await apiFetch('/api/admin/users', {});
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) return;
+      factoryUsers = (data.users || []).filter((u) => u.role === 'factory');
+    }
 
     function sessionToken() {
       return sessionStorage.getItem('sessionToken') || '';
@@ -371,12 +381,13 @@
       return fetch(path, { ...(options || {}), headers });
     }
 
-    function showApp() {
+    async function showApp() {
       loginSection.classList.add('hidden');
       appSection.classList.remove('hidden');
       logoutBtn.classList.remove('hidden');
       whoami.textContent = `${sessionName()} (${sessionRole()})`;
       applyRoleTabs();
+      await loadFactoryUsers();
       switchTab('orders');
     }
 
@@ -430,7 +441,7 @@
         return;
       }
       setSession(data.token, data.role, data.name);
-      showApp();
+      await showApp();
     });
 
     logoutBtn.addEventListener('click', async () => {
@@ -466,6 +477,10 @@
         tr.className = 'border-b';
         const statusOptions = ['客戶已提交','待確認報價','待確認樣板','生產中','已出貨','已完成','已取消']
           .map((s) => `<option value="${s}">${optionLabelStatus(s)}</option>`).join('');
+        const factoryOptions = [
+          `<option value="">未指派</option>`,
+          ...factoryUsers.map((u) => `<option value="${u.id}">${u.name}</option>`)
+        ].join('');
         tr.innerHTML = `
           <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
           <td class="px-3 py-2 font-semibold">${o.orderSn}</td>
@@ -478,12 +493,16 @@
           <td class="px-3 py-2">${o.cate1} / ${o.cate2}</td>
           <td class="px-3 py-2">${o.suggestedDeliveryDate || ''}</td>
           <td class="px-3 py-2">${o.requestedDeliveryDate || ''}</td>
+          <td class="px-3 py-2">
+            <select data-id="${o.id}" class="factorySel w-full rounded-lg border px-2 py-1 text-xs">${factoryOptions}</select>
+          </td>
           <td class="px-3 py-2 text-right">
             <button data-id="${o.id}" data-sn="${o.orderSn}" class="copyBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
           </td>
         `;
         ordersBody.appendChild(tr);
         tr.querySelector('.statusSel').value = o.status;
+        if (tr.querySelector('.factorySel')) tr.querySelector('.factorySel').value = o.factoryUserId || '';
       });
 
       document.querySelectorAll('.statusSel').forEach((sel) => {
@@ -508,6 +527,20 @@
           copyDeliveryDate.value = '';
           copyModal.classList.remove('hidden');
           copyModal.classList.add('flex');
+        });
+      });
+
+      document.querySelectorAll('.factorySel').forEach((sel) => {
+        sel.addEventListener('change', async () => {
+          const orderId = sel.dataset.id;
+          const factoryUserId = sel.value;
+          const res = await apiFetch('/api/admin/orders/assign-factory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, factoryUserId })
+          });
+          const data = await res.json().catch(() => null);
+          if (!data || !data.ok) appMsg.textContent = '指派工廠失敗';
         });
       });
     }
@@ -799,7 +832,7 @@
     loadFactoryOrdersBtn.addEventListener('click', loadFactoryOrders);
 
     async function init() {
-      if (sessionToken()) showApp();
+      if (sessionToken()) await showApp();
       else showLogin();
       if (sessionToken()) {
         await loadSizes().catch(() => null);

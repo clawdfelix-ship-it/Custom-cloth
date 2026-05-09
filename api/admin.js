@@ -202,6 +202,7 @@ async function ordersHandler(req, res, url) {
         o.cust_phone,
         o.cate1,
         o.cate2,
+        o.factory_user_id,
         o.factory_name,
         o.order_type,
         o.status,
@@ -246,6 +247,7 @@ async function ordersHandler(req, res, url) {
       phone: x.cust_phone,
       cate1: x.cate1,
       cate2: x.cate2,
+      factoryUserId: x.factory_user_id,
       factoryName: x.factory_name || '',
       orderType: x.order_type,
       status: x.status,
@@ -259,6 +261,46 @@ async function ordersHandler(req, res, url) {
     return sendJson(res, 200, { ok: true, orders });
   } catch (e) {
     return sendJson(res, 500, { ok: false, error: 'server_error' });
+  }
+}
+
+async function assignFactoryHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const orderId = typeof body.orderId === 'string' ? body.orderId.trim() : '';
+    const factoryUserId = typeof body.factoryUserId === 'string' ? body.factoryUserId.trim() : '';
+    if (!orderId) return sendJson(res, 400, { ok: false, error: 'orderId_required' });
+
+    if (factoryUserId) {
+      const updated = await sql`
+        update orders
+        set
+          factory_user_id = ${factoryUserId}::uuid,
+          factory_name = (select name from users where id = ${factoryUserId}::uuid)
+        where id = ${orderId}::uuid
+        returning id, factory_user_id, factory_name
+      `;
+      const row = updated.rows[0];
+      if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+      return sendJson(res, 200, { ok: true, orderId: row.id, factoryUserId: row.factory_user_id, factoryName: row.factory_name || '' });
+    }
+
+    const cleared = await sql`
+      update orders
+      set factory_user_id = null, factory_name = null
+      where id = ${orderId}::uuid
+      returning id
+    `;
+    const row = cleared.rows[0];
+    if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    return sendJson(res, 200, { ok: true, orderId: row.id, factoryUserId: null, factoryName: '' });
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
 }
 
@@ -417,6 +459,7 @@ module.exports = async function handler(req, res) {
   if (action === 'sizeTables') return sizeTablesHandler(req, res, url);
   if (action === 'styles') return stylesHandler(req, res, url);
   if (action === 'orders') return ordersHandler(req, res, url);
+  if (action === 'assignFactory') return assignFactoryHandler(req, res);
   if (action === 'orderStatus') return orderStatusHandler(req, res);
   if (action === 'orderCopy') return orderCopyHandler(req, res);
   if (action === 'feedback') return feedbackHandler(req, res, url);

@@ -20,7 +20,7 @@ async function ordersHandler(req, res, session) {
       select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, factory_name, order_type, status,
         requested_delivery_date, suggested_delivery_date
       from orders
-      where factory_name = ${session.name}
+      where (factory_user_id = ${session.userId}::uuid) or (factory_user_id is null and factory_name = ${session.name})
       order by create_time desc
       limit 300
     `;
@@ -81,7 +81,7 @@ async function orderDetailHandler(req, res, session, url) {
       from orders o
       left join order_items oi on oi.order_id = o.id
       left join styles s on s.id = oi.style_id
-      where o.id = ${id}::uuid and o.factory_name = ${session.name}
+      where o.id = ${id}::uuid and ((o.factory_user_id = ${session.userId}::uuid) or (o.factory_user_id is null and o.factory_name = ${session.name}))
       group by o.id
       limit 1
     `;
@@ -126,7 +126,7 @@ async function orderStatusHandler(req, res, session) {
     const updated = await sql`
       update orders
       set status = ${status}
-      where id = ${orderId}::uuid and factory_name = ${session.name}
+      where id = ${orderId}::uuid and ((factory_user_id = ${session.userId}::uuid) or (factory_user_id is null and factory_name = ${session.name}))
       returning id, status
     `;
     const row = updated.rows[0];
@@ -146,7 +146,13 @@ async function feedbackHandler(req, res, session) {
     const content = typeof body.content === 'string' ? body.content.trim() : '';
     if (!orderId || !content) return sendJson(res, 400, { ok: false, error: 'bad_request' });
 
-    const r = await sql`select order_sn from orders where id = ${orderId}::uuid and factory_name = ${session.name} limit 1`;
+    const r = await sql`
+      select order_sn
+      from orders
+      where id = ${orderId}::uuid
+        and ((factory_user_id = ${session.userId}::uuid) or (factory_user_id is null and factory_name = ${session.name}))
+      limit 1
+    `;
     const o = r.rows[0];
     if (!o) return sendJson(res, 404, { ok: false, error: 'not_found' });
 
