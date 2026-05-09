@@ -3,6 +3,7 @@ const { sendJson, readBody } = require('../src/lib/http');
 const { requireSession } = require('../src/lib/auth');
 const { ORDER_STATUS_ADMIN } = require('../src/lib/schema');
 const { ensureMigrations } = require('../src/lib/migrate');
+const { audit } = require('../src/lib/audit');
 
 async function requireFactory(req, res) {
   const session = await requireSession(req);
@@ -131,6 +132,7 @@ async function orderStatusHandler(req, res, session) {
     `;
     const row = updated.rows[0];
     if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    await audit(session.userId, 'factory_order_status', 'order', String(row.id), { status: row.status });
     return sendJson(res, 200, { ok: true, orderId: row.id, status: row.status });
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
@@ -161,6 +163,7 @@ async function feedbackHandler(req, res, session) {
       values (${orderId}::uuid, ${o.order_sn}, ${session.name}, ${content}, ${'待處理'})
       returning id, create_time
     `;
+    await audit(session.userId, 'factory_feedback_create', 'feedback', String(inserted.rows[0].id), { orderId });
     return sendJson(res, 200, { ok: true, feedbackId: inserted.rows[0].id, createdAt: inserted.rows[0].create_time });
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });

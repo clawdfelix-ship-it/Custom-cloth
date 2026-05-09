@@ -7,6 +7,7 @@ const { hkTodayYmd, addBusinessDays } = require('../src/lib/hk-date');
 const { generateOrderSn } = require('../src/lib/order-sn');
 const { requiredYmd } = require('../src/lib/validation');
 const { ensureMigrations } = require('../src/lib/migrate');
+const { audit } = require('../src/lib/audit');
 
 async function requireAdmin(req, res) {
   const session = await requireSession(req);
@@ -45,6 +46,7 @@ async function usersHandler(req, res, url) {
         returning id, acc, role, name, created_at
       `;
       const u = inserted.rows[0];
+      await audit(session.userId, 'admin_create_user', 'user', String(u.id), { acc: u.acc, role: u.role, name: u.name });
       return sendJson(res, 200, { ok: true, user: { id: u.id, acc: u.acc, role: u.role, name: u.name, createdAt: u.created_at } });
     } catch (e) {
       return sendJson(res, 400, { ok: false, error: 'bad_request' });
@@ -55,6 +57,7 @@ async function usersHandler(req, res, url) {
     const id = (url.searchParams.get('id') || '').trim();
     if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
     await sql`delete from users where id = ${id}::uuid`;
+    await audit(session.userId, 'admin_delete_user', 'user', id, null);
     return sendJson(res, 200, { ok: true });
   }
 
@@ -84,6 +87,7 @@ async function sizeTablesHandler(req, res, url) {
         returning id, name, data, created_at
       `;
       const x = inserted.rows[0];
+      await audit(session.userId, 'admin_create_size_table', 'size_table', String(x.id), { name: x.name });
       return sendJson(res, 200, { ok: true, sizeTable: { id: x.id, name: x.name, data: x.data, createdAt: x.created_at } });
     } catch (e) {
       return sendJson(res, 400, { ok: false, error: 'bad_request' });
@@ -94,6 +98,7 @@ async function sizeTablesHandler(req, res, url) {
     const id = (url.searchParams.get('id') || '').trim();
     if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
     await sql`delete from size_tables where id = ${id}::uuid`;
+    await audit(session.userId, 'admin_delete_size_table', 'size_table', id, null);
     return sendJson(res, 200, { ok: true });
   }
 
@@ -149,6 +154,7 @@ async function stylesHandler(req, res, url) {
         returning id, code, name, cate1, cate2, size_table_id, img_base64, remark, created_at
       `;
       const x = inserted.rows[0];
+      await audit(session.userId, 'admin_create_style', 'style', String(x.id), { code: x.code, name: x.name });
       return sendJson(res, 200, {
         ok: true,
         style: {
@@ -172,6 +178,7 @@ async function stylesHandler(req, res, url) {
     const id = (url.searchParams.get('id') || '').trim();
     if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
     await sql`delete from styles where id = ${id}::uuid`;
+    await audit(session.userId, 'admin_delete_style', 'style', id, null);
     return sendJson(res, 200, { ok: true });
   }
 
@@ -287,6 +294,7 @@ async function assignFactoryHandler(req, res) {
       `;
       const row = updated.rows[0];
       if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+      await audit(session.userId, 'admin_assign_factory', 'order', String(row.id), { factoryUserId: row.factory_user_id, factoryName: row.factory_name || '' });
       return sendJson(res, 200, { ok: true, orderId: row.id, factoryUserId: row.factory_user_id, factoryName: row.factory_name || '' });
     }
 
@@ -298,6 +306,7 @@ async function assignFactoryHandler(req, res) {
     `;
     const row = cleared.rows[0];
     if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    await audit(session.userId, 'admin_assign_factory', 'order', String(row.id), { factoryUserId: null, factoryName: '' });
     return sendJson(res, 200, { ok: true, orderId: row.id, factoryUserId: null, factoryName: '' });
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
@@ -325,6 +334,7 @@ async function orderStatusHandler(req, res) {
     `;
     const row = updated.rows[0];
     if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    await audit(session.userId, 'admin_order_status', 'order', String(row.id), { status: row.status });
     return sendJson(res, 200, { ok: true, orderId: row.id, status: row.status });
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
@@ -376,6 +386,7 @@ async function orderCopyHandler(req, res) {
       `;
     }
 
+    await audit(session.userId, 'admin_order_copy', 'order', String(newOrderId), { sourceOrderId });
     return sendJson(res, 200, {
       ok: true,
       orderId: newOrderId,
@@ -444,6 +455,7 @@ async function feedbackStatusHandler(req, res) {
     `;
     const row = updated.rows[0];
     if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    await audit(session.userId, 'admin_feedback_status', 'feedback', String(row.id), { status: row.status });
     return sendJson(res, 200, { ok: true, feedbackId: row.id, status: row.status });
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });

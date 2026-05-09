@@ -3,6 +3,7 @@ const { sendJson, readBody } = require('../src/lib/http');
 const { verifyPassword } = require('../src/lib/password');
 const { newToken, getBearerToken } = require('../src/lib/auth');
 const { ensureMigrations } = require('../src/lib/migrate');
+const { audit } = require('../src/lib/audit');
 
 module.exports = async function handler(req, res) {
   await ensureMigrations();
@@ -27,6 +28,7 @@ module.exports = async function handler(req, res) {
       const token = newToken();
       const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString();
       await sql`insert into sessions (token, user_id, expires_at) values (${token}, ${u.id}, ${expiresAt})`;
+      await audit(u.id, 'auth_login', 'user', String(u.id), { acc: u.acc, role: u.role });
       return sendJson(res, 200, { ok: true, token, role: u.role, name: u.name });
     } catch (e) {
       return sendJson(res, 400, { ok: false, error: 'bad_request' });
@@ -36,7 +38,12 @@ module.exports = async function handler(req, res) {
   if (action === 'logout') {
     if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
     const token = getBearerToken(req.headers.authorization);
-    if (token) await sql`delete from sessions where token = ${token}`;
+    if (token) {
+      const r = await sql`select user_id from sessions where token = ${token}`;
+      const row = r.rows[0];
+      await sql`delete from sessions where token = ${token}`;
+      await audit(row ? row.user_id : null, 'auth_logout', 'session', token.slice(0, 12), null);
+    }
     return sendJson(res, 200, { ok: true });
   }
 
