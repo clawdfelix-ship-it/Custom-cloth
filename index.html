@@ -149,8 +149,12 @@
         <input type="text" id="queryOrderSn" placeholder="例如：ORD20260509123456-abcdef">
       </div>
       <div class="form-item">
-        <label>電話</label>
-        <input type="text" id="queryPhone" placeholder="請輸入落單電話">
+        <label>查單碼（推薦）</label>
+        <input type="text" id="queryLookupCode" placeholder="請輸入提交成功後顯示嘅查單碼">
+      </div>
+      <div class="form-item">
+        <label>電話（兼容舊單）</label>
+        <input type="text" id="queryPhone" placeholder="如冇查單碼，先輸入落單電話">
       </div>
       <button class="btn btn-secondary" type="button" onclick="queryOrder()">查詢訂單狀態</button>
       <div id="queryMsg" class="muted"></div>
@@ -416,6 +420,7 @@
       box.classList.remove('hide');
       box.innerHTML = `<div style="font-weight:bold;">提交成功</div>
         <div>訂單編號：<b>${data.orderSn}</b></div>
+        <div>查單碼：<b>${data.lookupCode || ''}</b></div>
         <div>狀態：${data.status}</div>
         <div>建議交貨日：${data.suggestedDeliveryDate}</div>`;
 
@@ -498,6 +503,7 @@
 
     async function queryOrder() {
       const orderSn = document.getElementById('queryOrderSn').value.trim();
+      const lookupCode = document.getElementById('queryLookupCode').value.trim();
       const phone = document.getElementById('queryPhone').value.trim();
       const msg = document.getElementById('queryMsg');
       const box = document.getElementById('queryResult');
@@ -505,12 +511,17 @@
       box.classList.add('hide');
       box.innerHTML = '';
 
-      if (!orderSn || !phone) {
-        msg.textContent = '請輸入訂單編號及電話';
+      if (!orderSn || (!lookupCode && !phone)) {
+        msg.textContent = '請輸入訂單編號 + 查單碼（或電話）';
         return;
       }
 
-      const res = await fetch(`/api/public/orders/status?orderSn=${encodeURIComponent(orderSn)}&phone=${encodeURIComponent(phone)}`);
+      const qs = new URLSearchParams();
+      qs.set('orderSn', orderSn);
+      if (lookupCode) qs.set('lookupCode', lookupCode);
+      else qs.set('phone', phone);
+
+      const res = await fetch(`/api/public/orders/status?${qs.toString()}`);
       const data = await res.json().catch(() => null);
       if (!data || !data.ok) {
         msg.textContent = '找不到訂單或資料不匹配';

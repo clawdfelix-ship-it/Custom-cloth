@@ -4,6 +4,7 @@ const { hkTodayYmd, addBusinessDays } = require('../src/lib/hk-date');
 const { requiredString, requiredEnum, requiredYmd, requiredQtyJson } = require('../src/lib/validation');
 const { generateOrderSn } = require('../src/lib/order-sn');
 const { ensureMigrations } = require('../src/lib/migrate');
+const { generateLookupCode } = require('../src/lib/lookup-code');
 
 const CATE1 = ['現貨款式加工', '熱昇華訂製', '開板訂製'];
 
@@ -95,6 +96,7 @@ async function handleCreateOrder(req, res) {
     }
 
     const orderSn = generateOrderSn(new Date());
+    const lookupCode = generateLookupCode();
     const status = '客戶已提交';
     const orderType = computeOrderType(mode, cate1);
 
@@ -109,9 +111,9 @@ async function handleCreateOrder(req, res) {
 
     const inserted = await sql`
       insert into orders
-        (order_sn, customer_id, cust_name, cust_contact, cust_phone, cate1, cate2, factory_name, order_type, status, amount, remark, requested_delivery_date, suggested_delivery_date, source_order_id)
+        (order_sn, lookup_code, customer_id, cust_name, cust_contact, cust_phone, cate1, cate2, factory_name, order_type, status, amount, remark, requested_delivery_date, suggested_delivery_date, source_order_id)
       values
-        (${orderSn}, ${customerId}::uuid, ${companyName}, ${contactName || null}, ${phone}, ${cate1}, ${cate2}, ${null}, ${orderType}, ${status}, ${null}, ${address}, ${requestedDeliveryDate}, ${suggestedDeliveryDate}, ${sourceOrderId}::uuid)
+        (${orderSn}, ${lookupCode}, ${customerId}::uuid, ${companyName}, ${contactName || null}, ${phone}, ${cate1}, ${cate2}, ${null}, ${orderType}, ${status}, ${null}, ${address}, ${requestedDeliveryDate}, ${suggestedDeliveryDate}, ${sourceOrderId}::uuid)
       returning id, create_time
     `;
     const orderId = inserted.rows[0].id;
@@ -127,6 +129,7 @@ async function handleCreateOrder(req, res) {
       ok: true,
       orderId,
       orderSn,
+      lookupCode,
       status,
       suggestedDeliveryDate,
       createdAt: inserted.rows[0].create_time
@@ -198,17 +201,26 @@ async function handleHistory(req, res, url) {
 async function handleStatus(req, res, url) {
   if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
   const orderSn = (url.searchParams.get('orderSn') || '').trim();
+  const lookupCode = (url.searchParams.get('lookupCode') || '').trim();
   const phone = (url.searchParams.get('phone') || '').trim();
-  if (!orderSn || !phone) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  if (!orderSn || (!lookupCode && !phone)) return sendJson(res, 400, { ok: false, error: 'bad_request' });
 
   try {
-    const r = await sql`
-      select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, order_type, status,
-        requested_delivery_date, suggested_delivery_date, factory_name
-      from orders
-      where order_sn = ${orderSn} and cust_phone = ${phone}
-      limit 1
-    `;
+    const r = lookupCode
+      ? await sql`
+          select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, order_type, status,
+            requested_delivery_date, suggested_delivery_date, factory_name
+          from orders
+          where order_sn = ${orderSn} and lookup_code = ${lookupCode}
+          limit 1
+        `
+      : await sql`
+          select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, order_type, status,
+            requested_delivery_date, suggested_delivery_date, factory_name
+          from orders
+          where order_sn = ${orderSn} and cust_phone = ${phone}
+          limit 1
+        `;
     const o = r.rows[0];
     if (!o) return sendJson(res, 404, { ok: false, error: 'not_found' });
     return sendJson(res, 200, {

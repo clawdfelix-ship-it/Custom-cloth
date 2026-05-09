@@ -5,6 +5,7 @@ const { hashPassword } = require('../src/lib/password');
 const { ORDER_STATUS_ADMIN, FEEDBACK_STATUS } = require('../src/lib/schema');
 const { hkTodayYmd, addBusinessDays } = require('../src/lib/hk-date');
 const { generateOrderSn } = require('../src/lib/order-sn');
+const { generateLookupCode } = require('../src/lib/lookup-code');
 const { requiredYmd } = require('../src/lib/validation');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { audit } = require('../src/lib/audit');
@@ -367,14 +368,15 @@ async function orderCopyHandler(req, res) {
     }
 
     const orderSn = generateOrderSn(new Date());
+    const lookupCode = generateLookupCode();
     const orderType = '客戶翻單';
     const status = '客戶已提交';
 
     const inserted = await sql`
       insert into orders
-        (order_sn, customer_id, cust_name, cust_contact, cust_phone, cate1, cate2, factory_name, order_type, status, amount, remark, requested_delivery_date, suggested_delivery_date, source_order_id)
+        (order_sn, lookup_code, customer_id, cust_name, cust_contact, cust_phone, cate1, cate2, factory_name, order_type, status, amount, remark, requested_delivery_date, suggested_delivery_date, source_order_id)
       values
-        (${orderSn}, ${src.customer_id}::uuid, ${src.cust_name}, ${src.cust_contact}, ${src.cust_phone}, ${src.cate1}, ${src.cate2}, ${src.factory_name}, ${orderType}, ${status}, ${src.amount}, ${src.remark}, ${requestedDeliveryDate}, ${suggestedDeliveryDate}, ${sourceOrderId}::uuid)
+        (${orderSn}, ${lookupCode}, ${src.customer_id}::uuid, ${src.cust_name}, ${src.cust_contact}, ${src.cust_phone}, ${src.cate1}, ${src.cate2}, ${src.factory_name}, ${orderType}, ${status}, ${src.amount}, ${src.remark}, ${requestedDeliveryDate}, ${suggestedDeliveryDate}, ${sourceOrderId}::uuid)
       returning id, create_time
     `;
     const newOrderId = inserted.rows[0].id;
