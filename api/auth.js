@@ -4,6 +4,7 @@ const { verifyPassword } = require('../src/lib/password');
 const { newToken, getBearerToken } = require('../src/lib/auth');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { audit } = require('../src/lib/audit');
+const { shouldBlockLogin, getClientIp } = require('../src/lib/rate-limit');
 
 module.exports = async function handler(req, res) {
   await ensureMigrations();
@@ -19,15 +20,31 @@ module.exports = async function handler(req, res) {
       const pwd = typeof body.pwd === 'string' ? body.pwd : '';
       if (!acc || !pwd) return sendJson(res, 400, { ok: false, error: 'bad_request' });
 
+      const ip = getClientIp(req);
+      const attempts = await sql`
+        select count(*)::int as c
+        from login_attempts
+        where ip = ${ip} and acc = ${acc} and created_at > now() - interval '10 minutes'
+      `;
+      const failCount = attempts.rows[0] ? attempts.rows[0].c : 0;
+      if (shouldBlockLogin(failCount)) return sendJson(res, 429, { ok: false, error: 'too_many_attempts' });
+
       const r = await sql`select id, acc, pwd_hash, role, name from users where acc = ${acc}`;
       const u = r.rows[0];
-      if (!u) return sendJson(res, 401, { ok: false, error: 'invalid_credentials' });
+      if (!u) {
+        await sql`insert into login_attempts (ip, acc) values (${ip}, ${acc})`;
+        return sendJson(res, 401, { ok: false, error: 'invalid_credentials' });
+      }
       const ok = await verifyPassword(pwd, u.pwd_hash);
-      if (!ok) return sendJson(res, 401, { ok: false, error: 'invalid_credentials' });
+      if (!ok) {
+        await sql`insert into login_attempts (ip, acc) values (${ip}, ${acc})`;
+        return sendJson(res, 401, { ok: false, error: 'invalid_credentials' });
+      }
 
       const token = newToken();
       const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString();
       await sql`insert into sessions (token, user_id, expires_at) values (${token}, ${u.id}, ${expiresAt})`;
+      await sql`delete from login_attempts where ip = ${ip} and acc = ${acc}`;
       await audit(u.id, 'auth_login', 'user', String(u.id), { acc: u.acc, role: u.role });
       return sendJson(res, 200, { ok: true, token, role: u.role, name: u.name });
     } catch (e) {
