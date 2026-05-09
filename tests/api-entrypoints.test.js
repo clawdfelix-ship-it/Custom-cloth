@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-test('api modules export handler functions', () => {
+test('api entrypoints export handler functions', () => {
   const auth = require('../api/auth');
   const pub = require('../api/public');
   const admin = require('../api/admin');
@@ -12,3 +12,4 @@ test('api modules export handler functions', () => {
   assert.equal(typeof admin, 'function');
   assert.equal(typeof factory, 'function');
 });
+

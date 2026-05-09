@@ -1,6 +1,28 @@
 {
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" }
+    { "source": "/admin", "destination": "/admin.html" },
+
+    { "source": "/api/auth/login", "destination": "/api/auth?action=login" },
+    { "source": "/api/auth/logout", "destination": "/api/auth?action=logout" },
+
+    { "source": "/api/public/styles", "destination": "/api/public?action=styles" },
+    { "source": "/api/public/size-tables/:id", "destination": "/api/public?action=sizeTable&id=:id" },
+    { "source": "/api/public/orders", "destination": "/api/public?action=createOrder" },
+    { "source": "/api/public/orders/history", "destination": "/api/public?action=history" },
+    { "source": "/api/public/orders/status", "destination": "/api/public?action=status" },
+
+    { "source": "/api/admin/users", "destination": "/api/admin?action=users" },
+    { "source": "/api/admin/size-tables", "destination": "/api/admin?action=sizeTables" },
+    { "source": "/api/admin/styles", "destination": "/api/admin?action=styles" },
+    { "source": "/api/admin/orders", "destination": "/api/admin?action=orders" },
+    { "source": "/api/admin/orders/status", "destination": "/api/admin?action=orderStatus" },
+    { "source": "/api/admin/orders/copy", "destination": "/api/admin?action=orderCopy" },
+    { "source": "/api/admin/feedback", "destination": "/api/admin?action=feedback" },
+    { "source": "/api/admin/feedback/status", "destination": "/api/admin?action=feedbackStatus" },
+
+    { "source": "/api/factory/orders/status", "destination": "/api/factory?action=orderStatus" },
+    { "source": "/api/factory/orders/:id", "destination": "/api/factory?action=orderDetail&id=:id" },
+    { "source": "/api/factory/orders", "destination": "/api/factory?action=orders" },
+    { "source": "/api/factory/feedback", "destination": "/api/factory?action=feedback" }
   ]
 }
-

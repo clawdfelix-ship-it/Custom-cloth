@@ -1,0 +1,425 @@
+const { sql } = require('../src/lib/db');
+const { sendJson, readBody } = require('../src/lib/http');
+const { requireSession } = require('../src/lib/auth');
+const { hashPassword } = require('../src/lib/password');
+const { ORDER_STATUS_ADMIN, FEEDBACK_STATUS } = require('../src/lib/schema');
+const { hkTodayYmd, addBusinessDays } = require('../src/lib/hk-date');
+const { generateOrderSn } = require('../src/lib/order-sn');
+const { requiredYmd } = require('../src/lib/validation');
+
+async function requireAdmin(req, res) {
+  const session = await requireSession(req);
+  if (!session || session.role !== 'admin') {
+    sendJson(res, 401, { ok: false, error: 'unauthorized' });
+    return null;
+  }
+  return session;
+}
+
+async function usersHandler(req, res, url) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+
+  if (req.method === 'GET') {
+    const r = await sql`select id, acc, role, name, created_at from users order by created_at desc limit 200`;
+    const users = r.rows.map((u) => ({ id: u.id, acc: u.acc, role: u.role, name: u.name, createdAt: u.created_at }));
+    return sendJson(res, 200, { ok: true, users });
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const raw = await readBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const acc = typeof body.acc === 'string' ? body.acc.trim() : '';
+      const pwd = typeof body.pwd === 'string' ? body.pwd : '';
+      const role = typeof body.role === 'string' ? body.role.trim() : '';
+      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      if (!acc || !pwd || !role || !name) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+      if (!['admin', 'factory'].includes(role)) return sendJson(res, 400, { ok: false, error: 'role_invalid' });
+
+      const pwdHash = await hashPassword(pwd);
+      const inserted = await sql`
+        insert into users (acc, pwd_hash, role, name)
+        values (${acc}, ${pwdHash}, ${role}, ${name})
+        returning id, acc, role, name, created_at
+      `;
+      const u = inserted.rows[0];
+      return sendJson(res, 200, { ok: true, user: { id: u.id, acc: u.acc, role: u.role, name: u.name, createdAt: u.created_at } });
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'bad_request' });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    const id = (url.searchParams.get('id') || '').trim();
+    if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
+    await sql`delete from users where id = ${id}::uuid`;
+    return sendJson(res, 200, { ok: true });
+  }
+
+  return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+}
+
+async function sizeTablesHandler(req, res, url) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+
+  if (req.method === 'GET') {
+    const r = await sql`select id, name, data, created_at from size_tables order by created_at desc limit 200`;
+    const sizeTables = r.rows.map((x) => ({ id: x.id, name: x.name, data: x.data, createdAt: x.created_at }));
+    return sendJson(res, 200, { ok: true, sizeTables });
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const raw = await readBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      const data = body.data;
+      if (!name || !data) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+      const inserted = await sql`
+        insert into size_tables (name, data)
+        values (${name}, ${JSON.stringify(data)}::jsonb)
+        returning id, name, data, created_at
+      `;
+      const x = inserted.rows[0];
+      return sendJson(res, 200, { ok: true, sizeTable: { id: x.id, name: x.name, data: x.data, createdAt: x.created_at } });
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'bad_request' });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    const id = (url.searchParams.get('id') || '').trim();
+    if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
+    await sql`delete from size_tables where id = ${id}::uuid`;
+    return sendJson(res, 200, { ok: true });
+  }
+
+  return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+}
+
+async function stylesHandler(req, res, url) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+
+  if (req.method === 'GET') {
+    const cate1 = (url.searchParams.get('cate1') || '').trim();
+    const cate2 = (url.searchParams.get('cate2') || '').trim();
+    const r = await sql`
+      select id, code, name, cate1, cate2, size_table_id, img_base64, remark, created_at
+      from styles
+      where (${cate1} = '' or cate1 = ${cate1})
+        and (${cate2} = '' or cate2 = ${cate2})
+      order by created_at desc
+      limit 500
+    `;
+    const styles = r.rows.map((x) => ({
+      id: x.id,
+      code: x.code,
+      name: x.name,
+      cate1: x.cate1,
+      cate2: x.cate2,
+      sizeTableId: x.size_table_id,
+      imgBase64: x.img_base64 || '',
+      remark: x.remark || '',
+      createdAt: x.created_at
+    }));
+    return sendJson(res, 200, { ok: true, styles });
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const raw = await readBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const code = typeof body.code === 'string' ? body.code.trim() : '';
+      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      const cate1 = typeof body.cate1 === 'string' ? body.cate1.trim() : '';
+      const cate2 = typeof body.cate2 === 'string' ? body.cate2.trim() : '';
+      const sizeTableId = typeof body.sizeTableId === 'string' ? body.sizeTableId.trim() : '';
+      const remark = typeof body.remark === 'string' ? body.remark.trim() : '';
+      const imgBase64 = typeof body.imgBase64 === 'string' ? body.imgBase64.trim() : '';
+      if (!code || !name || !cate1 || !cate2 || !sizeTableId) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+      if (imgBase64 && imgBase64.length > 700000) return sendJson(res, 400, { ok: false, error: 'image_too_large' });
+
+      const inserted = await sql`
+        insert into styles (code, name, cate1, cate2, size_table_id, img_base64, remark)
+        values (${code}, ${name}, ${cate1}, ${cate2}, ${sizeTableId}::uuid, ${imgBase64 || null}, ${remark || null})
+        returning id, code, name, cate1, cate2, size_table_id, img_base64, remark, created_at
+      `;
+      const x = inserted.rows[0];
+      return sendJson(res, 200, {
+        ok: true,
+        style: {
+          id: x.id,
+          code: x.code,
+          name: x.name,
+          cate1: x.cate1,
+          cate2: x.cate2,
+          sizeTableId: x.size_table_id,
+          imgBase64: x.img_base64 || '',
+          remark: x.remark || '',
+          createdAt: x.created_at
+        }
+      });
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'bad_request' });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    const id = (url.searchParams.get('id') || '').trim();
+    if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
+    await sql`delete from styles where id = ${id}::uuid`;
+    return sendJson(res, 200, { ok: true });
+  }
+
+  return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+}
+
+async function ordersHandler(req, res, url) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  const orderSn = (url.searchParams.get('orderSn') || '').trim();
+  const companyName = (url.searchParams.get('companyName') || '').trim();
+  const phone = (url.searchParams.get('phone') || '').trim();
+  const status = (url.searchParams.get('status') || '').trim();
+  const cate1 = (url.searchParams.get('cate1') || '').trim();
+  const cate2 = (url.searchParams.get('cate2') || '').trim();
+  const factoryName = (url.searchParams.get('factoryName') || '').trim();
+
+  try {
+    const r = await sql`
+      select
+        o.id,
+        o.order_sn,
+        o.create_time,
+        o.cust_name,
+        o.cust_contact,
+        o.cust_phone,
+        o.cate1,
+        o.cate2,
+        o.factory_name,
+        o.order_type,
+        o.status,
+        o.amount,
+        o.remark,
+        o.requested_delivery_date,
+        o.suggested_delivery_date,
+        o.source_order_id,
+        coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'styleId', oi.style_id,
+              'styleCode', s.code,
+              'styleName', s.name,
+              'qty', oi.qty
+            )
+          ) filter (where oi.id is not null),
+          '[]'::jsonb
+        ) as items
+      from orders o
+      left join order_items oi on oi.order_id = o.id
+      left join styles s on s.id = oi.style_id
+      where
+        (${orderSn} = '' or o.order_sn = ${orderSn})
+        and (${companyName} = '' or o.cust_name ilike ${'%' + companyName + '%'})
+        and (${phone} = '' or o.cust_phone = ${phone})
+        and (${status} = '' or o.status = ${status})
+        and (${cate1} = '' or o.cate1 = ${cate1})
+        and (${cate2} = '' or o.cate2 = ${cate2})
+        and (${factoryName} = '' or o.factory_name = ${factoryName})
+      group by o.id
+      order by o.create_time desc
+      limit 300
+    `;
+
+    const orders = r.rows.map((x) => ({
+      id: x.id,
+      orderSn: x.order_sn,
+      createdAt: x.create_time,
+      companyName: x.cust_name,
+      contactName: x.cust_contact || '',
+      phone: x.cust_phone,
+      cate1: x.cate1,
+      cate2: x.cate2,
+      factoryName: x.factory_name || '',
+      orderType: x.order_type,
+      status: x.status,
+      amount: x.amount || '',
+      remark: x.remark || '',
+      requestedDeliveryDate: x.requested_delivery_date ? String(x.requested_delivery_date) : '',
+      suggestedDeliveryDate: x.suggested_delivery_date ? String(x.suggested_delivery_date) : '',
+      sourceOrderId: x.source_order_id,
+      items: x.items || []
+    }));
+    return sendJson(res, 200, { ok: true, orders });
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'server_error' });
+  }
+}
+
+async function orderStatusHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const orderId = typeof body.orderId === 'string' ? body.orderId.trim() : '';
+    const status = typeof body.status === 'string' ? body.status.trim() : '';
+    if (!orderId) return sendJson(res, 400, { ok: false, error: 'orderId_required' });
+    if (!ORDER_STATUS_ADMIN.includes(status)) return sendJson(res, 400, { ok: false, error: 'status_invalid' });
+
+    const updated = await sql`
+      update orders
+      set status = ${status}
+      where id = ${orderId}::uuid
+      returning id, status
+    `;
+    const row = updated.rows[0];
+    if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    return sendJson(res, 200, { ok: true, orderId: row.id, status: row.status });
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
+}
+
+async function orderCopyHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const sourceOrderId = typeof body.sourceOrderId === 'string' ? body.sourceOrderId.trim() : '';
+    const requestedDeliveryDate = requiredYmd(body.requestedDeliveryDate, 'requestedDeliveryDate');
+    if (!sourceOrderId) return sendJson(res, 400, { ok: false, error: 'sourceOrderId_required' });
+
+    const srcOrderR = await sql`select * from orders where id = ${sourceOrderId}::uuid limit 1`;
+    const src = srcOrderR.rows[0];
+    if (!src) return sendJson(res, 404, { ok: false, error: 'not_found' });
+
+    const itemsR = await sql`select style_id, qty from order_items where order_id = ${sourceOrderId}::uuid`;
+    const items = itemsR.rows;
+    if (!items.length) return sendJson(res, 400, { ok: false, error: 'source_items_missing' });
+
+    const suggestedDeliveryDate = addBusinessDays(hkTodayYmd(new Date()), 17);
+    if (requestedDeliveryDate < suggestedDeliveryDate) {
+      return sendJson(res, 400, { ok: false, error: 'delivery_date_too_early', suggestedDeliveryDate });
+    }
+
+    const orderSn = generateOrderSn(new Date());
+    const orderType = '客戶翻單';
+    const status = '客戶已提交';
+
+    const inserted = await sql`
+      insert into orders
+        (order_sn, customer_id, cust_name, cust_contact, cust_phone, cate1, cate2, factory_name, order_type, status, amount, remark, requested_delivery_date, suggested_delivery_date, source_order_id)
+      values
+        (${orderSn}, ${src.customer_id}::uuid, ${src.cust_name}, ${src.cust_contact}, ${src.cust_phone}, ${src.cate1}, ${src.cate2}, ${src.factory_name}, ${orderType}, ${status}, ${src.amount}, ${src.remark}, ${requestedDeliveryDate}, ${suggestedDeliveryDate}, ${sourceOrderId}::uuid)
+      returning id, create_time
+    `;
+    const newOrderId = inserted.rows[0].id;
+
+    for (const it of items) {
+      await sql`
+        insert into order_items (order_id, style_id, qty)
+        values (${newOrderId}::uuid, ${it.style_id}::uuid, ${JSON.stringify(it.qty)}::jsonb)
+      `;
+    }
+
+    return sendJson(res, 200, {
+      ok: true,
+      orderId: newOrderId,
+      orderSn,
+      status,
+      suggestedDeliveryDate,
+      createdAt: inserted.rows[0].create_time
+    });
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
+}
+
+async function feedbackHandler(req, res, url) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  const factoryName = (url.searchParams.get('factoryName') || '').trim();
+  const status = (url.searchParams.get('status') || '').trim();
+
+  try {
+    const r = await sql`
+      select id, order_id, order_sn, factory_name, content, status, create_time
+      from feedback
+      where
+        (${factoryName} = '' or factory_name = ${factoryName})
+        and (${status} = '' or status = ${status})
+      order by create_time desc
+      limit 300
+    `;
+
+    const feedback = r.rows.map((x) => ({
+      id: x.id,
+      orderId: x.order_id,
+      orderSn: x.order_sn,
+      factoryName: x.factory_name,
+      content: x.content,
+      status: x.status,
+      createdAt: x.create_time
+    }));
+    return sendJson(res, 200, { ok: true, feedback });
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'server_error' });
+  }
+}
+
+async function feedbackStatusHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const feedbackId = typeof body.feedbackId === 'string' ? body.feedbackId.trim() : '';
+    const status = typeof body.status === 'string' ? body.status.trim() : '';
+    if (!feedbackId) return sendJson(res, 400, { ok: false, error: 'feedbackId_required' });
+    if (!FEEDBACK_STATUS.includes(status)) return sendJson(res, 400, { ok: false, error: 'status_invalid' });
+
+    const updated = await sql`
+      update feedback
+      set status = ${status}
+      where id = ${feedbackId}::uuid
+      returning id, status
+    `;
+    const row = updated.rows[0];
+    if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    return sendJson(res, 200, { ok: true, feedbackId: row.id, status: row.status });
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
+}
+
+module.exports = async function handler(req, res) {
+  const url = new URL(req.url, 'http://localhost');
+  const action = (url.searchParams.get('action') || '').trim();
+
+  if (action === 'users') return usersHandler(req, res, url);
+  if (action === 'sizeTables') return sizeTablesHandler(req, res, url);
+  if (action === 'styles') return stylesHandler(req, res, url);
+  if (action === 'orders') return ordersHandler(req, res, url);
+  if (action === 'orderStatus') return orderStatusHandler(req, res);
+  if (action === 'orderCopy') return orderCopyHandler(req, res);
+  if (action === 'feedback') return feedbackHandler(req, res, url);
+  if (action === 'feedbackStatus') return feedbackStatusHandler(req, res);
+
+  return sendJson(res, 404, { ok: false, error: 'not_found' });
+};
+

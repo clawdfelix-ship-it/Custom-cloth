@@ -34,6 +34,6 @@
 
 ## 5) 注意事項
 
+- Vercel Hobby plan 限制每次 deployment 最多 12 個 serverless functions；本 repo 已用「4 個 API 入口（auth/public/admin/factory）+ rewrites」方式解決
 - 本機用 `python3 -m http.server` 只會顯示靜態頁面，唔會跑 `/api/*`；要測完整流程請用 Vercel deploy 後測試
 - 圖片暫時存 DB（base64），上傳限制建議 < 500KB
-
