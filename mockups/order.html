@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>客戶下單</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div class="mx-auto w-full max-w-4xl px-4 py-8">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">客戶下單</h1>
+          <p class="mt-1 text-sm text-slate-600">選擇新單 / 翻單，系統會自動限制最快交貨日。</p>
+        </div>
+        <a href="/admin" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">後台</a>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <button id="modeNew" type="button" class="group rounded-xl border bg-white p-4 text-left shadow-sm hover:bg-slate-50">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-medium">全新款式下單</div>
+            <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">31 工作日</span>
+          </div>
+          <div class="mt-1 text-xs text-slate-600">確認設計→樣板 14天；樣板→量產 14天；物流香港最少3天</div>
+        </button>
+        <button id="modeReorder" type="button" class="group rounded-xl border bg-white p-4 text-left shadow-sm hover:bg-slate-50">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-medium">歷史訂單翻單</div>
+            <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">17 工作日</span>
+          </div>
+          <div class="mt-1 text-xs text-slate-600">豁免設計/起樣板；量產 14天 + 物流最少3天</div>
+        </button>
+      </div>
+
+      <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <section class="rounded-xl border bg-white p-5 shadow-sm lg:col-span-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold">訂單資料</h2>
+            <div id="modeBadge" class="hidden rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"></div>
+          </div>
+
+          <form id="orderForm" class="mt-4 space-y-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label class="text-sm font-medium">公司名 *</label>
+                <input id="company" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：ABC Trading" required />
+              </div>
+              <div>
+                <label class="text-sm font-medium">聯絡人 *</label>
+                <input id="contact" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：陳先生" required />
+              </div>
+              <div>
+                <label class="text-sm font-medium">電話 *</label>
+                <input id="phone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：91234567" required />
+              </div>
+              <div>
+                <label class="text-sm font-medium">送貨地址 *</label>
+                <input id="address" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：九龍..." required />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label class="text-sm font-medium">款式 *</label>
+                <input id="style" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：公司 T 恤 2026 版" required />
+              </div>
+              <div>
+                <label class="text-sm font-medium">交貨日 *</label>
+                <input id="deliveryDate" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" required />
+                <div id="minDateHint" class="mt-1 text-xs text-slate-600"></div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border bg-slate-50 p-4">
+              <div class="flex items-center justify-between">
+                <div class="text-sm font-semibold">舊尺碼配比 *</div>
+                <button id="addRowBtn" type="button" class="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50">新增尺寸</button>
+              </div>
+              <div class="mt-3 overflow-x-auto">
+                <table class="w-full min-w-[420px] text-sm">
+                  <thead>
+                    <tr class="border-b bg-white">
+                      <th class="px-3 py-2 text-left font-medium">尺寸</th>
+                      <th class="px-3 py-2 text-left font-medium">數量</th>
+                      <th class="px-3 py-2 text-right font-medium">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ratioBody"></tbody>
+                </table>
+              </div>
+              <div class="mt-2 text-xs text-slate-600">示例：S 10 / M 20 / L 10</div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3">
+              <div id="msg" class="text-sm font-medium"></div>
+              <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">提交訂單</button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="rounded-xl border bg-white p-5 shadow-sm lg:col-span-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold">翻單庫（依電話）</h2>
+            <button id="loadHistoryBtn" type="button" class="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50">載入</button>
+          </div>
+          <p class="mt-1 text-xs text-slate-600">翻單模式會顯示該電話的歷史訂單，點選即可帶齊資料。</p>
+
+          <div id="historyEmpty" class="mt-4 rounded-xl border border-dashed p-4 text-sm text-slate-600">
+            未載入歷史訂單
+          </div>
+
+          <ul id="historyList" class="mt-4 hidden space-y-3"></ul>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const Mode = { NEW: 'new', REORDER: 'reorder' };
+      let selectedMode = null;
+
+      const modeNewBtn = document.getElementById('modeNew');
+      const modeReorderBtn = document.getElementById('modeReorder');
+      const modeBadge = document.getElementById('modeBadge');
+      const deliveryDateInput = document.getElementById('deliveryDate');
+      const minDateHint = document.getElementById('minDateHint');
+
+      const ratioBody = document.getElementById('ratioBody');
+      const addRowBtn = document.getElementById('addRowBtn');
+
+      const historyEmpty = document.getElementById('historyEmpty');
+      const historyList = document.getElementById('historyList');
+      const loadHistoryBtn = document.getElementById('loadHistoryBtn');
+
+      function pad(n) {
+        return String(n).padStart(2, '0');
+      }
+
+      function formatDate(d) {
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      }
+
+      function setMode(mode) {
+        selectedMode = mode;
+        modeBadge.classList.remove('hidden');
+
+        if (mode === Mode.NEW) {
+          modeBadge.textContent = '新單';
+          modeBadge.className = 'rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700';
+        } else {
+          modeBadge.textContent = '翻單';
+          modeBadge.className = 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700';
+        }
+
+        const earliest = new Date();
+        earliest.setDate(earliest.getDate() + (mode === Mode.NEW ? 31 : 17));
+        const earliestStr = formatDate(earliest);
+        deliveryDateInput.min = earliestStr;
+        if (!deliveryDateInput.value || deliveryDateInput.value < earliestStr) {
+          deliveryDateInput.value = earliestStr;
+        }
+        minDateHint.textContent = `最快交貨日：${earliestStr}`;
+      }
+
+      function addRatioRow(size = '', qty = '') {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b bg-white';
+        tr.innerHTML = `
+          <td class="px-3 py-2">
+            <input class="w-full rounded-lg border px-3 py-1.5 text-sm" placeholder="例如：M" value="${size}" required />
+          </td>
+          <td class="px-3 py-2">
+            <input type="number" min="0" class="w-full rounded-lg border px-3 py-1.5 text-sm" placeholder="例如：20" value="${qty}" required />
+          </td>
+          <td class="px-3 py-2 text-right">
+            <button type="button" class="removeRow rounded-lg border bg-white px-2.5 py-1 text-xs font-medium hover:bg-slate-50">刪除</button>
+          </td>
+        `;
+        tr.querySelector('.removeRow').addEventListener('click', () => {
+          tr.remove();
+        });
+        ratioBody.appendChild(tr);
+      }
+
+      function seedRatio() {
+        ratioBody.innerHTML = '';
+        addRatioRow('S', 10);
+        addRatioRow('M', 20);
+        addRatioRow('L', 10);
+      }
+
+      function renderHistory(orders) {
+        historyList.innerHTML = '';
+        if (!orders.length) {
+          historyEmpty.classList.remove('hidden');
+          historyList.classList.add('hidden');
+          historyEmpty.textContent = '冇歷史訂單';
+          return;
+        }
+
+        historyEmpty.classList.add('hidden');
+        historyList.classList.remove('hidden');
+
+        orders.forEach((o) => {
+          const li = document.createElement('li');
+          li.className = 'rounded-xl border p-3 hover:bg-slate-50';
+          li.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold">${o.style}</div>
+                <div class="mt-1 text-xs text-slate-600">上次交貨日：${o.deliveryDate}</div>
+              </div>
+              <button type="button" class="selectOrder rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">選擇</button>
+            </div>
+            <div class="mt-2 text-xs text-slate-600">配比：${o.ratio.map((r) => `${r.size}:${r.qty}`).join(' / ')}</div>
+          `;
+          li.querySelector('.selectOrder').addEventListener('click', () => {
+            document.getElementById('style').value = o.style;
+            seedRatio();
+            ratioBody.innerHTML = '';
+            o.ratio.forEach((r) => addRatioRow(r.size, r.qty));
+            setMode(Mode.REORDER);
+            document.getElementById('msg').textContent = '已帶入歷史訂單資料';
+          });
+          historyList.appendChild(li);
+        });
+      }
+
+      modeNewBtn.addEventListener('click', () => setMode(Mode.NEW));
+      modeReorderBtn.addEventListener('click', () => setMode(Mode.REORDER));
+      addRowBtn.addEventListener('click', () => addRatioRow());
+
+      loadHistoryBtn.addEventListener('click', () => {
+        const phone = document.getElementById('phone').value.trim();
+        if (!phone) {
+          historyEmpty.classList.remove('hidden');
+          historyList.classList.add('hidden');
+          historyEmpty.textContent = '請先輸入電話再載入';
+          return;
+        }
+        renderHistory([
+          {
+            style: '公司T恤 2025',
+            deliveryDate: '2025-11-30',
+            ratio: [
+              { size: 'S', qty: 10 },
+              { size: 'M', qty: 20 },
+              { size: 'L', qty: 10 }
+            ]
+          },
+          {
+            style: '活動衛衣 2026',
+            deliveryDate: '2026-03-20',
+            ratio: [
+              { size: 'XS', qty: 5 },
+              { size: 'S', qty: 12 },
+              { size: 'M', qty: 18 },
+              { size: 'L', qty: 8 }
+            ]
+          }
+        ]);
+      });
+
+      document.getElementById('orderForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!selectedMode) {
+          document.getElementById('msg').textContent = '請先選擇「新單」或「翻單」';
+          return;
+        }
+        document.getElementById('msg').textContent = 'Mockup：已提交（實際會呼叫 API 寫入雲端）';
+      });
+
+      seedRatio();
+    </script>
+  </body>
+</html>

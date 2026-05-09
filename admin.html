@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>後台訂單管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div class="mx-auto w-full max-w-7xl px-4 py-8">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">後台訂單管理</h1>
+        <p class="mt-1 text-sm text-slate-600">狀態流轉、搜尋/篩選、匯出 CSV、一鍵翻單。</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="refreshBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">刷新</button>
+        <button id="exportBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">匯出 CSV</button>
+        <a href="/" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">下單頁</a>
+      </div>
+    </div>
+
+    <section class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-6">
+        <div class="lg:col-span-2">
+          <label class="text-sm font-medium">Admin Token</label>
+          <input id="tokenInput" type="password" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="輸入後台密碼" />
+          <button id="saveTokenBtn" class="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">儲存 Token</button>
+        </div>
+        <div class="lg:col-span-4">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div>
+              <label class="text-sm font-medium">電話</label>
+              <input id="fPhone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div class="lg:col-span-2">
+              <label class="text-sm font-medium">公司</label>
+              <input id="fCompany" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-sm font-medium">類型</label>
+              <select id="fType" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="">全部</option>
+                <option value="new">新單</option>
+                <option value="reorder">翻單</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium">狀態</label>
+              <select id="fStatus" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="">全部</option>
+                <option value="received">已收到</option>
+                <option value="follow_up">跟進中</option>
+                <option value="confirmed">已確認</option>
+                <option value="production">量產中</option>
+                <option value="shipping">運送中</option>
+                <option value="done">已完成</option>
+                <option value="cancelled">已取消</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-sm font-medium">由</label>
+              <input id="fFrom" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-sm font-medium">至</label>
+              <input id="fTo" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div class="sm:col-span-2 lg:col-span-2">
+              <label class="text-sm font-medium">&nbsp;</label>
+              <button id="applyFilterBtn" class="mt-1 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">套用篩選</button>
+            </div>
+          </div>
+          <div id="adminMsg" class="mt-2 text-sm font-medium"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-base font-semibold">訂單列表</h2>
+        <div class="text-sm text-slate-600" id="summary"></div>
+      </div>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full min-w-[1100px] text-sm">
+          <thead>
+            <tr class="border-b bg-slate-50 text-left">
+              <th class="px-3 py-2 font-medium">時間</th>
+              <th class="px-3 py-2 font-medium">類型</th>
+              <th class="px-3 py-2 font-medium">狀態</th>
+              <th class="px-3 py-2 font-medium">公司</th>
+              <th class="px-3 py-2 font-medium">聯絡人</th>
+              <th class="px-3 py-2 font-medium">電話</th>
+              <th class="px-3 py-2 font-medium">款式</th>
+              <th class="px-3 py-2 font-medium">建議交貨日</th>
+              <th class="px-3 py-2 font-medium">客戶交貨日</th>
+              <th class="px-3 py-2 text-right font-medium">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+      <div class="flex items-center justify-between border-b px-5 py-4">
+        <div>
+          <div class="text-base font-semibold">翻單（預填表再確認）</div>
+          <div class="mt-1 text-xs text-slate-600">確認後會建立新一張翻單</div>
+        </div>
+        <button id="closeModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+      </div>
+      <div class="px-5 py-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label class="text-sm font-medium">公司</label>
+            <input id="mCompany" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">聯絡人</label>
+            <input id="mContact" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">電話</label>
+            <input id="mPhone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">送貨地址</label>
+            <input id="mAddress" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">款式</label>
+            <input id="mStyle" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">尺碼表（文字）</label>
+            <textarea id="mSizeChart" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="3"></textarea>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">配比（摘要，只讀）</label>
+            <input id="mRatio" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" readonly />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">交貨日</label>
+            <input id="mDeliveryDate" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <div id="modalMsg" class="mt-3 text-sm font-medium"></div>
+      </div>
+      <div class="flex items-center justify-end gap-2 border-t px-5 py-4">
+        <button id="confirmReorder" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">確認翻單</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const summary = document.getElementById('summary');
+    const tbody = document.getElementById('tbody');
+    const adminMsg = document.getElementById('adminMsg');
+
+    const tokenInput = document.getElementById('tokenInput');
+    const saveTokenBtn = document.getElementById('saveTokenBtn');
+
+    const fPhone = document.getElementById('fPhone');
+    const fCompany = document.getElementById('fCompany');
+    const fType = document.getElementById('fType');
+    const fStatus = document.getElementById('fStatus');
+    const fFrom = document.getElementById('fFrom');
+    const fTo = document.getElementById('fTo');
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
+
+    const refreshBtn = document.getElementById('refreshBtn');
+    const exportBtn = document.getElementById('exportBtn');
+
+    const modal = document.getElementById('modal');
+    const closeModal = document.getElementById('closeModal');
+    const confirmReorder = document.getElementById('confirmReorder');
+    const modalMsg = document.getElementById('modalMsg');
+
+    const mCompany = document.getElementById('mCompany');
+    const mContact = document.getElementById('mContact');
+    const mPhone = document.getElementById('mPhone');
+    const mAddress = document.getElementById('mAddress');
+    const mStyle = document.getElementById('mStyle');
+    const mSizeChart = document.getElementById('mSizeChart');
+    const mRatio = document.getElementById('mRatio');
+    const mDeliveryDate = document.getElementById('mDeliveryDate');
+
+    let currentOrders = [];
+    let currentSourceOrder = null;
+    let holidays = new Set();
+
+    function token() {
+      return sessionStorage.getItem('adminToken') || '';
+    }
+
+    function authHeaders() {
+      const t = token();
+      return t ? { Authorization: `Bearer ${t}` } : {};
+    }
+
+    function typeBadge(t) {
+      if (t === 'new') return '<span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">新單</span>';
+      return '<span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">翻單</span>';
+    }
+
+    function statusLabel(s) {
+      const map = {
+        received: '已收到',
+        follow_up: '跟進中',
+        confirmed: '已確認',
+        production: '量產中',
+        shipping: '運送中',
+        done: '已完成',
+        cancelled: '已取消'
+      };
+      return map[s] || s;
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function addDaysYmd(ymd, days) {
+      const d = new Date(`${ymd}T00:00:00.000Z`);
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+    function isWeekend(ymd) {
+      const d = new Date(`${ymd}T00:00:00.000Z`);
+      const day = d.getUTCDay();
+      return day === 0 || day === 6;
+    }
+    function addBusinessDays(startYmd, businessDays) {
+      let cursor = String(startYmd);
+      let left = Number(businessDays);
+      while (left > 0) {
+        cursor = addDaysYmd(cursor, 1);
+        if (isWeekend(cursor)) continue;
+        if (holidays.has(cursor)) continue;
+        left -= 1;
+      }
+      return cursor;
+    }
+    function hkTodayYmd() {
+      return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Hong_Kong' });
+    }
+
+    function queryString(extra) {
+      const p = new URLSearchParams();
+      if (fPhone.value.trim()) p.set('phone', fPhone.value.trim());
+      if (fCompany.value.trim()) p.set('company', fCompany.value.trim());
+      if (fType.value) p.set('orderType', fType.value);
+      if (fStatus.value) p.set('status', fStatus.value);
+      if (fFrom.value) p.set('from', fFrom.value);
+      if (fTo.value) p.set('to', fTo.value);
+      if (extra && extra.format) p.set('format', extra.format);
+      return p.toString();
+    }
+
+    function render(orders) {
+      currentOrders = orders;
+      summary.textContent = `${orders.length} 張訂單`;
+      tbody.innerHTML = '';
+      orders.forEach((o) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
+          <td class="px-3 py-2">${typeBadge(o.orderType)}</td>
+          <td class="px-3 py-2">
+            <select data-id="${o.id}" class="statusSel w-full rounded-lg border px-2 py-1 text-xs">
+              <option value="received">已收到</option>
+              <option value="follow_up">跟進中</option>
+              <option value="confirmed">已確認</option>
+              <option value="production">量產中</option>
+              <option value="shipping">運送中</option>
+              <option value="done">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </td>
+          <td class="px-3 py-2 font-medium">${o.companyName}</td>
+          <td class="px-3 py-2">${o.contactName}</td>
+          <td class="px-3 py-2">${o.phone}</td>
+          <td class="px-3 py-2">${o.styleName}</td>
+          <td class="px-3 py-2 font-medium">${o.suggestedDeliveryDate}</td>
+          <td class="px-3 py-2">${o.requestedDeliveryDate}</td>
+          <td class="px-3 py-2 text-right">
+            <button data-id="${o.id}" class="reorderBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        const sel = tr.querySelector('.statusSel');
+        sel.value = o.status || 'received';
+      });
+
+      document.querySelectorAll('.statusSel').forEach((sel) => {
+        sel.addEventListener('change', async () => {
+          const orderId = sel.dataset.id;
+          const status = sel.value;
+          adminMsg.textContent = '';
+          const res = await fetch('/api/admin/orders/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ orderId, status })
+          });
+          const data = await res.json().catch(() => null);
+          if (!data || !data.ok) {
+            adminMsg.textContent = '更新狀態失敗';
+            sel.value = (currentOrders.find((x) => x.id === orderId) || {}).status || 'received';
+            return;
+          }
+          const o = currentOrders.find((x) => x.id === orderId);
+          if (o) o.status = status;
+          adminMsg.textContent = `已更新狀態：${statusLabel(status)}`;
+        });
+      });
+
+      document.querySelectorAll('.reorderBtn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const o = currentOrders.find((x) => x.id === btn.dataset.id);
+          if (!o) return;
+          currentSourceOrder = o;
+
+          const histRes = await fetch('/api/orders/history?phone=' + encodeURIComponent(o.phone));
+          const histData = await histRes.json().catch(() => null);
+          const src = histData && histData.ok ? (histData.orders || []).find((x) => x.id === o.id) : null;
+          const ratioSummary = src && Array.isArray(src.sizeRatio) ? src.sizeRatio.map((r) => `${r.size}:${r.qty}`).join(' / ') : '';
+
+          mCompany.value = o.companyName || '';
+          mContact.value = o.contactName || '';
+          mPhone.value = o.phone || '';
+          mAddress.value = o.address || '';
+          mStyle.value = o.styleName || '';
+          mSizeChart.value = src && typeof src.sizeChart === 'string' ? src.sizeChart : '';
+          mRatio.value = ratioSummary;
+          modalMsg.textContent = '';
+
+          const earliest = addBusinessDays(hkTodayYmd(), 17);
+          mDeliveryDate.min = earliest;
+          mDeliveryDate.value = earliest;
+
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        });
+      });
+    }
+
+    async function loadOrders() {
+      adminMsg.textContent = '';
+      const qs = queryString();
+      const res = await fetch(`/api/admin/orders?${qs}`, { headers: authHeaders() });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        adminMsg.textContent = '載入失敗（請確認 Token）';
+        render([]);
+        return;
+      }
+      render(data.orders || []);
+    }
+
+    saveTokenBtn.addEventListener('click', () => {
+      const t = tokenInput.value.trim();
+      if (!t) {
+        adminMsg.textContent = '請輸入 Token';
+        return;
+      }
+      sessionStorage.setItem('adminToken', t);
+      adminMsg.textContent = 'Token 已儲存';
+      loadOrders();
+    });
+
+    applyFilterBtn.addEventListener('click', loadOrders);
+    refreshBtn.addEventListener('click', loadOrders);
+
+    exportBtn.addEventListener('click', async () => {
+      adminMsg.textContent = '';
+      const t = token();
+      if (!t) {
+        adminMsg.textContent = '請先輸入 Token';
+        return;
+      }
+      const qs = queryString({ format: 'csv' });
+      const res = await fetch(`/api/admin/orders?${qs}`, { headers: authHeaders() });
+      if (!res.ok) {
+        adminMsg.textContent = '匯出失敗（請確認 Token）';
+        return;
+      }
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'orders.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    closeModal.addEventListener('click', () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    });
+
+    confirmReorder.addEventListener('click', async () => {
+      modalMsg.textContent = '';
+      if (!currentSourceOrder) return;
+      const histRes = await fetch('/api/orders/history?phone=' + encodeURIComponent(currentSourceOrder.phone));
+      const histData = await histRes.json().catch(() => null);
+      const src = histData && histData.ok ? (histData.orders || []).find((x) => x.id === currentSourceOrder.id) : null;
+      const sizeRatio = src && Array.isArray(src.sizeRatio) ? src.sizeRatio : [];
+      if (!sizeRatio.length) {
+        modalMsg.textContent = '找唔到原訂單配比';
+        return;
+      }
+
+      const payload = {
+        orderType: 'reorder',
+        companyName: mCompany.value.trim(),
+        contactName: mContact.value.trim(),
+        phone: mPhone.value.trim(),
+        address: mAddress.value.trim(),
+        styleName: mStyle.value.trim(),
+        sizeChart: mSizeChart.value,
+        sizeRatio,
+        requestedDeliveryDate: mDeliveryDate.value,
+        sourceOrderId: currentSourceOrder.id
+      };
+
+      const created = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then((r) => r.json()).catch(() => null);
+
+      if (!created || !created.ok) {
+        modalMsg.textContent = '翻單失敗';
+        return;
+      }
+
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      adminMsg.textContent = '已建立翻單';
+      loadOrders();
+    });
+
+    async function init() {
+      const r = await fetch('/data/hk-holidays/2026.json').catch(() => null);
+      const list = r ? await r.json().catch(() => []) : [];
+      holidays = new Set(Array.isArray(list) ? list.map(String) : []);
+      const t = token();
+      if (t) tokenInput.value = t;
+      if (t) loadOrders();
+    }
+
+    init();
+  </script>
+</body>
+</html>

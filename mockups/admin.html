@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>後台訂單管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div class="mx-auto w-full max-w-6xl px-4 py-8">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">後台訂單管理</h1>
+          <p class="mt-1 text-sm text-slate-600">訂單類型標註、交期建議、自動翻單庫。</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="refreshBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">刷新</button>
+          <a href="/" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">下單頁</a>
+        </div>
+      </div>
+
+      <section class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div class="w-full max-w-sm">
+            <label class="text-sm font-medium">Admin Token</label>
+            <input id="tokenInput" type="password" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="輸入後台密碼" />
+          </div>
+          <div class="text-xs text-slate-600">Mockup：真實版會用 Authorization: Bearer &lt;token&gt; 讀取 API</div>
+        </div>
+      </section>
+
+      <section class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-base font-semibold">訂單列表</h2>
+          <div class="text-sm text-slate-600" id="summary"></div>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[980px] text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50 text-left">
+                <th class="px-3 py-2 font-medium">時間</th>
+                <th class="px-3 py-2 font-medium">類型</th>
+                <th class="px-3 py-2 font-medium">公司</th>
+                <th class="px-3 py-2 font-medium">聯絡人</th>
+                <th class="px-3 py-2 font-medium">電話</th>
+                <th class="px-3 py-2 font-medium">款式</th>
+                <th class="px-3 py-2 font-medium">建議交貨日</th>
+                <th class="px-3 py-2 font-medium">客戶選擇交貨日</th>
+                <th class="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4">
+      <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b px-5 py-4">
+          <div>
+            <div class="text-base font-semibold">翻單（預填表再確認）</div>
+            <div class="mt-1 text-xs text-slate-600">Mockup：真實版會建立一張新訂單（類型=翻單）</div>
+          </div>
+          <button id="closeModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+        </div>
+        <div class="px-5 py-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="text-sm font-medium">公司</label>
+              <input id="mCompany" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-sm font-medium">電話</label>
+              <input id="mPhone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="text-sm font-medium">款式</label>
+              <input id="mStyle" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="text-sm font-medium">配比（只顯示摘要）</label>
+              <input id="mRatio" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 border-t px-5 py-4">
+          <button id="confirmReorder" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">確認翻單</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tbody = document.getElementById('tbody');
+      const summary = document.getElementById('summary');
+      const modal = document.getElementById('modal');
+      const closeModal = document.getElementById('closeModal');
+      const confirmReorder = document.getElementById('confirmReorder');
+
+      const mCompany = document.getElementById('mCompany');
+      const mPhone = document.getElementById('mPhone');
+      const mStyle = document.getElementById('mStyle');
+      const mRatio = document.getElementById('mRatio');
+
+      const orders = [
+        {
+          id: 'o_1001',
+          createdAt: '2026-05-09 10:12',
+          type: 'new',
+          company: 'ABC Trading',
+          contact: '陳先生',
+          phone: '91234567',
+          style: '公司T恤 2026',
+          suggestedDeliveryDate: '2026-06-30',
+          requestedDeliveryDate: '2026-07-05',
+          ratio: [
+            { size: 'S', qty: 10 },
+            { size: 'M', qty: 20 },
+            { size: 'L', qty: 10 }
+          ]
+        },
+        {
+          id: 'o_1002',
+          createdAt: '2026-05-08 14:03',
+          type: 'reorder',
+          company: 'XYZ Limited',
+          contact: '李小姐',
+          phone: '98887777',
+          style: '活動衛衣 2026',
+          suggestedDeliveryDate: '2026-06-10',
+          requestedDeliveryDate: '2026-06-12',
+          ratio: [
+            { size: 'XS', qty: 5 },
+            { size: 'S', qty: 12 },
+            { size: 'M', qty: 18 },
+            { size: 'L', qty: 8 }
+          ]
+        }
+      ];
+
+      function badge(type) {
+        if (type === 'new') return '<span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">新單</span>';
+        return '<span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">翻單</span>';
+      }
+
+      function render() {
+        tbody.innerHTML = '';
+        summary.textContent = `${orders.length} 張訂單`;
+        orders.forEach((o) => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b hover:bg-slate-50';
+          tr.innerHTML = `
+            <td class="px-3 py-2 text-slate-700">${o.createdAt}</td>
+            <td class="px-3 py-2">${badge(o.type)}</td>
+            <td class="px-3 py-2 font-medium">${o.company}</td>
+            <td class="px-3 py-2">${o.contact}</td>
+            <td class="px-3 py-2">${o.phone}</td>
+            <td class="px-3 py-2">${o.style}</td>
+            <td class="px-3 py-2 font-medium">${o.suggestedDeliveryDate}</td>
+            <td class="px-3 py-2">${o.requestedDeliveryDate}</td>
+            <td class="px-3 py-2 text-right">
+              <button data-id="${o.id}" class="reorderBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.querySelectorAll('.reorderBtn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const o = orders.find((x) => x.id === btn.dataset.id);
+            if (!o) return;
+            mCompany.value = o.company;
+            mPhone.value = o.phone;
+            mStyle.value = o.style;
+            mRatio.value = o.ratio.map((r) => `${r.size}:${r.qty}`).join(' / ');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+          });
+        });
+      }
+
+      closeModal.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      });
+
+      confirmReorder.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        alert('Mockup：已建立翻單（真實版會呼叫 API 寫入 DB）');
+      });
+
+      document.getElementById('refreshBtn').addEventListener('click', render);
+      render();
+    </script>
+  </body>
+</html>
