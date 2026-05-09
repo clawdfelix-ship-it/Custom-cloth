@@ -2,6 +2,7 @@ const { sql } = require('../src/lib/db');
 const { sendJson, readBody } = require('../src/lib/http');
 const { requireSession } = require('../src/lib/auth');
 const { ORDER_STATUS_ADMIN } = require('../src/lib/schema');
+const { ensureMigrations } = require('../src/lib/migrate');
 
 async function requireFactory(req, res) {
   const session = await requireSession(req);
@@ -161,6 +162,7 @@ async function feedbackHandler(req, res, session) {
 }
 
 module.exports = async function handler(req, res) {
+  await ensureMigrations();
   const url = new URL(req.url, 'http://localhost');
   const action = (url.searchParams.get('action') || '').trim();
 
@@ -174,4 +176,3 @@ module.exports = async function handler(req, res) {
 
   return sendJson(res, 404, { ok: false, error: 'not_found' });
 };
-

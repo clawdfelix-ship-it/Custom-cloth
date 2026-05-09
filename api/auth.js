@@ -2,8 +2,10 @@ const { sql } = require('../src/lib/db');
 const { sendJson, readBody } = require('../src/lib/http');
 const { verifyPassword } = require('../src/lib/password');
 const { newToken, getBearerToken } = require('../src/lib/auth');
+const { ensureMigrations } = require('../src/lib/migrate');
 
 module.exports = async function handler(req, res) {
+  await ensureMigrations();
   const url = new URL(req.url, 'http://localhost');
   const action = (url.searchParams.get('action') || '').trim();
 
@@ -40,4 +42,3 @@ module.exports = async function handler(req, res) {
 
   return sendJson(res, 404, { ok: false, error: 'not_found' });
 };
-

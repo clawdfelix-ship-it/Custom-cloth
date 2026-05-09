@@ -3,6 +3,7 @@ const { sendJson, readBody } = require('../src/lib/http');
 const { hkTodayYmd, addBusinessDays } = require('../src/lib/hk-date');
 const { requiredString, requiredEnum, requiredYmd, requiredQtyJson } = require('../src/lib/validation');
 const { generateOrderSn } = require('../src/lib/order-sn');
+const { ensureMigrations } = require('../src/lib/migrate');
 
 const CATE1 = ['現貨款式加工', '熱昇華訂製', '開板訂製'];
 
@@ -233,6 +234,7 @@ async function handleStatus(req, res, url) {
 }
 
 module.exports = async function handler(req, res) {
+  await ensureMigrations();
   const url = new URL(req.url, 'http://localhost');
   const action = (url.searchParams.get('action') || '').trim();
 
@@ -244,4 +246,3 @@ module.exports = async function handler(req, res) {
 
   return sendJson(res, 404, { ok: false, error: 'not_found' });
 };
-

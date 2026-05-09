@@ -6,6 +6,7 @@ const { ORDER_STATUS_ADMIN, FEEDBACK_STATUS } = require('../src/lib/schema');
 const { hkTodayYmd, addBusinessDays } = require('../src/lib/hk-date');
 const { generateOrderSn } = require('../src/lib/order-sn');
 const { requiredYmd } = require('../src/lib/validation');
+const { ensureMigrations } = require('../src/lib/migrate');
 
 async function requireAdmin(req, res) {
   const session = await requireSession(req);
@@ -408,6 +409,7 @@ async function feedbackStatusHandler(req, res) {
 }
 
 module.exports = async function handler(req, res) {
+  await ensureMigrations();
   const url = new URL(req.url, 'http://localhost');
   const action = (url.searchParams.get('action') || '').trim();
 
@@ -422,4 +424,3 @@ module.exports = async function handler(req, res) {
 
   return sendJson(res, 404, { ok: false, error: 'not_found' });
 };
-
