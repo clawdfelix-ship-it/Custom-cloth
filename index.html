@@ -1,138 +1,181 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>客戶下單</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客戶訂單下單系統</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft JhengHei",sans-serif;}
+    body{background:#f3f4f6;color:#333;max-width:880px;margin:0 auto;padding:20px;}
+    .card{background:#fff;padding:25px;border-radius:12px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+    .card-title{font-size:20px;font-weight:bold;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #eee;}
+    .form-item{margin-bottom:15px;}
+    .form-item label{display:block;margin-bottom:6px;font-weight:500;}
+    .form-item input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:15px;}
+    .btn{width:100%;padding:14px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-size:16px;cursor:pointer;font-weight:bold;}
+    .btn:hover{background:#2563eb;}
+    .btn-sm{padding:8px 12px;width:auto;font-size:14px;}
+    .btn-success{background:#10b981;}
+    .btn-warning{background:#f59e0b;}
+    .btn-secondary{background:#6b7280;}
+    .tab-group{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+    .tab-btn{flex:1;min-width:160px;padding:12px;border:none;border-radius:8px;background:#e5e7eb;cursor:pointer;font-size:15px;}
+    .tab-btn.active{background:#3b82f6;color:#fff;}
+    .hide{display:none !important;}
+    .style-item{border:1px solid #eee;padding:12px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
+    .style-item img{width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ddd;background:#fff;}
+    .style-info{flex:1;min-width:220px;}
+    .size-qty-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px;}
+    .size-qty-row input{text-align:center;}
+    .size-table-preview{background:#f8f9fa;padding:10px;border-radius:8px;margin-top:10px;overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{padding:8px;border:1px solid #ddd;text-align:center;font-size:13px;}
+    th{background:#f9fafb;}
+    .note-red{color:#dc2626;font-weight:bold;margin:8px 0;}
+    .note-green{color:#059669;font-weight:bold;margin:8px 0;}
+    .muted{color:#6b7280;font-size:13px;}
+    .result-box{background:#f9fafb;border:1px solid #e5e7eb;padding:12px;border-radius:10px;margin-top:10px;}
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
-  <div class="mx-auto w-full max-w-4xl px-4 py-8">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-semibold tracking-tight">客戶下單</h1>
-        <p class="mt-1 text-sm text-slate-600">新單 / 翻單；系統會按工作日 + 香港假期限制最快交貨日。</p>
+<body>
+  <div class="card">
+    <div class="card-title">客戶訂單下單系統</div>
+    <div class="tab-group">
+      <button id="btn-new" class="tab-btn active" type="button" onclick="switchTab('new')">全新款式下單</button>
+      <button id="btn-repeat" class="tab-btn" type="button" onclick="switchTab('repeat')">歷史訂單翻單</button>
+      <button id="btn-query" class="tab-btn" type="button" onclick="switchTab('query')">訂單狀態查詢</button>
+    </div>
+
+    <div id="tab-new" class="tab-content">
+      <div class="note-red">開板訂製（全新款）最低工期：31 工作日</div>
+      <div class="note-green">現貨加工/熱昇華訂製、任何翻單：最低工期：17 工作日</div>
+
+      <div class="form-item">
+        <label>訂製大分類</label>
+        <select id="cate1" onchange="filterStyle()">
+          <option value="">請選擇訂製類型</option>
+          <option value="現貨款式加工">現貨款式加工</option>
+          <option value="熱昇華訂製">熱昇華訂製</option>
+          <option value="開板訂製">開板訂製</option>
+        </select>
       </div>
-      <a href="/admin" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">後台</a>
+      <div class="form-item">
+        <label>產品子分類</label>
+        <select id="cate2" onchange="filterStyle()">
+          <option value="">請選擇產品類型</option>
+          <option value="球衣">球衣</option>
+          <option value="POLO">POLO</option>
+          <option value="風衣外套">風衣外套</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+
+      <div class="form-item">
+        <label>選擇款式</label>
+        <div id="styleList"></div>
+        <div id="styleHint" class="muted">請先選擇分類後載入款式。</div>
+      </div>
+
+      <div id="sizeWrap" class="hide">
+        <div class="form-item">
+          <label>尺碼表參考</label>
+          <div id="sizeTablePreview" class="size-table-preview"></div>
+        </div>
+
+        <div class="form-item">
+          <label>填寫各尺碼數量</label>
+          <div class="size-qty-row">
+            <div><label>S</label><input type="number" id="qty_S" value="0" min="0"></div>
+            <div><label>M</label><input type="number" id="qty_M" value="0" min="0"></div>
+            <div><label>L</label><input type="number" id="qty_L" value="0" min="0"></div>
+            <div><label>XL</label><input type="number" id="qty_XL" value="0" min="0"></div>
+            <div><label>2XL</label><input type="number" id="qty_2XL" value="0" min="0"></div>
+            <div><label>3XL</label><input type="number" id="qty_3XL" value="0" min="0"></div>
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label>要求交貨日期</label>
+          <input type="date" id="deliveryDate">
+          <div id="minDateHint" class="muted"></div>
+        </div>
+
+        <div class="form-item">
+          <label>公司名</label>
+          <input type="text" id="companyName" placeholder="請輸入公司名">
+        </div>
+        <div class="form-item">
+          <label>聯絡人</label>
+          <input type="text" id="contactName" placeholder="請輸入聯絡人">
+        </div>
+        <div class="form-item">
+          <label>電話</label>
+          <input type="text" id="phone" placeholder="請輸入電話">
+        </div>
+        <div class="form-item">
+          <label>送貨地址</label>
+          <input type="text" id="address" placeholder="請輸入送貨地址">
+        </div>
+
+        <button class="btn btn-success" type="button" onclick="submitOrder('new')">提交訂單</button>
+        <div id="newMsg" class="muted"></div>
+        <div id="newResult" class="result-box hide"></div>
+      </div>
     </div>
 
-    <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <button id="modeNew" type="button" class="rounded-xl border bg-white p-4 text-left shadow-sm hover:bg-slate-50">
-        <div class="flex items-center justify-between">
-          <div class="text-sm font-medium">全新款式下單</div>
-          <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">31 工作日</span>
-        </div>
-        <div class="mt-1 text-xs text-slate-600">確認設計→樣板 14天；樣板→量產 14天；物流香港最少3天</div>
-      </button>
-      <button id="modeReorder" type="button" class="rounded-xl border bg-white p-4 text-left shadow-sm hover:bg-slate-50">
-        <div class="flex items-center justify-between">
-          <div class="text-sm font-medium">歷史訂單翻單</div>
-          <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">17 工作日</span>
-        </div>
-        <div class="mt-1 text-xs text-slate-600">豁免設計/起樣板；量產 14天 + 物流最少3天</div>
-      </button>
+    <div id="tab-repeat" class="tab-content hide">
+      <div class="form-item">
+        <label>公司名</label>
+        <input type="text" id="repeatCompanyName" placeholder="請輸入之前落單公司名">
+      </div>
+      <div class="form-item">
+        <label>電話</label>
+        <input type="text" id="repeatPhone" placeholder="請輸入之前落單電話">
+      </div>
+      <button class="btn btn-warning" type="button" onclick="searchMyOrder()">查找歷史訂單</button>
+      <div id="repeatMsg" class="muted"></div>
+
+      <div id="repeatList" class="result-box hide"></div>
+
+      <div id="repeatSelected" class="result-box hide"></div>
+      <div id="repeatAction" class="hide" style="margin-top:10px;">
+        <button class="btn btn-success" type="button" onclick="submitOrder('repeat')">確認翻單並提交</button>
+      </div>
     </div>
 
-    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
-      <section class="rounded-xl border bg-white p-5 shadow-sm lg:col-span-3">
-        <div class="flex items-center justify-between">
-          <h2 class="text-base font-semibold">訂單資料</h2>
-          <div id="modeBadge" class="hidden rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"></div>
-        </div>
-
-        <form id="orderForm" class="mt-4 space-y-4">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="text-sm font-medium">公司名 *</label>
-              <input id="company" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" required />
-            </div>
-            <div>
-              <label class="text-sm font-medium">聯絡人 *</label>
-              <input id="contact" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" required />
-            </div>
-            <div>
-              <label class="text-sm font-medium">電話 *</label>
-              <input id="phone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" required />
-            </div>
-            <div>
-              <label class="text-sm font-medium">送貨地址 *</label>
-              <input id="address" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" required />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="text-sm font-medium">款式 *</label>
-              <input id="style" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" required />
-            </div>
-            <div>
-              <label class="text-sm font-medium">交貨日 *</label>
-              <input id="deliveryDate" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" required />
-              <div id="minDateHint" class="mt-1 text-xs text-slate-600"></div>
-            </div>
-          </div>
-
-          <div>
-            <label class="text-sm font-medium">尺碼表（文字，可選）</label>
-            <textarea id="sizeChart" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="3"></textarea>
-          </div>
-
-          <div class="rounded-xl border bg-slate-50 p-4">
-            <div class="flex items-center justify-between">
-              <div class="text-sm font-semibold">舊尺碼配比 *</div>
-              <button id="addRowBtn" type="button" class="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50">新增尺寸</button>
-            </div>
-            <div class="mt-3 overflow-x-auto">
-              <table class="w-full min-w-[420px] text-sm">
-                <thead>
-                  <tr class="border-b bg-white">
-                    <th class="px-3 py-2 text-left font-medium">尺寸</th>
-                    <th class="px-3 py-2 text-left font-medium">數量</th>
-                    <th class="px-3 py-2 text-right font-medium">操作</th>
-                  </tr>
-                </thead>
-                <tbody id="ratioBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between gap-3">
-            <div id="msg" class="text-sm font-medium"></div>
-            <button id="submitBtn" type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">提交訂單</button>
-          </div>
-        </form>
-      </section>
-
-      <aside class="rounded-xl border bg-white p-5 shadow-sm lg:col-span-2">
-        <div class="flex items-center justify-between">
-          <h2 class="text-base font-semibold">翻單庫（依電話）</h2>
-          <button id="loadHistoryBtn" type="button" class="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50">載入</button>
-        </div>
-        <p class="mt-1 text-xs text-slate-600">翻單模式會顯示該電話的歷史訂單，點選即可帶入。</p>
-        <div id="historyEmpty" class="mt-4 rounded-xl border border-dashed p-4 text-sm text-slate-600">未載入歷史訂單</div>
-        <ul id="historyList" class="mt-4 hidden space-y-3"></ul>
-      </aside>
+    <div id="tab-query" class="tab-content hide">
+      <div class="form-item">
+        <label>訂單編號</label>
+        <input type="text" id="queryOrderSn" placeholder="例如：ORD20260509123456-abcdef">
+      </div>
+      <div class="form-item">
+        <label>電話</label>
+        <input type="text" id="queryPhone" placeholder="請輸入落單電話">
+      </div>
+      <button class="btn btn-secondary" type="button" onclick="queryOrder()">查詢訂單狀態</button>
+      <div id="queryMsg" class="muted"></div>
+      <div id="queryResult" class="result-box hide"></div>
     </div>
   </div>
 
   <script>
-    const Mode = { NEW: 'new', REORDER: 'reorder' };
-    let selectedMode = null;
     let holidays = new Set();
-    let selectedSourceOrderId = null;
+    let stylesCache = [];
+    let selectedStyleIds = new Set();
+    let selectedSizeTableId = '';
+    let repeatSelectedOrder = null;
 
-    const modeNewBtn = document.getElementById('modeNew');
-    const modeReorderBtn = document.getElementById('modeReorder');
-    const modeBadge = document.getElementById('modeBadge');
-    const deliveryDateInput = document.getElementById('deliveryDate');
-    const minDateHint = document.getElementById('minDateHint');
+    function switchTab(tab) {
+      document.getElementById('tab-new').classList.add('hide');
+      document.getElementById('tab-repeat').classList.add('hide');
+      document.getElementById('tab-query').classList.add('hide');
+      document.getElementById('btn-new').classList.remove('active');
+      document.getElementById('btn-repeat').classList.remove('active');
+      document.getElementById('btn-query').classList.remove('active');
 
-    const ratioBody = document.getElementById('ratioBody');
-    const addRowBtn = document.getElementById('addRowBtn');
-
-    const historyEmpty = document.getElementById('historyEmpty');
-    const historyList = document.getElementById('historyList');
-    const loadHistoryBtn = document.getElementById('loadHistoryBtn');
+      document.getElementById(`tab-${tab}`).classList.remove('hide');
+      document.getElementById(`btn-${tab}`).classList.add('active');
+    }
 
     function pad(n) { return String(n).padStart(2, '0'); }
     function addDaysYmd(ymd, days) {
@@ -159,171 +202,336 @@
     function hkTodayYmd() {
       return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Hong_Kong' });
     }
-
-    function setMode(mode) {
-      selectedMode = mode;
-      modeBadge.classList.remove('hidden');
-      if (mode === Mode.NEW) {
-        modeBadge.textContent = '新單';
-        modeBadge.className = 'rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700';
-      } else {
-        modeBadge.textContent = '翻單';
-        modeBadge.className = 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700';
-      }
-
-      const lead = mode === Mode.NEW ? 31 : 17;
+    function leadDays(mode) {
+      if (mode === 'repeat') return 17;
+      const c1 = document.getElementById('cate1').value;
+      return c1 === '開板訂製' ? 31 : 17;
+    }
+    function updateMinDelivery(mode) {
+      const lead = leadDays(mode);
       const earliest = addBusinessDays(hkTodayYmd(), lead);
-      deliveryDateInput.min = earliest;
-      if (!deliveryDateInput.value || deliveryDateInput.value < earliest) deliveryDateInput.value = earliest;
-      minDateHint.textContent = `最快交貨日：${earliest}`;
+      const el = document.getElementById('deliveryDate');
+      el.min = earliest;
+      if (!el.value || el.value < earliest) el.value = earliest;
+      document.getElementById('minDateHint').textContent = `最快交貨日：${earliest}`;
     }
 
-    function addRatioRow(size = '', qty = '') {
-      const tr = document.createElement('tr');
-      tr.className = 'border-b bg-white';
-      tr.innerHTML = `
-        <td class="px-3 py-2">
-          <input class="w-full rounded-lg border px-3 py-1.5 text-sm" value="${String(size)}" required />
-        </td>
-        <td class="px-3 py-2">
-          <input type="number" min="1" class="w-full rounded-lg border px-3 py-1.5 text-sm" value="${String(qty)}" required />
-        </td>
-        <td class="px-3 py-2 text-right">
-          <button type="button" class="removeRow rounded-lg border bg-white px-2.5 py-1 text-xs font-medium hover:bg-slate-50">刪除</button>
-        </td>
-      `;
-      tr.querySelector('.removeRow').addEventListener('click', () => tr.remove());
-      ratioBody.appendChild(tr);
-    }
+    async function filterStyle() {
+      const cate1 = document.getElementById('cate1').value;
+      const cate2 = document.getElementById('cate2').value;
+      selectedStyleIds = new Set();
+      selectedSizeTableId = '';
+      document.getElementById('sizeWrap').classList.add('hide');
+      document.getElementById('styleList').innerHTML = '';
+      document.getElementById('styleHint').classList.remove('hide');
 
-    function readRatio() {
-      const rows = Array.from(ratioBody.querySelectorAll('tr'));
-      return rows.map((tr) => {
-        const inputs = tr.querySelectorAll('input');
-        return { size: inputs[0].value.trim(), qty: Number(inputs[1].value) };
-      }).filter((r) => r.size && Number.isFinite(r.qty) && r.qty > 0);
-    }
+      if (!cate1 || !cate2) return;
 
-    function renderHistory(orders) {
-      historyList.innerHTML = '';
-      if (!orders.length) {
-        historyEmpty.classList.remove('hidden');
-        historyList.classList.add('hidden');
-        historyEmpty.textContent = '冇歷史訂單';
+      const res = await fetch(`/api/public/styles?cate1=${encodeURIComponent(cate1)}&cate2=${encodeURIComponent(cate2)}`);
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        document.getElementById('styleHint').textContent = '載入款式失敗';
         return;
       }
-      historyEmpty.classList.add('hidden');
-      historyList.classList.remove('hidden');
-      orders.forEach((o) => {
-        const li = document.createElement('li');
-        li.className = 'rounded-xl border p-3 hover:bg-slate-50';
-        const ratioSummary = (o.sizeRatio || []).map((r) => `${r.size}:${r.qty}`).join(' / ');
-        li.innerHTML = `
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <div class="text-sm font-semibold">${o.styleName}</div>
-              <div class="mt-1 text-xs text-slate-600">上次交貨日：${o.requestedDeliveryDate}</div>
-            </div>
-            <button type="button" class="selectOrder rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">選擇</button>
+
+      stylesCache = data.styles || [];
+      renderStyles(stylesCache);
+      document.getElementById('styleHint').classList.add('hide');
+      updateMinDelivery('new');
+    }
+
+    function renderStyles(styles) {
+      const wrap = document.getElementById('styleList');
+      wrap.innerHTML = '';
+      if (!styles.length) {
+        document.getElementById('styleHint').textContent = '此分類暫無款式';
+        document.getElementById('styleHint').classList.remove('hide');
+        return;
+      }
+      styles.forEach((s) => {
+        const div = document.createElement('div');
+        div.className = 'style-item';
+        const img = s.imgBase64 ? `<img src="${s.imgBase64}" alt="${s.name}">` : `<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">`;
+        div.innerHTML = `
+          ${img}
+          <div class="style-info">
+            <div style="font-weight:bold;">${s.code} - ${s.name}</div>
+            <div class="muted">${s.cate1} / ${s.cate2}</div>
+            <div class="muted">尺碼表：${s.sizeTableName}</div>
           </div>
-          <div class="mt-2 text-xs text-slate-600">配比：${ratioSummary}</div>
+          <div>
+            <label style="display:flex;gap:8px;align-items:center;">
+              <input type="checkbox" data-style-id="${s.id}">
+              選擇
+            </label>
+          </div>
         `;
-        li.querySelector('.selectOrder').addEventListener('click', () => {
-          document.getElementById('style').value = o.styleName || '';
-          document.getElementById('sizeChart').value = o.sizeChart || '';
-          ratioBody.innerHTML = '';
-          (o.sizeRatio || []).forEach((r) => addRatioRow(r.size, r.qty));
-          selectedSourceOrderId = o.id;
-          setMode(Mode.REORDER);
-          document.getElementById('msg').textContent = '已帶入歷史訂單資料';
+        div.querySelector('input[type="checkbox"]').addEventListener('change', async (e) => {
+          if (e.target.checked) selectedStyleIds.add(s.id);
+          else selectedStyleIds.delete(s.id);
+          await onStyleSelectionChanged();
         });
-        historyList.appendChild(li);
+        wrap.appendChild(div);
       });
     }
 
-    modeNewBtn.addEventListener('click', () => setMode(Mode.NEW));
-    modeReorderBtn.addEventListener('click', () => setMode(Mode.REORDER));
-    addRowBtn.addEventListener('click', () => addRatioRow());
-
-    loadHistoryBtn.addEventListener('click', async () => {
-      const phone = document.getElementById('phone').value.trim();
-      if (!phone) {
-        historyEmpty.classList.remove('hidden');
-        historyList.classList.add('hidden');
-        historyEmpty.textContent = '請先輸入電話再載入';
+    async function onStyleSelectionChanged() {
+      if (!selectedStyleIds.size) {
+        document.getElementById('sizeWrap').classList.add('hide');
+        selectedSizeTableId = '';
         return;
       }
-      const res = await fetch(`/api/orders/history?phone=${encodeURIComponent(phone)}`);
+
+      const firstId = Array.from(selectedStyleIds)[0];
+      const style = stylesCache.find((x) => x.id === firstId);
+      if (!style) return;
+      if (selectedSizeTableId !== style.sizeTableId) {
+        selectedSizeTableId = style.sizeTableId;
+        await loadSizeTable(selectedSizeTableId);
+      }
+      document.getElementById('sizeWrap').classList.remove('hide');
+      updateMinDelivery('new');
+    }
+
+    async function loadSizeTable(id) {
+      const res = await fetch(`/api/public/size-tables/${encodeURIComponent(id)}`);
       const data = await res.json().catch(() => null);
       if (!data || !data.ok) {
-        historyEmpty.classList.remove('hidden');
-        historyList.classList.add('hidden');
-        historyEmpty.textContent = '載入失敗';
+        document.getElementById('sizeTablePreview').innerHTML = '載入尺碼表失敗';
         return;
       }
-      renderHistory(data.orders || []);
-    });
+      const st = data.sizeTable;
+      const rows = Array.isArray(st.data) ? st.data : [];
+      const html = `
+        <table>
+          <thead><tr><th>EU</th><th>胸圍</th><th>腰圍</th><th>衣長</th><th>中國碼</th><th>身高</th></tr></thead>
+          <tbody>
+            ${rows.map((r) => `<tr><td>${r.eu||''}</td><td>${r.chest||''}</td><td>${r.waist||''}</td><td>${r.length||''}</td><td>${r.china||''}</td><td>${r.height||''}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('sizeTablePreview').innerHTML = html;
+    }
 
-    document.getElementById('orderForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('msg');
-      msg.textContent = '';
-      if (!selectedMode) {
-        msg.textContent = '請先選擇「新單」或「翻單」';
-        return;
-      }
-      const payload = {
-        orderType: selectedMode,
-        companyName: document.getElementById('company').value.trim(),
-        contactName: document.getElementById('contact').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        styleName: document.getElementById('style').value.trim(),
-        sizeChart: document.getElementById('sizeChart').value,
-        sizeRatio: readRatio(),
-        requestedDeliveryDate: deliveryDateInput.value,
-        sourceOrderId: selectedMode === Mode.REORDER ? selectedSourceOrderId : null
+    function readQty() {
+      const qty = {
+        S: Number(document.getElementById('qty_S').value || 0),
+        M: Number(document.getElementById('qty_M').value || 0),
+        L: Number(document.getElementById('qty_L').value || 0),
+        XL: Number(document.getElementById('qty_XL').value || 0),
+        '2XL': Number(document.getElementById('qty_2XL').value || 0),
+        '3XL': Number(document.getElementById('qty_3XL').value || 0)
       };
+      return qty;
+    }
 
-      document.getElementById('submitBtn').disabled = true;
-      try {
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json().catch(() => null);
-        if (!data || !data.ok) {
-          if (data && data.error === 'delivery_date_too_early' && data.suggestedDeliveryDate) {
-            msg.textContent = `交貨日過早，最快：${data.suggestedDeliveryDate}`;
-          } else {
-            msg.textContent = '提交失敗';
-          }
+    async function submitOrder(mode) {
+      const msgId = mode === 'repeat' ? 'repeatMsg' : 'newMsg';
+      const msgEl = document.getElementById(msgId);
+      msgEl.textContent = '';
+
+      let cate1 = document.getElementById('cate1').value;
+      let cate2 = document.getElementById('cate2').value;
+
+      if (mode === 'repeat') {
+        if (!repeatSelectedOrder) {
+          msgEl.textContent = '請先選擇一張歷史訂單';
           return;
         }
-        msg.textContent = '下單成功！';
-        e.target.reset();
-        ratioBody.innerHTML = '';
-        addRatioRow('S', 10);
-        addRatioRow('M', 20);
-        addRatioRow('L', 10);
-        selectedSourceOrderId = null;
-        selectedMode = null;
-        modeBadge.classList.add('hidden');
-        minDateHint.textContent = '';
-      } finally {
-        document.getElementById('submitBtn').disabled = false;
+        cate1 = repeatSelectedOrder.cate1;
+        cate2 = repeatSelectedOrder.cate2;
       }
-    });
+
+      if (!cate1 || !cate2) {
+        msgEl.textContent = '請先選擇分類';
+        return;
+      }
+
+      if (!selectedStyleIds.size && mode !== 'repeat') {
+        msgEl.textContent = '請選擇至少一個款式';
+        return;
+      }
+
+      const qty = readQty();
+      const qtyTotal = Object.values(qty).reduce((a, b) => a + b, 0);
+      if (qtyTotal <= 0) {
+        msgEl.textContent = '請填寫尺碼數量';
+        return;
+      }
+
+      const companyName = (mode === 'repeat' ? document.getElementById('repeatCompanyName').value : document.getElementById('companyName').value).trim();
+      const phone = (mode === 'repeat' ? document.getElementById('repeatPhone').value : document.getElementById('phone').value).trim();
+      const contactName = document.getElementById('contactName').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const requestedDeliveryDate = document.getElementById('deliveryDate').value;
+
+      if (!companyName || !phone) {
+        msgEl.textContent = '請填公司名及電話';
+        return;
+      }
+      if (!address) {
+        msgEl.textContent = '請填送貨地址';
+        return;
+      }
+
+      updateMinDelivery(mode);
+      if (requestedDeliveryDate < document.getElementById('deliveryDate').min) {
+        msgEl.textContent = '交貨日過早，請重新選擇';
+        return;
+      }
+
+      const styleIds = mode === 'repeat' ? new Set(repeatSelectedOrder.items.map((it) => String(it.styleId))) : selectedStyleIds;
+      const items = Array.from(styleIds).map((styleId) => ({ styleId, qty }));
+
+      const payload = {
+        mode,
+        cate1,
+        cate2,
+        companyName,
+        contactName,
+        phone,
+        address,
+        requestedDeliveryDate,
+        sourceOrderId: mode === 'repeat' ? repeatSelectedOrder.id : null,
+        items
+      };
+
+      const res = await fetch('/api/public/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        if (data && data.error === 'delivery_date_too_early' && data.suggestedDeliveryDate) {
+          msgEl.textContent = `交貨日過早，最快：${data.suggestedDeliveryDate}`;
+        } else {
+          msgEl.textContent = '提交失敗';
+        }
+        return;
+      }
+
+      const boxId = mode === 'repeat' ? 'repeatSelected' : 'newResult';
+      const box = document.getElementById(boxId);
+      box.classList.remove('hide');
+      box.innerHTML = `<div style="font-weight:bold;">提交成功</div>
+        <div>訂單編號：<b>${data.orderSn}</b></div>
+        <div>狀態：${data.status}</div>
+        <div>建議交貨日：${data.suggestedDeliveryDate}</div>`;
+
+      if (mode !== 'repeat') {
+        msgEl.textContent = '';
+      } else {
+        document.getElementById('repeatAction').classList.add('hide');
+      }
+    }
+
+    async function searchMyOrder() {
+      const companyName = document.getElementById('repeatCompanyName').value.trim();
+      const phone = document.getElementById('repeatPhone').value.trim();
+      const msg = document.getElementById('repeatMsg');
+      msg.textContent = '';
+      repeatSelectedOrder = null;
+      document.getElementById('repeatSelected').classList.add('hide');
+      document.getElementById('repeatAction').classList.add('hide');
+
+      if (!companyName || !phone) {
+        msg.textContent = '請輸入公司名及電話';
+        return;
+      }
+
+      const res = await fetch(`/api/public/orders/history?companyName=${encodeURIComponent(companyName)}&phone=${encodeURIComponent(phone)}`);
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        msg.textContent = '查找失敗';
+        return;
+      }
+
+      const orders = data.orders || [];
+      const listBox = document.getElementById('repeatList');
+      listBox.classList.remove('hide');
+      if (!orders.length) {
+        listBox.textContent = '沒有找到歷史訂單';
+        return;
+      }
+
+      listBox.innerHTML = orders.map((o) => {
+        const styles = (o.items || []).map((it) => it.styleName || it.styleCode || '').filter(Boolean).join('、');
+        return `<div style="padding:10px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px;">
+          <div><b>${o.orderSn}</b> <span class="muted">(${new Date(o.createdAt).toLocaleString('zh-HK')})</span></div>
+          <div class="muted">${o.orderType} / ${o.status}</div>
+          <div class="muted">款式：${styles || '—'}</div>
+          <button class="btn btn-sm" type="button" onclick="selectHistoryOrder('${o.id}')">選擇此訂單翻單</button>
+        </div>`;
+      }).join('');
+
+      window.__historyOrders = orders;
+      updateMinDelivery('repeat');
+    }
+
+    function selectHistoryOrder(id) {
+      const orders = window.__historyOrders || [];
+      const o = orders.find((x) => x.id === id);
+      if (!o) return;
+      repeatSelectedOrder = o;
+
+      const items = Array.isArray(o.items) ? o.items : [];
+      const firstQty = items[0] && items[0].qty ? items[0].qty : null;
+      if (firstQty) {
+        document.getElementById('qty_S').value = Number(firstQty.S || 0);
+        document.getElementById('qty_M').value = Number(firstQty.M || 0);
+        document.getElementById('qty_L').value = Number(firstQty.L || 0);
+        document.getElementById('qty_XL').value = Number(firstQty.XL || 0);
+        document.getElementById('qty_2XL').value = Number(firstQty['2XL'] || 0);
+        document.getElementById('qty_3XL').value = Number(firstQty['3XL'] || 0);
+      }
+
+      document.getElementById('repeatSelected').classList.remove('hide');
+      document.getElementById('repeatSelected').innerHTML = `<div style="font-weight:bold;">已選擇翻單</div>
+        <div>原訂單：<b>${o.orderSn}</b></div>
+        <div class="muted">${o.orderType} / ${o.status}</div>`;
+
+      document.getElementById('repeatAction').classList.remove('hide');
+      updateMinDelivery('repeat');
+      switchTab('repeat');
+    }
+
+    async function queryOrder() {
+      const orderSn = document.getElementById('queryOrderSn').value.trim();
+      const phone = document.getElementById('queryPhone').value.trim();
+      const msg = document.getElementById('queryMsg');
+      const box = document.getElementById('queryResult');
+      msg.textContent = '';
+      box.classList.add('hide');
+      box.innerHTML = '';
+
+      if (!orderSn || !phone) {
+        msg.textContent = '請輸入訂單編號及電話';
+        return;
+      }
+
+      const res = await fetch(`/api/public/orders/status?orderSn=${encodeURIComponent(orderSn)}&phone=${encodeURIComponent(phone)}`);
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        msg.textContent = '找不到訂單或資料不匹配';
+        return;
+      }
+
+      const o = data.order;
+      box.classList.remove('hide');
+      box.innerHTML = `<div style="font-weight:bold;">訂單狀態</div>
+        <div>訂單編號：<b>${o.orderSn}</b></div>
+        <div>公司：${o.companyName}</div>
+        <div>狀態：<b>${o.status}</b></div>
+        <div>建議交貨日：${o.suggestedDeliveryDate || '—'}</div>
+        <div>客戶交貨日：${o.requestedDeliveryDate || '—'}</div>
+        <div class="muted">分類：${o.cate1} / ${o.cate2}</div>`;
+    }
 
     async function init() {
       const r = await fetch('/data/hk-holidays/2026.json').catch(() => null);
       const list = r ? await r.json().catch(() => []) : [];
       holidays = new Set(Array.isArray(list) ? list.map(String) : []);
-      ratioBody.innerHTML = '';
-      addRatioRow('S', 10);
-      addRatioRow('M', 20);
-      addRatioRow('L', 10);
     }
 
     init();

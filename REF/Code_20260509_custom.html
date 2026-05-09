@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>客戶訂單下單系統</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft JhengHei",sans-serif;}
+body{background:#f3f4f6;color:#333;max-width:800px;margin:0 auto;padding:20px;}
+.card{background:#fff;padding:25px;border-radius:12px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+.card-title{font-size:20px;font-weight:bold;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #eee;}
+.form-item{margin-bottom:15px;}
+.form-item label{display:block;margin-bottom:6px;font-weight:500;}
+.form-item input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:15px;}
+.btn{width:100%;padding:14px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-size:16px;cursor:pointer;font-weight:bold;}
+.btn:hover{background:#2563eb;}
+.btn-sm{padding:8px 12px;width:auto;font-size:14px;}
+.btn-success{background:#10b981;}
+.btn-warning{background:#f59e0b;}
+.tab-group{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.tab-btn{flex:1;min-width:120px;padding:12px;border:none;border-radius:8px;background:#e5e7eb;cursor:pointer;font-size:15px;}
+.tab-btn.active{background:#3b82f6;color:#fff;}
+.hide{display:none !important;}
+.style-item{border:1px solid #eee;padding:12px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
+.style-item img{width:80px;height:80px;object-fit:cover;border-radius:8px;}
+.style-info{flex:1;min-width:200px;}
+.size-qty-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px;}
+.size-qty-row input{text-align:center;}
+.size-table-preview{background:#f8f9fa;padding:10px;border-radius:8px;margin-top:10px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:8px;border:1px solid #ddd;text-align:center;font-size:13px;}
+th{background:#f9fafb;}
+.note-red{color:#dc2626;font-weight:bold;margin:8px 0;}
+.note-green{color:#059669;font-weight:bold;margin:8px 0;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-title">客戶訂單下單系統</div>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('new')">全新款式下單</button>
+    <button class="tab-btn" onclick="switchTab('repeat')">歷史訂單翻單</button>
+    <button class="tab-btn" onclick="switchTab('query')">訂單狀態查詢</button>
+  </div>
+
+  <!-- 全新下單頁 -->
+  <div id="tab-new" class="tab-content">
+    <div class="form-item">
+      <label>訂製大分類</label>
+      <select id="cate1" onchange="filterStyle()">
+        <option value="">請選擇訂製類型</option>
+        <option value="現貨款式加工">現貨款式加工</option>
+        <option value="熱昇華訂製">熱昇華訂製</option>
+        <option value="開板訂製">開板訂製</option>
+      </select>
+    </div>
+    <div class="form-item">
+      <label>產品子分類</label>
+      <select id="cate2" onchange="filterStyle()">
+        <option value="">請選擇產品類型</option>
+        <option value="球衣">球衣</option>
+        <option value="POLO">POLO</option>
+        <option value="風衣外套">風衣外套</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="form-item">
+      <label>選擇款式</label>
+      <div id="styleList"></div>
+    </div>
+    <div id="sizeWrap" class="hide">
+      <div class="form-item">
+        <label>尺碼表參考</label>
+        <div id="sizeTablePreview" class="size-table-preview"></div>
+      </div>
+      <div class="form-item">
+        <label>填寫各尺碼數量</label>
+        <div class="size-qty-row">
+          <div><label>S</label><input type="number" id="qty_S" value="0"></div>
+          <div><label>M</label><input type="number" id="qty_M" value="0"></div>
+          <div><label>L</label><input type="number" id="qty_L" value="0"></div>
+          <div><label>XL</label><input type="number" id="qty_XL" value="0"></div>
+          <div><label>2XL</label><input type="number" id="qty_2XL" value="0"></div>
+          <div><label>3XL</label><input type="number" id="qty_3XL" value="0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 翻單頁 -->
+  <div id="tab-repeat" class="tab-content hide">
+    <div class="form-item">
+      <label>請輸入您的公司名稱</label>
+      <input type="text" id="repeatCustName" placeholder="請輸入您之前落單的公司名稱" oninput="searchMyOrder()">
+    </div>
+    <div id

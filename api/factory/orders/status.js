@@ -7,7 +7,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
 
   const session = await requireSession(req);
-  if (!session || session.role !== 'admin') return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+  if (!session || session.role !== 'factory') return sendJson(res, 401, { ok: false, error: 'unauthorized' });
 
   try {
     const raw = await readBody(req);
@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
     const updated = await sql`
       update orders
       set status = ${status}
-      where id = ${orderId}::uuid
+      where id = ${orderId}::uuid and factory_name = ${session.name}
       returning id, status
     `;
     const row = updated.rows[0];
@@ -30,3 +30,4 @@ module.exports = async function handler(req, res) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
 };
+

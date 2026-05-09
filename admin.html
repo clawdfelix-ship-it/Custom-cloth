@@ -3,450 +3,807 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>後台訂單管理</title>
+  <title>後台管理系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div class="mx-auto w-full max-w-7xl px-4 py-8">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight">後台訂單管理</h1>
-        <p class="mt-1 text-sm text-slate-600">狀態流轉、搜尋/篩選、匯出 CSV、一鍵翻單。</p>
+        <h1 class="text-2xl font-semibold tracking-tight">後台管理系統</h1>
+        <p class="mt-1 text-sm text-slate-600">帳密登入（admin/factory）、訂單、款式、尺碼表、帳號、異常反饋。</p>
       </div>
       <div class="flex items-center gap-2">
-        <button id="refreshBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">刷新</button>
-        <button id="exportBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">匯出 CSV</button>
-        <a href="/" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">下單頁</a>
+        <a href="/" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">客戶端</a>
+        <button id="logoutBtn" class="hidden rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">登出</button>
       </div>
     </div>
 
-    <section class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-6">
-        <div class="lg:col-span-2">
-          <label class="text-sm font-medium">Admin Token</label>
-          <input id="tokenInput" type="password" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="輸入後台密碼" />
-          <button id="saveTokenBtn" class="mt-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">儲存 Token</button>
+    <section id="loginSection" class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div>
+          <label class="text-sm font-medium">帳號</label>
+          <input id="accInput" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：admin" />
         </div>
-        <div class="lg:col-span-4">
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <div>
-              <label class="text-sm font-medium">電話</label>
-              <input id="fPhone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-            </div>
-            <div class="lg:col-span-2">
-              <label class="text-sm font-medium">公司</label>
-              <input id="fCompany" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="text-sm font-medium">類型</label>
-              <select id="fType" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
-                <option value="">全部</option>
-                <option value="new">新單</option>
-                <option value="reorder">翻單</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-sm font-medium">狀態</label>
-              <select id="fStatus" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
-                <option value="">全部</option>
-                <option value="received">已收到</option>
-                <option value="follow_up">跟進中</option>
-                <option value="confirmed">已確認</option>
-                <option value="production">量產中</option>
-                <option value="shipping">運送中</option>
-                <option value="done">已完成</option>
-                <option value="cancelled">已取消</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-sm font-medium">由</label>
-              <input id="fFrom" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label class="text-sm font-medium">至</label>
-              <input id="fTo" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-            </div>
-            <div class="sm:col-span-2 lg:col-span-2">
-              <label class="text-sm font-medium">&nbsp;</label>
-              <button id="applyFilterBtn" class="mt-1 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">套用篩選</button>
-            </div>
-          </div>
-          <div id="adminMsg" class="mt-2 text-sm font-medium"></div>
+        <div>
+          <label class="text-sm font-medium">密碼</label>
+          <input id="pwdInput" type="password" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：123456" />
+        </div>
+        <div class="flex items-end">
+          <button id="loginBtn" class="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">登入</button>
         </div>
       </div>
+      <div id="loginMsg" class="mt-3 text-sm font-medium"></div>
+      <div class="mt-2 text-xs text-slate-600">預設 seed：admin / 123456；factory1 / 123456（需先跑 db/schema.sql + db/seed.sql）</div>
     </section>
 
-    <section class="mt-6 rounded-xl border bg-white p-5 shadow-sm">
+    <section id="appSection" class="mt-6 hidden rounded-xl border bg-white p-5 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 class="text-base font-semibold">訂單列表</h2>
-        <div class="text-sm text-slate-600" id="summary"></div>
+        <div class="flex flex-wrap gap-2">
+          <button data-tab="orders" class="tabBtn rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">訂單</button>
+          <button data-tab="styles" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">款式庫</button>
+          <button data-tab="sizes" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">尺碼表庫</button>
+          <button data-tab="users" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">帳號</button>
+          <button data-tab="feedback" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">異常反饋</button>
+          <button data-tab="factory" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">工廠端</button>
+        </div>
+        <div id="whoami" class="text-sm text-slate-600"></div>
       </div>
-      <div class="mt-4 overflow-x-auto">
-        <table class="w-full min-w-[1100px] text-sm">
-          <thead>
-            <tr class="border-b bg-slate-50 text-left">
-              <th class="px-3 py-2 font-medium">時間</th>
-              <th class="px-3 py-2 font-medium">類型</th>
-              <th class="px-3 py-2 font-medium">狀態</th>
-              <th class="px-3 py-2 font-medium">公司</th>
-              <th class="px-3 py-2 font-medium">聯絡人</th>
-              <th class="px-3 py-2 font-medium">電話</th>
-              <th class="px-3 py-2 font-medium">款式</th>
-              <th class="px-3 py-2 font-medium">建議交貨日</th>
-              <th class="px-3 py-2 font-medium">客戶交貨日</th>
-              <th class="px-3 py-2 text-right font-medium">操作</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+
+      <div id="appMsg" class="mt-3 text-sm font-medium"></div>
+
+      <div id="tab-orders" class="mt-5">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-6">
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">訂單編號</label>
+            <input id="fOrderSn" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">公司</label>
+            <input id="fCompany" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">電話</label>
+            <input id="fPhone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">狀態</label>
+            <select id="fStatus" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="">全部</option>
+              <option value="客戶已提交">客戶已提交</option>
+              <option value="待確認報價">待確認報價</option>
+              <option value="待確認樣板">待確認樣板</option>
+              <option value="生產中">生產中</option>
+              <option value="已出貨">已出貨</option>
+              <option value="已完成">已完成</option>
+              <option value="已取消">已取消</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <button id="loadOrdersBtn" class="mt-6 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">載入訂單</button>
+          </div>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[1200px] text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50 text-left">
+                <th class="px-3 py-2 font-medium">時間</th>
+                <th class="px-3 py-2 font-medium">訂單編號</th>
+                <th class="px-3 py-2 font-medium">類型</th>
+                <th class="px-3 py-2 font-medium">狀態</th>
+                <th class="px-3 py-2 font-medium">公司</th>
+                <th class="px-3 py-2 font-medium">電話</th>
+                <th class="px-3 py-2 font-medium">分類</th>
+                <th class="px-3 py-2 font-medium">建議交貨日</th>
+                <th class="px-3 py-2 font-medium">客戶交貨日</th>
+                <th class="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-styles" class="mt-5 hidden">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-6">
+          <div>
+            <label class="text-sm font-medium">款式編號</label>
+            <input id="styleCode" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">款式名稱</label>
+            <input id="styleName" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">大類</label>
+            <input id="styleCate1" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="現貨款式加工" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">子類</label>
+            <input id="styleCate2" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="球衣" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">尺碼表</label>
+            <select id="styleSizeTableId" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
+          </div>
+          <div class="sm:col-span-3">
+            <label class="text-sm font-medium">圖片（<500KB）</label>
+            <input id="styleImage" type="file" accept="image/*" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-3">
+            <label class="text-sm font-medium">備註</label>
+            <input id="styleRemark" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <button id="createStyleBtn" class="mt-6 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">新增款式</button>
+          </div>
+          <div class="sm:col-span-2">
+            <button id="loadStylesBtn" class="mt-6 w-full rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入款式</button>
+          </div>
+        </div>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50 text-left">
+                <th class="px-3 py-2 font-medium">編號</th>
+                <th class="px-3 py-2 font-medium">名稱</th>
+                <th class="px-3 py-2 font-medium">分類</th>
+                <th class="px-3 py-2 font-medium">尺碼表</th>
+                <th class="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody id="stylesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-sizes" class="mt-5 hidden">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-6">
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">尺碼表名稱</label>
+            <input id="sizeName" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-4">
+            <label class="text-sm font-medium">尺碼表 JSON（array，每行：eu/chest/waist/length/china/height）</label>
+            <textarea id="sizeData" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="3"></textarea>
+          </div>
+          <div class="sm:col-span-2">
+            <button id="createSizeBtn" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">新增尺碼表</button>
+          </div>
+          <div class="sm:col-span-2">
+            <button id="loadSizesBtn" class="w-full rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入尺碼表</button>
+          </div>
+        </div>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50 text-left">
+                <th class="px-3 py-2 font-medium">名稱</th>
+                <th class="px-3 py-2 font-medium">ID</th>
+                <th class="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody id="sizesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-users" class="mt-5 hidden">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-6">
+          <div>
+            <label class="text-sm font-medium">帳號</label>
+            <input id="userAcc" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">密碼</label>
+            <input id="userPwd" type="password" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">角色</label>
+            <select id="userRole" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="factory">factory</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="text-sm font-medium">顯示名/工廠名</label>
+            <input id="userName" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="sm:col-span-2">
+            <button id="createUserBtn" class="mt-6 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">新增帳號</button>
+          </div>
+          <div class="sm:col-span-2">
+            <button id="loadUsersBtn" class="mt-6 w-full rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入帳號</button>
+          </div>
+        </div>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50 text-left">
+                <th class="px-3 py-2 font-medium">帳號</th>
+                <th class="px-3 py-2 font-medium">角色</th>
+                <th class="px-3 py-2 font-medium">名稱</th>
+                <th class="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-feedback" class="mt-5 hidden">
+        <div class="flex items-center gap-2">
+          <button id="loadFeedbackBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入反饋</button>
+        </div>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50 text-left">
+                <th class="px-3 py-2 font-medium">時間</th>
+                <th class="px-3 py-2 font-medium">訂單</th>
+                <th class="px-3 py-2 font-medium">工廠</th>
+                <th class="px-3 py-2 font-medium">內容</th>
+                <th class="px-3 py-2 font-medium">狀態</th>
+                <th class="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody id="feedbackBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-factory" class="mt-5 hidden">
+        <div class="flex items-center gap-2">
+          <button id="loadFactoryOrdersBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入工廠訂單</button>
+        </div>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[900px] text-sm">
+            <thead>
+              <tr class="border-b bg-slate-50 text-left">
+                <th class="px-3 py-2 font-medium">時間</th>
+                <th class="px-3 py-2 font-medium">訂單</th>
+                <th class="px-3 py-2 font-medium">公司</th>
+                <th class="px-3 py-2 font-medium">狀態</th>
+                <th class="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody id="factoryBody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>
 
-  <div id="modal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4">
-    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+  <div id="copyModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-white shadow-xl">
       <div class="flex items-center justify-between border-b px-5 py-4">
-        <div>
-          <div class="text-base font-semibold">翻單（預填表再確認）</div>
-          <div class="mt-1 text-xs text-slate-600">確認後會建立新一張翻單</div>
-        </div>
-        <button id="closeModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+        <div class="text-base font-semibold">翻單（複製並建立新訂單）</div>
+        <button id="closeCopyModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
       </div>
-      <div class="px-5 py-4">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="text-sm font-medium">公司</label>
-            <input id="mCompany" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label class="text-sm font-medium">聯絡人</label>
-            <input id="mContact" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label class="text-sm font-medium">電話</label>
-            <input id="mPhone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label class="text-sm font-medium">送貨地址</label>
-            <input id="mAddress" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-          </div>
-          <div class="sm:col-span-2">
-            <label class="text-sm font-medium">款式</label>
-            <input id="mStyle" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-          </div>
-          <div class="sm:col-span-2">
-            <label class="text-sm font-medium">尺碼表（文字）</label>
-            <textarea id="mSizeChart" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="3"></textarea>
-          </div>
-          <div class="sm:col-span-2">
-            <label class="text-sm font-medium">配比（摘要，只讀）</label>
-            <input id="mRatio" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" readonly />
-          </div>
-          <div class="sm:col-span-2">
-            <label class="text-sm font-medium">交貨日</label>
-            <input id="mDeliveryDate" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-          </div>
+      <div class="px-5 py-4 space-y-3">
+        <div class="text-sm text-slate-600" id="copyInfo"></div>
+        <div>
+          <label class="text-sm font-medium">交貨日</label>
+          <input id="copyDeliveryDate" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
         </div>
-        <div id="modalMsg" class="mt-3 text-sm font-medium"></div>
+        <div id="copyMsg" class="text-sm font-medium"></div>
       </div>
       <div class="flex items-center justify-end gap-2 border-t px-5 py-4">
-        <button id="confirmReorder" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">確認翻單</button>
+        <button id="confirmCopyBtn" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">確認翻單</button>
       </div>
     </div>
   </div>
 
   <script>
-    const summary = document.getElementById('summary');
-    const tbody = document.getElementById('tbody');
-    const adminMsg = document.getElementById('adminMsg');
+    const loginSection = document.getElementById('loginSection');
+    const appSection = document.getElementById('appSection');
+    const loginMsg = document.getElementById('loginMsg');
+    const appMsg = document.getElementById('appMsg');
+    const whoami = document.getElementById('whoami');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-    const tokenInput = document.getElementById('tokenInput');
-    const saveTokenBtn = document.getElementById('saveTokenBtn');
+    const accInput = document.getElementById('accInput');
+    const pwdInput = document.getElementById('pwdInput');
+    const loginBtn = document.getElementById('loginBtn');
 
-    const fPhone = document.getElementById('fPhone');
+    const tabButtons = Array.from(document.querySelectorAll('.tabBtn'));
+    const tabIds = ['orders', 'styles', 'sizes', 'users', 'feedback', 'factory'];
+
+    const fOrderSn = document.getElementById('fOrderSn');
     const fCompany = document.getElementById('fCompany');
-    const fType = document.getElementById('fType');
+    const fPhone = document.getElementById('fPhone');
     const fStatus = document.getElementById('fStatus');
-    const fFrom = document.getElementById('fFrom');
-    const fTo = document.getElementById('fTo');
-    const applyFilterBtn = document.getElementById('applyFilterBtn');
+    const loadOrdersBtn = document.getElementById('loadOrdersBtn');
+    const ordersBody = document.getElementById('ordersBody');
 
-    const refreshBtn = document.getElementById('refreshBtn');
-    const exportBtn = document.getElementById('exportBtn');
+    const styleSizeTableId = document.getElementById('styleSizeTableId');
+    const loadStylesBtn = document.getElementById('loadStylesBtn');
+    const createStyleBtn = document.getElementById('createStyleBtn');
+    const stylesBody = document.getElementById('stylesBody');
 
-    const modal = document.getElementById('modal');
-    const closeModal = document.getElementById('closeModal');
-    const confirmReorder = document.getElementById('confirmReorder');
-    const modalMsg = document.getElementById('modalMsg');
+    const loadSizesBtn = document.getElementById('loadSizesBtn');
+    const createSizeBtn = document.getElementById('createSizeBtn');
+    const sizesBody = document.getElementById('sizesBody');
 
-    const mCompany = document.getElementById('mCompany');
-    const mContact = document.getElementById('mContact');
-    const mPhone = document.getElementById('mPhone');
-    const mAddress = document.getElementById('mAddress');
-    const mStyle = document.getElementById('mStyle');
-    const mSizeChart = document.getElementById('mSizeChart');
-    const mRatio = document.getElementById('mRatio');
-    const mDeliveryDate = document.getElementById('mDeliveryDate');
+    const loadUsersBtn = document.getElementById('loadUsersBtn');
+    const createUserBtn = document.getElementById('createUserBtn');
+    const usersBody = document.getElementById('usersBody');
 
-    let currentOrders = [];
-    let currentSourceOrder = null;
-    let holidays = new Set();
+    const loadFeedbackBtn = document.getElementById('loadFeedbackBtn');
+    const feedbackBody = document.getElementById('feedbackBody');
 
-    function token() {
-      return sessionStorage.getItem('adminToken') || '';
+    const loadFactoryOrdersBtn = document.getElementById('loadFactoryOrdersBtn');
+    const factoryBody = document.getElementById('factoryBody');
+
+    const copyModal = document.getElementById('copyModal');
+    const closeCopyModal = document.getElementById('closeCopyModal');
+    const confirmCopyBtn = document.getElementById('confirmCopyBtn');
+    const copyDeliveryDate = document.getElementById('copyDeliveryDate');
+    const copyInfo = document.getElementById('copyInfo');
+    const copyMsg = document.getElementById('copyMsg');
+    let copySourceOrderId = null;
+
+    function sessionToken() {
+      return sessionStorage.getItem('sessionToken') || '';
+    }
+    function sessionRole() {
+      return sessionStorage.getItem('sessionRole') || '';
+    }
+    function sessionName() {
+      return sessionStorage.getItem('sessionName') || '';
+    }
+    function setSession(token, role, name) {
+      sessionStorage.setItem('sessionToken', token);
+      sessionStorage.setItem('sessionRole', role);
+      sessionStorage.setItem('sessionName', name);
+    }
+    function clearSession() {
+      sessionStorage.removeItem('sessionToken');
+      sessionStorage.removeItem('sessionRole');
+      sessionStorage.removeItem('sessionName');
     }
 
-    function authHeaders() {
-      const t = token();
-      return t ? { Authorization: `Bearer ${t}` } : {};
+    async function apiFetch(path, options) {
+      const token = sessionToken();
+      const headers = { ...(options && options.headers ? options.headers : {}) };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      return fetch(path, { ...(options || {}), headers });
     }
 
-    function typeBadge(t) {
-      if (t === 'new') return '<span class="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">新單</span>';
-      return '<span class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">翻單</span>';
+    function showApp() {
+      loginSection.classList.add('hidden');
+      appSection.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      whoami.textContent = `${sessionName()} (${sessionRole()})`;
+      applyRoleTabs();
+      switchTab('orders');
     }
 
-    function statusLabel(s) {
-      const map = {
-        received: '已收到',
-        follow_up: '跟進中',
-        confirmed: '已確認',
-        production: '量產中',
-        shipping: '運送中',
-        done: '已完成',
-        cancelled: '已取消'
-      };
-      return map[s] || s;
+    function showLogin() {
+      loginSection.classList.remove('hidden');
+      appSection.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+      whoami.textContent = '';
     }
 
-    function pad(n) { return String(n).padStart(2, '0'); }
-    function addDaysYmd(ymd, days) {
-      const d = new Date(`${ymd}T00:00:00.000Z`);
-      d.setUTCDate(d.getUTCDate() + days);
-      return d.toISOString().slice(0, 10);
+    function applyRoleTabs() {
+      const role = sessionRole();
+      const allowAll = role === 'admin';
+      tabButtons.forEach((btn) => {
+        const t = btn.dataset.tab;
+        if (allowAll) btn.classList.remove('hidden');
+        else btn.classList.toggle('hidden', t !== 'factory');
+      });
     }
-    function isWeekend(ymd) {
-      const d = new Date(`${ymd}T00:00:00.000Z`);
-      const day = d.getUTCDay();
-      return day === 0 || day === 6;
+
+    function switchTab(tab) {
+      tabIds.forEach((t) => document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab));
+      tabButtons.forEach((b) => {
+        const active = b.dataset.tab === tab;
+        b.classList.toggle('bg-slate-900', active);
+        b.classList.toggle('text-white', active);
+        b.classList.toggle('border', !active);
+        b.classList.toggle('bg-white', !active);
+      });
+      appMsg.textContent = '';
     }
-    function addBusinessDays(startYmd, businessDays) {
-      let cursor = String(startYmd);
-      let left = Number(businessDays);
-      while (left > 0) {
-        cursor = addDaysYmd(cursor, 1);
-        if (isWeekend(cursor)) continue;
-        if (holidays.has(cursor)) continue;
-        left -= 1;
+
+    tabButtons.forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+    loginBtn.addEventListener('click', async () => {
+      loginMsg.textContent = '';
+      const acc = accInput.value.trim();
+      const pwd = pwdInput.value;
+      if (!acc || !pwd) {
+        loginMsg.textContent = '請輸入帳號及密碼';
+        return;
       }
-      return cursor;
-    }
-    function hkTodayYmd() {
-      return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Hong_Kong' });
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acc, pwd })
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        loginMsg.textContent = '登入失敗';
+        return;
+      }
+      setSession(data.token, data.role, data.name);
+      showApp();
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      const token = sessionToken();
+      clearSession();
+      showLogin();
+      if (token) {
+        await fetch('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+      }
+    });
+
+    function optionLabelStatus(s) {
+      return s;
     }
 
-    function queryString(extra) {
-      const p = new URLSearchParams();
-      if (fPhone.value.trim()) p.set('phone', fPhone.value.trim());
-      if (fCompany.value.trim()) p.set('company', fCompany.value.trim());
-      if (fType.value) p.set('orderType', fType.value);
-      if (fStatus.value) p.set('status', fStatus.value);
-      if (fFrom.value) p.set('from', fFrom.value);
-      if (fTo.value) p.set('to', fTo.value);
-      if (extra && extra.format) p.set('format', extra.format);
-      return p.toString();
-    }
-
-    function render(orders) {
-      currentOrders = orders;
-      summary.textContent = `${orders.length} 張訂單`;
-      tbody.innerHTML = '';
+    async function loadOrders() {
+      appMsg.textContent = '';
+      const qs = new URLSearchParams();
+      if (fOrderSn.value.trim()) qs.set('orderSn', fOrderSn.value.trim());
+      if (fCompany.value.trim()) qs.set('companyName', fCompany.value.trim());
+      if (fPhone.value.trim()) qs.set('phone', fPhone.value.trim());
+      if (fStatus.value) qs.set('status', fStatus.value);
+      const res = await apiFetch(`/api/admin/orders?${qs.toString()}`, {});
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        appMsg.textContent = '載入訂單失敗';
+        return;
+      }
+      const orders = data.orders || [];
+      ordersBody.innerHTML = '';
       orders.forEach((o) => {
         const tr = document.createElement('tr');
-        tr.className = 'border-b hover:bg-slate-50';
+        tr.className = 'border-b';
+        const statusOptions = ['客戶已提交','待確認報價','待確認樣板','生產中','已出貨','已完成','已取消']
+          .map((s) => `<option value="${s}">${optionLabelStatus(s)}</option>`).join('');
         tr.innerHTML = `
           <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
-          <td class="px-3 py-2">${typeBadge(o.orderType)}</td>
+          <td class="px-3 py-2 font-semibold">${o.orderSn}</td>
+          <td class="px-3 py-2">${o.orderType}</td>
           <td class="px-3 py-2">
-            <select data-id="${o.id}" class="statusSel w-full rounded-lg border px-2 py-1 text-xs">
-              <option value="received">已收到</option>
-              <option value="follow_up">跟進中</option>
-              <option value="confirmed">已確認</option>
-              <option value="production">量產中</option>
-              <option value="shipping">運送中</option>
-              <option value="done">已完成</option>
-              <option value="cancelled">已取消</option>
-            </select>
+            <select data-id="${o.id}" class="statusSel w-full rounded-lg border px-2 py-1 text-xs">${statusOptions}</select>
           </td>
-          <td class="px-3 py-2 font-medium">${o.companyName}</td>
-          <td class="px-3 py-2">${o.contactName}</td>
+          <td class="px-3 py-2">${o.companyName}</td>
           <td class="px-3 py-2">${o.phone}</td>
-          <td class="px-3 py-2">${o.styleName}</td>
-          <td class="px-3 py-2 font-medium">${o.suggestedDeliveryDate}</td>
-          <td class="px-3 py-2">${o.requestedDeliveryDate}</td>
+          <td class="px-3 py-2">${o.cate1} / ${o.cate2}</td>
+          <td class="px-3 py-2">${o.suggestedDeliveryDate || ''}</td>
+          <td class="px-3 py-2">${o.requestedDeliveryDate || ''}</td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${o.id}" class="reorderBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
+            <button data-id="${o.id}" data-sn="${o.orderSn}" class="copyBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
           </td>
         `;
-        tbody.appendChild(tr);
-        const sel = tr.querySelector('.statusSel');
-        sel.value = o.status || 'received';
+        ordersBody.appendChild(tr);
+        tr.querySelector('.statusSel').value = o.status;
       });
 
       document.querySelectorAll('.statusSel').forEach((sel) => {
         sel.addEventListener('change', async () => {
           const orderId = sel.dataset.id;
           const status = sel.value;
-          adminMsg.textContent = '';
-          const res = await fetch('/api/admin/orders/status', {
+          const res = await apiFetch('/api/admin/orders/status', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orderId, status })
           });
           const data = await res.json().catch(() => null);
-          if (!data || !data.ok) {
-            adminMsg.textContent = '更新狀態失敗';
-            sel.value = (currentOrders.find((x) => x.id === orderId) || {}).status || 'received';
-            return;
-          }
-          const o = currentOrders.find((x) => x.id === orderId);
-          if (o) o.status = status;
-          adminMsg.textContent = `已更新狀態：${statusLabel(status)}`;
+          if (!data || !data.ok) appMsg.textContent = '更新狀態失敗';
         });
       });
 
-      document.querySelectorAll('.reorderBtn').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const o = currentOrders.find((x) => x.id === btn.dataset.id);
-          if (!o) return;
-          currentSourceOrder = o;
-
-          const histRes = await fetch('/api/orders/history?phone=' + encodeURIComponent(o.phone));
-          const histData = await histRes.json().catch(() => null);
-          const src = histData && histData.ok ? (histData.orders || []).find((x) => x.id === o.id) : null;
-          const ratioSummary = src && Array.isArray(src.sizeRatio) ? src.sizeRatio.map((r) => `${r.size}:${r.qty}`).join(' / ') : '';
-
-          mCompany.value = o.companyName || '';
-          mContact.value = o.contactName || '';
-          mPhone.value = o.phone || '';
-          mAddress.value = o.address || '';
-          mStyle.value = o.styleName || '';
-          mSizeChart.value = src && typeof src.sizeChart === 'string' ? src.sizeChart : '';
-          mRatio.value = ratioSummary;
-          modalMsg.textContent = '';
-
-          const earliest = addBusinessDays(hkTodayYmd(), 17);
-          mDeliveryDate.min = earliest;
-          mDeliveryDate.value = earliest;
-
-          modal.classList.remove('hidden');
-          modal.classList.add('flex');
+      document.querySelectorAll('.copyBtn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          copyMsg.textContent = '';
+          copySourceOrderId = btn.dataset.id;
+          copyInfo.textContent = `原訂單：${btn.dataset.sn}`;
+          copyDeliveryDate.value = '';
+          copyModal.classList.remove('hidden');
+          copyModal.classList.add('flex');
         });
       });
     }
 
-    async function loadOrders() {
-      adminMsg.textContent = '';
-      const qs = queryString();
-      const res = await fetch(`/api/admin/orders?${qs}`, { headers: authHeaders() });
-      const data = await res.json().catch(() => null);
-      if (!data || !data.ok) {
-        adminMsg.textContent = '載入失敗（請確認 Token）';
-        render([]);
-        return;
-      }
-      render(data.orders || []);
-    }
+    loadOrdersBtn.addEventListener('click', loadOrders);
 
-    saveTokenBtn.addEventListener('click', () => {
-      const t = tokenInput.value.trim();
-      if (!t) {
-        adminMsg.textContent = '請輸入 Token';
-        return;
-      }
-      sessionStorage.setItem('adminToken', t);
-      adminMsg.textContent = 'Token 已儲存';
-      loadOrders();
+    closeCopyModal.addEventListener('click', () => {
+      copyModal.classList.add('hidden');
+      copyModal.classList.remove('flex');
     });
 
-    applyFilterBtn.addEventListener('click', loadOrders);
-    refreshBtn.addEventListener('click', loadOrders);
-
-    exportBtn.addEventListener('click', async () => {
-      adminMsg.textContent = '';
-      const t = token();
-      if (!t) {
-        adminMsg.textContent = '請先輸入 Token';
+    confirmCopyBtn.addEventListener('click', async () => {
+      copyMsg.textContent = '';
+      if (!copySourceOrderId) return;
+      if (!copyDeliveryDate.value) {
+        copyMsg.textContent = '請選擇交貨日';
         return;
       }
-      const qs = queryString({ format: 'csv' });
-      const res = await fetch(`/api/admin/orders?${qs}`, { headers: authHeaders() });
-      if (!res.ok) {
-        adminMsg.textContent = '匯出失敗（請確認 Token）';
-        return;
-      }
-      const blob = await res.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'orders.csv';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
-
-    closeModal.addEventListener('click', () => {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    });
-
-    confirmReorder.addEventListener('click', async () => {
-      modalMsg.textContent = '';
-      if (!currentSourceOrder) return;
-      const histRes = await fetch('/api/orders/history?phone=' + encodeURIComponent(currentSourceOrder.phone));
-      const histData = await histRes.json().catch(() => null);
-      const src = histData && histData.ok ? (histData.orders || []).find((x) => x.id === currentSourceOrder.id) : null;
-      const sizeRatio = src && Array.isArray(src.sizeRatio) ? src.sizeRatio : [];
-      if (!sizeRatio.length) {
-        modalMsg.textContent = '找唔到原訂單配比';
-        return;
-      }
-
-      const payload = {
-        orderType: 'reorder',
-        companyName: mCompany.value.trim(),
-        contactName: mContact.value.trim(),
-        phone: mPhone.value.trim(),
-        address: mAddress.value.trim(),
-        styleName: mStyle.value.trim(),
-        sizeChart: mSizeChart.value,
-        sizeRatio,
-        requestedDeliveryDate: mDeliveryDate.value,
-        sourceOrderId: currentSourceOrder.id
-      };
-
-      const created = await fetch('/api/orders', {
+      const res = await apiFetch('/api/admin/orders/copy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then((r) => r.json()).catch(() => null);
-
-      if (!created || !created.ok) {
-        modalMsg.textContent = '翻單失敗';
+        body: JSON.stringify({ sourceOrderId: copySourceOrderId, requestedDeliveryDate: copyDeliveryDate.value })
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        copyMsg.textContent = '翻單失敗';
         return;
       }
-
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      adminMsg.textContent = '已建立翻單';
+      copyMsg.textContent = `已建立翻單：${data.orderSn}`;
       loadOrders();
     });
 
+    async function loadSizes() {
+      const res = await apiFetch('/api/admin/size-tables', {});
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) return;
+      const list = data.sizeTables || [];
+      sizesBody.innerHTML = '';
+      styleSizeTableId.innerHTML = '';
+      list.forEach((st) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium">${st.name}</td>
+          <td class="px-3 py-2 text-xs text-slate-600">${st.id}</td>
+          <td class="px-3 py-2 text-right">
+            <button data-id="${st.id}" class="delSize rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
+          </td>
+        `;
+        sizesBody.appendChild(tr);
+        const opt = document.createElement('option');
+        opt.value = st.id;
+        opt.textContent = st.name;
+        styleSizeTableId.appendChild(opt);
+      });
+
+      document.querySelectorAll('.delSize').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const id = b.dataset.id;
+          await apiFetch(`/api/admin/size-tables?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+          loadSizes();
+        });
+      });
+    }
+
+    loadSizesBtn.addEventListener('click', loadSizes);
+    createSizeBtn.addEventListener('click', async () => {
+      appMsg.textContent = '';
+      const name = document.getElementById('sizeName').value.trim();
+      const dataText = document.getElementById('sizeData').value.trim();
+      if (!name || !dataText) {
+        appMsg.textContent = '請輸入尺碼表名稱與 JSON';
+        return;
+      }
+      let data;
+      try { data = JSON.parse(dataText); } catch (e) { appMsg.textContent = 'JSON 格式錯誤'; return; }
+      const res = await apiFetch('/api/admin/size-tables', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, data })
+      });
+      const out = await res.json().catch(() => null);
+      if (!out || !out.ok) {
+        appMsg.textContent = '新增尺碼表失敗';
+        return;
+      }
+      loadSizes();
+    });
+
+    async function loadStyles() {
+      const res = await apiFetch('/api/admin/styles', {});
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) return;
+      const list = data.styles || [];
+      stylesBody.innerHTML = '';
+      list.forEach((s) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium">${s.code}</td>
+          <td class="px-3 py-2">${s.name}</td>
+          <td class="px-3 py-2">${s.cate1} / ${s.cate2}</td>
+          <td class="px-3 py-2 text-xs text-slate-600">${s.sizeTableId}</td>
+          <td class="px-3 py-2 text-right">
+            <button data-id="${s.id}" class="delStyle rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
+          </td>
+        `;
+        stylesBody.appendChild(tr);
+      });
+      document.querySelectorAll('.delStyle').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const id = b.dataset.id;
+          await apiFetch(`/api/admin/styles?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+          loadStyles();
+        });
+      });
+    }
+
+    loadStylesBtn.addEventListener('click', async () => {
+      await loadSizes();
+      await loadStyles();
+    });
+
+    createStyleBtn.addEventListener('click', async () => {
+      appMsg.textContent = '';
+      const code = document.getElementById('styleCode').value.trim();
+      const name = document.getElementById('styleName').value.trim();
+      const cate1 = document.getElementById('styleCate1').value.trim();
+      const cate2 = document.getElementById('styleCate2').value.trim();
+      const sizeTableId = styleSizeTableId.value;
+      const remark = document.getElementById('styleRemark').value.trim();
+      const file = document.getElementById('styleImage').files[0];
+      let imgBase64 = '';
+      if (!code || !name || !cate1 || !cate2 || !sizeTableId) {
+        appMsg.textContent = '請填齊款式資料';
+        return;
+      }
+      if (file) {
+        if (file.size > 500 * 1024) {
+          appMsg.textContent = '圖片太大（>500KB）';
+          return;
+        }
+        imgBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+      const res = await apiFetch('/api/admin/styles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, name, cate1, cate2, sizeTableId, imgBase64, remark })
+      });
+      const out = await res.json().catch(() => null);
+      if (!out || !out.ok) {
+        appMsg.textContent = '新增款式失敗';
+        return;
+      }
+      loadStyles();
+    });
+
+    async function loadUsers() {
+      const res = await apiFetch('/api/admin/users', {});
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) return;
+      const list = data.users || [];
+      usersBody.innerHTML = '';
+      list.forEach((u) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-medium">${u.acc}</td>
+          <td class="px-3 py-2">${u.role}</td>
+          <td class="px-3 py-2">${u.name}</td>
+          <td class="px-3 py-2 text-right">
+            <button data-id="${u.id}" class="delUser rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
+          </td>
+        `;
+        usersBody.appendChild(tr);
+      });
+      document.querySelectorAll('.delUser').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const id = b.dataset.id;
+          await apiFetch(`/api/admin/users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+          loadUsers();
+        });
+      });
+    }
+
+    loadUsersBtn.addEventListener('click', loadUsers);
+    createUserBtn.addEventListener('click', async () => {
+      appMsg.textContent = '';
+      const acc = document.getElementById('userAcc').value.trim();
+      const pwd = document.getElementById('userPwd').value;
+      const role = document.getElementById('userRole').value;
+      const name = document.getElementById('userName').value.trim();
+      if (!acc || !pwd || !role || !name) {
+        appMsg.textContent = '請填齊帳號資料';
+        return;
+      }
+      const res = await apiFetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acc, pwd, role, name })
+      });
+      const out = await res.json().catch(() => null);
+      if (!out || !out.ok) {
+        appMsg.textContent = '新增帳號失敗';
+        return;
+      }
+      loadUsers();
+    });
+
+    async function loadFeedback() {
+      const res = await apiFetch('/api/admin/feedback', {});
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) return;
+      const list = data.feedback || [];
+      feedbackBody.innerHTML = '';
+      list.forEach((f) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-slate-700">${new Date(f.createdAt).toLocaleString('zh-HK')}</td>
+          <td class="px-3 py-2 font-semibold">${f.orderSn}</td>
+          <td class="px-3 py-2">${f.factoryName}</td>
+          <td class="px-3 py-2">${f.content}</td>
+          <td class="px-3 py-2">${f.status}</td>
+          <td class="px-3 py-2 text-right">
+            <button data-id="${f.id}" data-status="已處理" class="markDone rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">標記已處理</button>
+          </td>
+        `;
+        feedbackBody.appendChild(tr);
+      });
+      document.querySelectorAll('.markDone').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const feedbackId = b.dataset.id;
+          await apiFetch('/api/admin/feedback/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feedbackId, status: '已處理' })
+          });
+          loadFeedback();
+        });
+      });
+    }
+
+    loadFeedbackBtn.addEventListener('click', loadFeedback);
+
+    async function loadFactoryOrders() {
+      const res = await apiFetch('/api/factory/orders', {});
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        appMsg.textContent = '載入工廠訂單失敗（需要 factory 角色）';
+        return;
+      }
+      const list = data.orders || [];
+      factoryBody.innerHTML = '';
+      list.forEach((o) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+          <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
+          <td class="px-3 py-2 font-semibold">${o.orderSn}</td>
+          <td class="px-3 py-2">${o.companyName}</td>
+          <td class="px-3 py-2">${o.status}</td>
+          <td class="px-3 py-2 text-right">
+            <button data-id="${o.id}" class="detailBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">詳情</button>
+          </td>
+        `;
+        factoryBody.appendChild(tr);
+      });
+      document.querySelectorAll('.detailBtn').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const id = b.dataset.id;
+          const res = await apiFetch(`/api/factory/orders/${encodeURIComponent(id)}`, {});
+          const data = await res.json().catch(() => null);
+          if (!data || !data.ok) {
+            appMsg.textContent = '載入詳情失敗';
+            return;
+          }
+          const o = data.order;
+          appMsg.textContent = `訂單 ${o.orderSn}：${o.status}`;
+        });
+      });
+    }
+
+    loadFactoryOrdersBtn.addEventListener('click', loadFactoryOrders);
+
     async function init() {
-      const r = await fetch('/data/hk-holidays/2026.json').catch(() => null);
-      const list = r ? await r.json().catch(() => []) : [];
-      holidays = new Set(Array.isArray(list) ? list.map(String) : []);
-      const t = token();
-      if (t) tokenInput.value = t;
-      if (t) loadOrders();
+      if (sessionToken()) showApp();
+      else showLogin();
+      if (sessionToken()) {
+        await loadSizes().catch(() => null);
+      }
     }
 
     init();

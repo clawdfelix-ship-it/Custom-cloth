@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>服裝訂單後台管理系統 修復版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft JhengHei",sans-serif;}
+body{background:#f3f4f6;color:#333;}
+.hide{display:none !important;}
+
+/* 通用樣式 */
+.login-wrap{height:100vh;display:flex;align-items:center;justify-content:center;}
+.login-card{width:90%;max-width:400px;background:#fff;padding:40px 30px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
+.login-card h2{text-align:center;margin-bottom:30px;}
+.form-item{margin-bottom:15px;}
+.form-item label{display:block;margin-bottom:6px;}
+.form-item input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:15px;}
+.btn{padding:8px 12px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-size:14px;cursor:pointer;margin:0 2px;}
+.btn:hover{background:#2563eb;}
+.btn-block{width:100%;padding:10px;}
+.btn-danger{background:#ef4444;}
+.btn-success{background:#10b981;}
+.btn-warning{background:#f59e0b;}
+.btn-secondary{background:#6b7280;}
+.btn-sm{padding:5px 8px;font-size:13px;}
+
+/* 後台布局 */
+.admin-wrap{display:none;}
+.sidebar{width:240px;background:#1f2937;position:fixed;height:100vh;padding-top:30px;overflow-y:auto;}
+.sidebar h3{color:#fff;text-align:center;margin-bottom:30px;}
+.sidebar a{display:block;padding:13px 20px;color:#d1d5db;text-decoration:none;font-size:15px;}
+.sidebar a:hover,.sidebar a.active{background:#374151;color:#fff;border-left:4px solid #3b82f6;}
+.main-content{margin-left:240px;padding:25px;}
+.card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;}
+.card-title{font-size:18px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid #eee;}
+.grid-row{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+table{width:100%;border-collapse:collapse;margin:15px 0;}
+th,td{padding:10px;border:1px solid #ddd;text-align:center;font-size:14px;}
+th{background:#f9fafb;}
+
+/* 專用模塊樣式 */
+.style-item{border:1px solid #eee;padding:10px;border-radius:8px;margin-bottom:10px;}
+.size-table-preview{background:#f8f9fa;padding:10px;border-radius:8px;margin-top:10px;overflow-x:auto;}
+.size-input-table{width:100%;border-collapse:collapse;}
+.size-input-table td{padding:6px;}
+.size-input-table input{width:100%;padding:6px;border:1px solid #ddd;border-radius:4px;text-align:center;}
+.size-qty-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px;}
+.note-red{color:#dc2626;font-weight:bold;}
+.note-green{color:#059669;font-weight:bold;}
+.search-bar{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;}
+.search-bar input,.search-bar select{width:auto;min-width:150px;}
+.img-preview{width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #ddd;margin-top:8px;}
+.style-img{width:60px;height:60px;object-fit:cover;border-radius:6px;}
+.factory-notice{background:#fef3c7;padding:10px;border-radius:8px;margin-bottom:15px;border-left:4px solid #f59e0b;}
+.print-only{display:none;}
+
+/* 手機适配 */
+@media(max-width:768px){
+  .sidebar{width:100%;height:auto;position:relative;}
+  .main-content{margin-left:0;padding:15px;}
+  .grid-row{grid-template-columns:1fr;}
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .size-qty-row{grid-template-columns:repeat(3,1fr);}
+  .search-bar input,.search-bar select{width:100%;}
+}
+
+/* 打印樣式優化 */
+@media print{
+  .sidebar,.no-print{display:none !important;}
+  .main-content{margin-left:0;padding:0;}
+  .print-only{display:block !important;}
+  .card{box-shadow:none;border:1px solid #ddd;margin:10px 0;page-break-inside:avoid;}
+  body{background:#fff;}
+  @page {size:A4;margin:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- 登入頁 -->
+<div class="login-wrap" id="loginPage">
+  <div class="login-card">
+    <h2>後台管理登入</h2>
+    <div class="form-item">
+      <label>帳號</label>
+      <input type="text" id="acc" value="admin">
+    </div>
+    <div class="form-item">
+      <label>密碼</label>
+      <input type="password" id="pwd" value="123456">
+    </div>
+    <button class="btn btn-block" onclick="login()">登入系統</button>
+  </div>
+</div>
+
+<!-- 後台主體 -->
+<div class="admin-wrap" id="adminPage">
+  <div class="sidebar">
+    <h3>功能選單</h3>
+    <a href="javascript:;" onclick="switchPage('home')">儀表板總覽</a>
+    <a href="javascript:;" onclick="switchPage('sizeLib')">尺碼表庫</a>
+    <a href="javascript:;" onclick="switchPage('styleLib')">款式庫管理</a>
+    <a href="javascript:;" onclick="switchPage('order')">訂單全管理</a>
+    <a href="javascript:;" onclick="switchPage('poPi')">PO/PI單據</a>
+    <a href="javascript:;" onclick="switchPage('factoryFeedback')">工廠異常反饋</a>
+    <a href="javascript:;" id="menuUser" onclick="switchPage('user')">帳號管理</a>
+    <a href="javascript:;" onclick="logout()">登出</a>
+  </div>
+
+  <div class="main-content">
+    <!-- 儀表板 -->
+    <div id="page-home" class="page-content hide">
+      <div class="card">
+        <div class="card-title">系統規則說明</div>
+        <p><span class="note-red">開板訂製（全新款）</span>：設計→樣板14日 + 樣板→量產14日 + 物流3日 = 最低工期31日</p>
+        <p><span class="note-green">現貨加工/熱昇華訂製</span>：量產14日 + 物流3日 = 最低工期17日</p>
+        <p><span class="note-green">所有分類舊單翻單</span>：統一最低工期17日</p>
+        <br>
+        <p>訂製大分類：現貨款式加工 / 熱昇華訂製 / 開板訂製</p>
+        <p>產品子分類：球衣 / POLO / 風衣外套 / 其他</p>
+      </div>
+      <div class="grid-row grid-4">
+        <div class="card">
+          <div class="card-title">總訂單數</div>
+          <h2 id="totalOrder">0</h2>
+        </div>
+        <div class="card">
+          <div class="card-title">待處理訂單</div>
+          <h2 id="pendingOrder" class="note-red">0</h2>
+        </div>
+        <div class="card">
+          <div class="card-title">累計客戶</div>
+          <h2 id="totalCust">0</h2>
+        </div>
+        <div class="card">
+          <div class="card-title">翻單客戶</div>
+          <h2 id="repeatCust" class="note-green">0</h2>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">最近訂單</div>
+        <table>
+          <thead>
+            <tr><th>訂單編號</th><th>客戶</th><th>訂單類型</th><th>交貨日</th><th>狀態</th></tr>
+          </thead>
+          <tbody id="recentOrderList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 尺碼表庫 -->
+    <div id="page-sizeLib" class="page-content hide">
+      <div class="card">
+        <div class="card-title">新增尺碼表（標準6尺碼模板）</div>
+        <div class="form-item">
+          <label>尺碼表名稱</label>
+          <input type="text" id="sizeTableName" placeholder="例如：禮頓POLO標準尺碼表">
+        </div>
+        <table class="size-input-table">
+          <thead>
+            <tr>
+              <th>EU SIZE</th>
+              <th>胸圍(cm)</th>
+              <th>腰圍(cm)</th>
+              <th>衣長(cm)</th>
+              <th>中國尺碼</th>
+              <th>適用身高</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="text" value="S" id="size_EU_S"></td>
+              <td><input type="text" id="size_chest_S"></td>
+              <td><input type="text" id="size_waist_S"></td>
+              <td><input type="text" id="size_length_S"></td>
+              <td><input type="text" id="size_china_S"></td>
+              <td><input type="text" id="size_height_S"></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="M" id="size_EU_M"></td>
+              <td><input type="text" id="size_chest_M"></td>
+              <td><input type="text" id="size_waist_M"></td>
+              <td><input type="text" id="size_length_M"></td>
+              <td><input type="text" id="size_china_M"></td>
+              <td><input type="text" id="size_height_M"></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="L" id="size_EU_L"></td>
+              <td><input type="text" id="size_chest_L"></td>
+              <td><input type="text" id="size_waist_L"></td>
+              <td><input type="text" id="size_length_L"></td>
+              <td><input type="text" id="size_china_L"></td>
+              <td><input type="text" id="size_height_L"></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="XL" id="size_EU_XL"></td>
+              <td><input type="text" id="size_chest_XL"></td>
+              <td><input type="text" id="size_waist_XL"></td>
+              <td><input type="text" id="size_length_XL"></td>
+              <td><input type="text" id="size_china_XL"></td>
+              <td><input type="text" id="size_height_XL"></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="2XL" id="size_EU_2XL"></td>
+              <td><input type="text" id="size_chest_2XL"></td>
+              <td><input type="text" id="size_waist_2XL"></td>
+              <td><input type="text" id="size_length_2XL"></td>
+              <td><input type="text" id="size_china_2XL"></td>
+              <td><input type="text" id="size_height_2XL"></td>
+            </tr>
+            <tr>
+              <td><input type="text" value="3XL" id="size_EU_3XL"></td>
+              <td><input type="text" id="size_chest_3XL"></td>
+              <td><input type="text" id="size_waist_3XL"></td>
+              <td><input type="text" id="size_length_3XL"></td>
+              <td><input type="text" id="size_china_3XL"></td>
+              <td><input type="text" id="size_height_3XL"></td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn" style="margin-top:15px" onclick="saveSizeTable()">保存尺碼表</button>
+      </div>
+      <div class="card">
+        <div class="card-title">尺碼表列表</div>
+        <div id="sizeTableList"></div>
+      </div>
+    </div>
+
+    <!-- 款式庫管理（修復圖片預覽） -->
+    <div id="page-styleLib" class="page-content hide">
+      <div class="card">
+        <div class="card-title">新增款式</div>
+        <div class="grid-row">
+          <div class="form-item">
+            <label>款式編號</label>
+            <input type="text" id="styleCode" placeholder="例如：ST-POLO001">
+          </div>
+          <div class="form-item">
+            <label>款式名稱</label>
+            <input type="text" id="styleName" placeholder="例如：禮頓POLO">
+          </div>
+        </div>
+        <div class="grid-row">
+          <div class="form-item">
+            <label>訂製大分類</label>
+            <select id="styleCate1">
+              <option value="現貨款式加工">現貨款式加工</option>
+              <option value="熱昇華訂製">熱昇華訂製</option>
+              <option value="開板訂製">開板訂製</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <label>產品子分類</label>
+            <select id="styleCate2">
+              <option value="球衣">球衣</option>
+              <option value="POLO">POLO</option>
+              <option value="風衣外套">風衣外套</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-item">
+          <label>綁定尺碼表</label>
+          <select id="bindSizeTable"></select>
+        </div>
+        <div class="form-item">
+          <label>款式圖片（建議小於500KB）</label>
+          <input type="file" id="styleImg" accept="image/*" onchange="previewImg(this)">
+          <img id="imgPreview" class="img-preview hide" alt="款式預覽圖">
+          <p id="imgTip" class="note-red hide">圖片過大，請選擇小於500KB的圖片</p>
+        </div>
+        <div class="form-item">
+          <label>工藝備註</label>
+          <textarea id="styleRemark" rows="3"></textarea>
+        </div>
+        <button class="btn" onclick="saveStyle()">保存款式</button>
+      </div>
+      <div class="card">
+        <div class="card-title">款式列表</div>
+        <table>
+          <thead>
+            <tr>
+              <th>款式圖</th>
+              <th>款式編號</th>
+              <th>款式名稱</th>
+              <th>大分類</th>
+              <th>子分類</th>
+              <th>綁定尺碼表</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="styleList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 訂單全管理 -->
+    <div id="page-order" class="page-content hide">
+      <div class="card">
+        <div class="card-title">手動新建訂單</div>
+        <div class="grid-row">
+          <div class="form-item"><label>訂單編號</label><input type="text" id="orderSn"></div>
+          <div class="form-item"><label>客戶公司名</label><input type="text" id="custName"></div>
+        </div>
+        <div class="grid-row">
+          <div class="form-item"><label>聯絡人</label><input type="text" id="custContact"></div>
+          <div class="form-item"><label>聯絡電話</label><input type="text" id="custPhone"></div>
+        </div>
+        <div class="grid-row">
+          <div class="form-item"><label>訂製大分類</label><select id="orderCate1" onchange="filterStyleByCate()"></select></div>
+          <div class="form-item"><label>產品子分類</label><select id="orderCate2" onchange="filterStyleByCate()"></select></div>
+        </div>
+        <div class="grid-row">
+          <div class="form-item"><label>合作工廠</label><select id="factoryName"></select></div>
+          <div class="form-item"><label>要求交貨日期</label><input type="date" id="deliveryDate"></div>
+        </div>
+        <div class="form-item">
+          <label>選擇款式</label>
+          <div id="styleCheckList"></div>
+        </div>
+        <div class="form-item" id="sizeQtyWrap" style="display:none">
+          <label>填寫各尺碼數量</label>
+          <div class="size-qty-row">
+            <div><label>S</label><input type="number" id="qty_S" value="0"></div>
+            <div><label>M</label><input type="number" id="qty_M" value="0"></div>
+            <div><label>L</label><input type="number" id="qty_L" value="0"></div>
+            <div><label>XL</label><input type="number" id="qty_XL" value="0"></div>
+            <div><label>2XL</label><input type="number" id="qty_2XL" value="0"></div>
+            <div><label>3XL</label><input type="number" id="qty_3XL" value="0"></div>
+          </div>
+        </div>
+        <div class="grid-row">
+          <div class="form-item">
+            <label>訂單狀態</label>
+            <select id="orderStatus">
+              <option value="客戶已提交">客戶已提交</option>
+              <option value="待確認報價">待確認報價</option>
+              <option value="待確認樣板">待確認樣板</option>
+              <option value="生產中">生產中</option>
+              <option value="已出貨">已出貨</option>
+              <option value="已完成">已完成</option>
+              <option value="已取消">已取消</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <label>單價/總金額</label>
+            <input type="text" id="orderAmount" placeholder="例如：HKD 10000">
+          </div>
+        </div>
+        <div class="form-item"><label>訂單備註</label><textarea id="orderRemark" rows="3"></textarea></div>
+        <button class="btn btn-success" onclick="saveOrder()">建立訂單</button>
+      </div>
+      <div class="card">
+        <div class="card-title">訂單列表</div>
+        <div class="search-bar">
+          <input type="text" id="searchOrderSn" placeholder="輸入訂單編號搜索" oninput="renderOrderList()">
+          <select id="filterStatus" onchange="renderOrderList()">
+            <option value="">全部狀態</option>
+            <option value="客戶已提交">客戶已提交</option>
+            <option value="待確認報價">待確認報價</option>
+            <option value="待確認樣板">待確認樣板</option>
+            <option value="生產中">生產中</option>
+            <option value="已出貨">已出貨</option>
+            <option value="已完成">已完成</option>
+            <option value="已取消">已取消</option>
+          </select>
+          <select id="filterCate" onchange="renderOrderList()">
+            <option value="">全部分類</option>
+            <option value="現貨款式加工">現貨款式加工</option>
+            <option value="熱昇華訂製">熱昇華訂製</option>
+            <option value="開板訂製">開板訂製</option>
+          </select>
+          <input type="date" id="filterDeliveryDate" onchange="renderOrderList()">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>訂單編號</th>
+              <th>客戶</th>
+              <th>訂單類型</th>
+              <th>工廠</th>
+              <th>交貨日</th>
+              <th>狀態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="orderList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PO/PI單據生成（修復預覽打印） -->
+    <div id="page-poPi" class="page-content hide">
+      <div class="card no-print">
+        <div class="card-title">選擇訂單生成PO/PI</div>
+        <div class="form-item">
+          <label>選擇訂單</label>
+          <select id="poPiOrderSelect" onchange="loadOrderForPoPi()"></select>
+        </div>
+      </div>
+      <div id="poPiForm" class="hide">
+        <div class="card">
+          <div class="print-only" style="text-align:center;margin-bottom:20px;">
+            <h1 id="poPiTitle">採購訂單 PO</h1>
+            <p>單據編號：<span id="printPoPiNo"></span></p>
+            <p>單據日期：<span id="printPoPiDate"></span></p>
+          </div>
+          <div class="no-print">
+            <div class="grid-row">
+              <div class="form-item"><label>單據類型</label>
+                <select id="poPiType" onchange="changePoPiType()">
+                  <option value="PO">PO 採購訂單</option>
+                  <option value="PI">PI 形式發票</option>
+                </select>
+              </div>
+              <div class="form-item"><label>單據編號</label><input type="text" id="poPiNo" oninput="document.getElementById('printPoPiNo').innerText=this.value"></div>
+            </div>
+            <div class="form-item"><label>單據日期</label><input type="date" id="poPiDate" oninput="document.getElementById('printPoPiDate').innerText=this.value"></div>
+          </div>
+          <div class="grid-row">
+            <div class="form-item">
+              <label id="poPiCustLabel">收貨方/客戶</label>
+              <textarea id="poPiCust" rows="3" oninput="document.getElementById('printCust').innerText=this.value"></textarea>
+              <div class="print-only"><p><b>收貨方/客戶：</b></p><p id="printCust"></p></div>
+            </div>
+            <div class="form-item">
+              <label id="poPiFactoryLabel">供應方/工廠</label>
+              <textarea id="poPiFactory" rows="3" oninput="document.getElementById('printFactory').innerText=this.value"></textarea>
+              <div class="print-only"><p><b>供應方/工廠：</b></p><p id="printFactory"></p></div>
+            </div>
+          </div>
+          <div class="card-title">貨品明細</div>
+          <div id="poPiItemTable"></div>
+          <div class="grid-row" style="margin-top:20px;">
+            <div class="form-item">
+              <label>總金額</label>
+              <input type="text" id="poPiAmount" oninput="document.getElementById('printAmount').innerText=this.value">
+              <div class="print-only"><p><b>總金額：</b><span id="printAmount"></span></p></div>
+            </div>
+            <div class="form-item">
+              <label>付款條款</label>
+              <input type="text" id="poPiPayment" oninput="document.getElementById('printPayment').innerText=this.value">
+              <div class="print-only"><p><b>付款條款：</b><span id="printPayment"></span></p></div>
+            </div>
+          </div>
+          <div class="form-item">
+            <label>備註/條款</label>
+            <textarea id="poPiRemark" rows="3" oninput="document.getElementById('printRemark').innerText=this.value"></textarea>
+            <div class="print-only"><p><b>備註：</b></p><p id="printRemark"></p></div>
+          </div>
+        </div>
+        <div class="no-print" style="text-align:center;margin:20px 0;">
+          <button class="btn btn-success" onclick="window.print()">打印/導出PDF</button>
+          <button class="btn btn-secondary" onclick="switchPage('order')">返回訂單列表</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 工廠異常反饋 -->
+    <div id="page-factoryFeedback" class="page-content hide">
+      <div class="card">
+        <div class="card-title">工廠異常反饋列表</div>
+        <table>
+          <thead>
+            <tr><th>反饋時間</th><th>工廠名</th><th>訂單編號</th><th>異常內容</th><th>處理狀態</th></tr>
+          </thead>
+          <tbody id="feedbackList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 帳號管理 -->
+    <div id="page-user" class="page-content hide">
+      <div class="card">
+        <div class="card-title">新增工廠帳號</div>
+        <div class="grid-row">
+          <div class="form-item"><label>工廠名</label><input type="text" id="newFactoryName"></div>
+          <div class="form-item"><label>帳號</label><input type="text" id="newFactoryAcc"></div>
+        </div>
+        <div class="form-item"><label>密碼</label><input type="text" id="newFactoryPwd" value="123456"></div>
+        <button class="btn" onclick="addFactoryUser()">新增</button>
+      </div>
+      <div class="card">
+        <div class="card-title">工廠帳號列表</div>
+        <table>
+          <thead><tr><th>工廠名</th><th>帳號</th><th>操作</th></tr></thead>
+          <tbody id="factoryUserList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 工廠端專用頁面 -->
+    <div id="page-factoryHome" class="page-content hide">
+      <div class="card">
+        <div class="card-title">工廠訂單管理 <span id="factoryNameShow"></span></div>
+        <div id="factoryNoticeWrap"></div>
+        <table>
+          <thead>
+            <tr><th>訂單編號</th><th>款式</th><th>總數量</th><th>交貨日</th><th>當前狀態</th><th>操作</th></tr>
+          </thead>
+          <tbody id="factoryOrderList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="page-factoryOrderDetail" class="page-content hide">
+      <div class="card no-print">
+        <div class="card-title">訂單詳情 <button class="btn btn-sm btn-secondary" onclick="switchPage('factoryHome')">返回列表</button></div>
+        <div id="factoryOrderDetail"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// 統一數據存儲Key
+const KEY_USER      = "sysUserFinalV3";
+const KEY_ORDER     = "sysOrderFinalV3";
+const KEY_STYLE     = "sysStyleFinalV3";
+const KEY_SIZETABLE = "sysSizeTableFinalV3";
+const KEY_CUSTOMER  = "sysCustomerFinalV3";
+const KEY_FEEDBACK  = "sysFeedbackFinalV3";
+
+// 初始數據
+let userList = JSON.parse(localStorage.getItem(KEY_USER)) || [
+  {acc:"admin",pwd:"123456",role:"admin",name:"管理員"},
+  {acc:"factory1",pwd:"123456",role:"factory",name:"測試工廠"}
+];
+
+// 默認內置禮頓POLO尺碼表
+let sizeTableList = JSON.parse(localStorage.getItem(KEY_SIZETABLE)) || [
+  {
+    id:1001,
+    name:"禮頓POLO標準尺碼表",
+    data:[
+      {eu:"S",chest:"88-91",waist:"74-77",length:"66",china:"170/88A",height:"168-173cm"},
+      {eu:"M",chest:"92-95",waist:"78-81",length:"68",china:"175/92A",height:"173-178cm"},
+      {eu:"L",chest:"96-99",waist:"82-85",length:"70",china:"180/96A",height:"178-183cm"},
+      {eu:"XL",chest:"100-103",waist:"86-89",length:"72",china:"185/100A",height:"183-188cm"},
+      {eu:"2XL",chest:"104-107",waist:"90-93",length:"74",china:"190/104A",height:"188-193cm"},
+      {eu:"3XL",chest:"108-111",waist:"94-97",length:"76",china:"195/108A",height:"193-198cm"}
+    ]
+  }
+];
+
+// 默認內置禮頓POLO款式
+let styleList = JSON.parse(localStorage.getItem(KEY_STYLE)) || [
+  {id:1001,code:"ST-POLO001",name:"禮頓POLO",cate1:"現貨款式加工",cate2:"POLO",sizeId:1001,sizeName:"禮頓POLO標準尺碼表",img:"",remark:"標準POLO車縫、領型做法"}
+];
+
+let orderList = JSON.parse(localStorage.getItem(KEY_ORDER)) || [];
+let customerList = JSON.parse(localStorage.getItem(KEY_CUSTOMER)) || [];
+let feedbackList = JSON.parse(localStorage.getItem(KEY_FEEDBACK)) || [];
+let currentUser = null;
+let currentFactoryOrderId = null;
+let currentStyleImg = "";
+
+// 數據持久化
+function saveUser(){localStorage.setItem(KEY_USER,JSON.stringify(userList));}
+function saveOrder(){localStorage.setItem(KEY_ORDER,JSON.stringify(orderList));}
+function saveStyle(){localStorage.setItem(KEY_STYLE,JSON.stringify(styleList));}
+function saveSizeTable(){localStorage.setItem(KEY_SIZETABLE,JSON.stringify(sizeTableList));}
+function saveCustomer(){localStorage.setItem(KEY_CUSTOMER,JSON.stringify(customerList));}
+function saveFeedback(){localStorage.setItem(KEY_FEEDBACK,JSON.stringify(feedbackList));}
+
+// 初始化數據
+saveUser();
+if(!localStorage.getItem(KEY_SIZETABLE)) saveSizeTable();
+if(!localStorage.getItem(KEY_STYLE)) saveStyle();
+saveOrder();saveCustomer();saveFeedback();
+
+// 登入邏輯
+function login(){
+  let a = document.getElementById("acc").value.trim();
+  let p = document.getElementById("pwd").value.trim();
+  let u = userList.find(x=>x.acc===a&&x.pwd===p);
+  if(!u){alert("帳號密碼錯誤");return;}
+  currentUser = u;
+  document.getElementById("loginPage").classList.add("hide");
+  document.getElementById("adminPage").style.display = "block";
+  
+  if(u.role === "factory"){
+    document.querySelectorAll(".sidebar a").forEach(a=>a.classList.add("hide"));
+    document.getElementById("factoryNameShow").innerText = u.name;
+    switchPage("factoryHome");
+  }else{
+    document.querySelectorAll(".sidebar a").forEach(a=>a.classList.remove("hide"));
+    document.getElementById("menuUser").classList.remove("hide");
+    switchPage("home");
+  }
+  renderBaseData();
+}
+
+function logout(){
+  currentUser = null;
+  document.getElementById("adminPage").style.display = "none";
+  document.getElementById("loginPage").classList.remove("hide");
+  document.getElementById("acc").value = "admin";
+  document.getElementById("pwd").value = "123456";
+}
+
+function switchPage(page){
+  document.querySelectorAll(".page-content").forEach(el=>el.classList.add("hide"));
+  document.getElementById("page-"+page).classList.remove("hide");
+  renderBaseData();
+  if(page==="home") renderDashboard();
+  if(page==="factoryHome") renderFactoryOrderList();
+  if(page==="factoryOrderDetail") renderFactoryOrderDetail();
+  if(page==="poPi") renderPoPiOrderSelect();
+}
+
+// 儀表板數據
+function renderDashboard(){
+  document.getElementById("totalOrder").innerText = orderList.length;
+  document.getElementById("pendingOrder").innerText = orderList.filter(x=>!["已完成","已取消"].includes(x.status)).length;
+  document.getElementById("totalCust").innerText = customerList.length;
+  document.getElementById("repeatCust").innerText = customerList.filter(c=>orderList.filter(o=>o.custName===c.name).length>=2).length;
+  
+  let recentOrder = orderList.slice(-5).reverse();
+  let html = "";
+  recentOrder.forEach(o=>{
+    html += `<tr><td>${o.orderSn}</td><td>${o.custName}</td><td>${o.orderType}</td><td>${o.deliveryDate}</td><td>${o.status}</td></tr>`;
+  });
+  document.getElementById("recentOrderList").innerHTML = html;
+}
+
+// 基礎數據渲染
+function renderBaseData(){
+  renderSizeTableSelect();
+  renderSizeTableList();
+  renderStyleCateSelect();
+  renderStyleList();
+  renderStyleCheckList();
+  renderFactorySelect();
+  renderFactoryUserList();
+  renderFeedbackList();
+  renderOrderList();
+}
+
+// 尺碼表相關
+function saveSizeTable(){
+  let name = document.getElementById("sizeTableName").value.trim();
+  if(!name){alert("請填寫尺碼表名稱");return;}
+  const sizes = ["S","M","L","XL","2XL","3XL"];
+  let sizeData = [];
+  sizes.forEach(size=>{
+    sizeData.push({
+      eu: document.getElementById(`size_EU_${size}`).value,
+      chest: document.getElementById(`size_chest_${size}`).value,
+      waist: document.getElementById(`size_waist_${size}`).value,
+      length: document.getElementById(`size_length_${size}`).value,
+      china: document.getElementById(`size_china_${size}`).value,
+      height: document.getElementById(`size_height_${size}`).value
+    });
+  });
+  sizeTableList.push({id:Date.now(),name,data:sizeData});
+  saveSizeTable();
+  alert("尺碼表保存成功");
+  renderBaseData();
+}
+
+function renderSizeTableList(){
+  let html = "";
+  sizeTableList.forEach(item=>{
+    html += `<div class="card">
+      <div class="card-title">${item.name}</div>
+      <div class="size-table-preview"><table>
+        <thead><tr><th>EU</th><th>胸圍</th><th>腰圍</th><th>衣長</th><th>中國碼</th><th>身高</th></tr></thead>
+        <tbody>${item.data.map(row=>`<tr><td>${row.eu}</td><td>${row.chest}</td><td>${row.waist}</td><td>${row.length}</td><td>${row.china}</td><td>${row.height}</td></tr>`).join("")}</tbody>
+      </table></div>
+      <button class="btn btn-sm btn-danger" onclick="sizeTableList=sizeTableList.filter(x=>x.id!==${item.id});saveSizeTable();renderBaseData();">刪除</button>
+    </div>`;
+  });
+  document.getElementById("sizeTableList").innerHTML = html;
+}
+
+function renderSizeTableSelect(){
+  let html = "<option value=''>請選擇尺碼表</option>";
+  sizeTableList.forEach(item=>html+=`<option value="${item.id}">${item.name}</option>`);
+  document.getElementById("bindSizeTable").innerHTML = html;
+}
+
+// 款式庫圖片預覽修復
+function previewImg(input){
+  let file = input.files[0];
+  if(!file) return;
+  // 限制圖片大小500KB
+  if(file.size > 500*1024){
+    document.getElementById("imgTip").classList.remove("hide");
+    document.getElementById("imgPreview").classList.add("hide");
+    currentStyleImg = "";
+    return;
+  }
+  document.getElementById("imgTip").classList.add("hide");
+  let reader = new FileReader();
+  reader.onload = function(e){
+    currentStyleImg = e.target.result;
+    document.getElementById("imgPreview").src = currentStyleImg;
+    document.getElementById("imgPreview").classList.remove("hide");
+  }
+  reader.onerror = function(){
+    alert("圖片讀取失敗，請更換圖片重試");
+  }
+  reader.readAsDataURL(file);
+}
+
+// 款式庫相關
+function saveStyle(){
+  let code = document.getElementById("styleCode").value.trim();
+  let name = document.getElementById("styleName").value.trim();
+  let cate1 = document.getElementById("styleCate1").value;
+  let cate2 = document.getElementById("styleCate2").value;
+  let sizeId = document.getElementById("bindSizeTable").value;
+  let remark = document.getElementById("styleRemark").value.trim();
+  if(!code||!name||!sizeId){alert("請填寫完整款式資料並綁定尺碼表");return;}
+  let sizeObj = sizeTableList.find(x=>x.id==sizeId);
+  styleList.push({id:Date.now(),code,name,cate1,cate2,sizeId,sizeName:sizeObj.name,img:currentStyleImg,remark});
+  saveStyle();
+  alert("款式保存成功");
+  // 重置表單
+  currentStyleImg = "";
+  document.getElementById("styleCode").value = "";
+  document.getElementById("styleName").value = "";
+  document.getElementById("styleRemark").value = "";
+  document.getElementById("imgPreview").classList.add("hide");
+  document.getElementById("styleImg").value = "";
+  renderBaseData();
+}
+
+function renderStyleCateSelect(){
+  let cate1Html = `<option value="">全部分類</option>
+    <option value="現貨款式加工">現貨款式加工</option>
+    <option value="熱昇華訂製">熱昇華訂製</option>
+    <option value="開板訂製">開板訂製</option>`;
+  let cate2Html = `<option value="">全部產品</option>
+    <option value="球衣">球衣</option>
+    <option value="POLO">POLO</option>
+    <option value="風衣外套">風衣外套</option>
+    <option value="其他">其他</option>`;
+  document.getElementById("orderCate1").innerHTML = cate1Html;
+  document.getElementById("orderCate2").innerHTML = cate2Html;
+}
+
+function filterStyleByCate(){
+  let cate1 = document.getElementById("orderCate1").value;
+  let cate2 = document.getElementById("orderCate2").value;
+  renderStyleCheckList(cate1,cate2);
+}
+
+function renderStyleList(){
+  let html = "";
+  styleList.forEach(item=>{
+    let imgHtml = item.img ? `<img src="${item.img}" class="style-img" alt="${item.name}">` : "無圖片";
+    html += `<tr>
+      <td>${imgHtml}</td>
+      <td>${item.code}</td>
+      <td>${item.name}</td>
+      <td>${item.cate1}</td>
+      <td>${item.cate2}</td>
+      <td>${item.sizeName}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="styleList=styleList.filter(x=>x.id!==${item.id});saveStyle();renderBaseData();">刪除</button></td>
+    </tr>`;
+  });
+  document.getElementById("styleList").innerHTML = html;
+}
+
+function renderStyleCheckList(cate1="",cate2=""){
+  let filterStyle = styleList;
+  if(cate1) filterStyle = filterStyle.filter(x=>x.cate1===cate1);
+  if(cate2) filterStyle = filterStyle.filter(x=>x.cate2===cate2);
+  let html = "";
+  filterStyle.forEach(item=>{
+    html += `<div class="style-item">
+      <label><input type="checkbox" class="styleCheck" value="${item.id}" onchange="toggleSizeQty()"> ${item.code} - ${item.name}（${item.cate1}/${item.cate2}）</label>
+    </div>`;
+  });
+  document.getElementById("styleCheckList").innerHTML = html;
+}
+
+function toggleSizeQty(){
+  let wrap = document.getElementById("sizeQtyWrap");
+  wrap.style.display = document.querySelectorAll(".styleCheck:checked").length>0 ? "block" : "none";
+}
+
+// 工廠帳號相關
+function renderFactorySelect(){
+  let html = "<option value=''>請選擇工廠</option>";
+  userList.filter(x=>x.role==="factory").forEach(f=>{
+    html += `<option value="${f.name}">${f.name}</option>`;
+  });
+  document.getElementById("factoryName").innerHTML = html;
+}
+
+function addFactoryUser(){
+  let name = document.getElementById("newFactoryName").value.trim();
+  let acc = document.getElementById("newFactoryAcc").value.trim();
+  let pwd = document.getElementById("newFactoryPwd").value.trim();
+  if(!name||!acc){alert("請填寫完整資料");return;}
+  if(userList.find(x=>x.acc===acc)){alert("帳號已存在");return;}
+  userList.push({acc,pwd,role:"factory",name});
+  saveUser();
+  alert("新增工廠帳號成功");
+  renderBaseData();
+}
+
+function renderFactoryUserList(){
+  let html = "";
+  userList.filter(x=>x.role==="factory").forEach(f=>{
+    html += `<tr><td>${f.name}</td><td>${f.acc}</td><td><button class="btn btn-sm btn-danger" onclick="userList=userList.filter(x=>x.acc!=='${f.acc}');saveUser();renderBaseData();">刪除</button></td></tr>`;
+  });
+  document.getElementById("factoryUserList").innerHTML = html;
+}
+
+// 訂單相關
+function copyOrder(oldId){
+  let old = orderList.find(x=>x.id===oldId);
+  if(!old) return;
+  document.getElementById("orderSn").value = "";
+  document.getElementById("custName").value = old.custName;
+  document.getElementById("custContact").value = old.custContact;
+  document.getElementById("custPhone").value = old.custPhone;
+  document.getElementById("orderCate1").value = old.cate1;
+  document.getElementById("orderCate2").value = old.cate2;
+  document.getElementById("factoryName").value = old.factoryName;
+  document.getElementById("deliveryDate").value = "";
+  document.getElementById("orderRemark").value = old.remark;
+  document.getElementById("orderStatus").value = "新建訂單";
+  document.getElementById("orderAmount").value = old.amount||"";
+  filterStyleByCate();
+  setTimeout(()=>{
+    document.querySelectorAll(".styleCheck").forEach(chk=>{
+      chk.checked = old.styleList.some(s=>s.id == chk.value);
+    });
+    toggleSizeQty();
+    document.getElementById("qty_S").value = old.qty.S||0;
+    document.getElementById("qty_M").value = old.qty.M||0;
+    document.getElementById("qty_L").value = old.qty.L||0;
+    document.getElementById("qty_XL").value = old.qty.XL||0;
+    document.getElementById("qty_2XL").value = old.qty.XL2||0;
+    document.getElementById("qty_3XL").value = old.qty.XL3||0;
+  },100);
+  switchPage("order");
+  alert("已複製舊單資料，翻單自動豁免14日開板工期，請填新訂單編號+交貨日期");
+}
+
+function changeOrderStatus(orderId){
+  let order = orderList.find(x=>x.id===orderId);
+  if(!order) return;
+  let newStatus = prompt("請選擇新狀態：\n1.客戶已提交\n2.待確認報價\n3.待確認樣板\n4.生產中\n5.已出貨\n6.已完成\n7.已取消",order.status);
+  if(!newStatus) return;
+  order.status = newStatus;
+  saveOrder();
+  renderBaseData();
+}
+
+function saveOrder(){
+  let orderSn = document.getElementById("orderSn").value.trim();
+  let custName = document.getElementById("custName").value.trim();
+  let custContact = document.getElementById("custContact").value.trim();
+  let custPhone = document.getElementById("custPhone").value.trim();
+  let cate1 = document.getElementById("orderCate1").value;
+  let cate2 = document.getElementById("orderCate2").value;
+  let factoryName = document.getElementById("factoryName").value;
+  let deliveryDate = document.getElementById("deliveryDate").value;
+  let status = document.getElementById("orderStatus").value;
+  let amount = document.getElementById("orderAmount").value.trim();
+  let remark = document.getElementById("orderRemark").value.trim();
+
+  let qty = {
+    S:+document.getElementById("qty_S").value||0,
+    M:+document.getElementById("qty_M").value||0,
+    L:+document.getElementById("qty_L").value||0,
+    XL:+document.getElementById("qty_XL").value||0,
+    XL2:+document.getElementById("qty_2XL").value||0,
+    XL3:+document.getElementById("qty_3XL").value||0
+  };
+
+  let checkedStyle = [];
+  document.querySelectorAll(".styleCheck:checked").forEach(el=>{
+    let sObj = styleList.find(x=>x.id==el.value);
+    if(sObj) checkedStyle.push(sObj);
+  });
+
+  if(!orderSn||!custName){alert("請填寫訂單編號、客戶公司名");return;}
+  if(checkedStyle.length===0){alert("請至少選擇一個款式");return;}
+
+  if(!customerList.find(x=>x.name===custName)){
+    customerList.push({name:custName,contact:custContact,phone:custPhone});
+    saveCustomer();
+  }
+
+  let isRepeat = orderList.some(x=>x.custName===custName && x.styleList.some(s=>checkedStyle.some(ns=>ns.id===s.id)));
+  let orderType = isRepeat ? "客戶翻單" : (cate1==="開板訂製" ? "開板新單" : "現貨/熱昇華新單");
+
+  orderList.push({
+    id:Date.now(),orderSn,custName,custContact,custPhone,cate1,cate2,
+    factoryName,deliveryDate,styleList:checkedStyle,qty,remark,status,orderType,amount,
+    createTime:new Date().toLocaleString("zh-HK")
+  });
+  saveOrder();
+  alert("訂單建立成功");
+  renderBaseData();
+  renderDashboard();
+}
+
+function renderOrderList(){
+  let searchSn = document.getElementById("searchOrderSn").value.trim().toLowerCase();
+  let filterStatus = document.getElementById("filterStatus").value;
+  let filterCate = document.getElementById("filterCate").value;
+  let filterDate = document.getElementById("filterDeliveryDate").value;
+
+  let filterOrder = orderList.filter(o=>{
+    if(searchSn && !o.orderSn.toLowerCase().includes(searchSn)) return false;
+    if(filterStatus && o.status!==filterStatus) return false;
+    if(filterCate && o.cate1!==filterCate) return false;
+    if(filterDate && o.deliveryDate!==filterDate) return false;
+    return true;
+  }).reverse();
+
+  let html = "";
+  filterOrder.forEach(o=>{
+    html += `<tr>
+      <td>${o.orderSn}</td>
+      <td>${o.custName}</td>
+      <td>${o.orderType}</td>
+      <td>${o.factoryName||"待分配"}</td>
+      <td>${o.deliveryDate}</td>
+      <td>${o.status}</td>
+      <td>
+        <button class="btn btn-sm btn-warning" onclick="copyOrder(${o.id})">一鍵翻單</button>
+        <button class="btn btn-sm btn-secondary" onclick="changeOrderStatus(${o.id})">改狀態</button>
+        <button class="btn btn-sm btn-success" onclick="goToPoPi(${o.id})">生成PO/PI</button>
+      </td>
+    </tr>`;
+  });
+  document.getElementById("orderList").innerHTML = html;
+}
+
+// PO/PI相關修復
+function changePoPiType(){
+  let type = document.getElementById("poPiType").value;
+  let title = type==="PO" ? "採購訂單 PO" : "形式發票 PI";
+  document.getElementById("poPiTitle").innerText = title;
+  document.getElementById("poPiCustLabel").innerText = type==="PO" ? "收貨方/客戶" : "買方/客戶";
+  document.getElementById("poPiFactoryLabel").innerText = type==="PO" ? "供應方/工廠" : "賣方/我方";
+}
+
+function goToPoPi(orderId){
+  switchPage("poPi");
+  document.getElementById("poPiOrderSelect").value = orderId;
+  loadOrderForPoPi();
+}
+
+function renderPoPiOrderSelect(){
+  let html = "<option value=''>請選擇訂單</option>";
+  orderList.reverse().forEach(o=>{
+    html += `<option value="${o.id}">${o.orderSn} - ${o.custName}</option>`;
+  });
+  document.getElementById("poPiOrderSelect").innerHTML = html;
+}
+
+function loadOrderForPoPi(){
+  let orderId = document.getElementById("poPiOrderSelect").value;
+  if(!orderId){
+    document.getElementById("poPiForm").classList.add("hide");
+    return;
+  }
+  let order = orderList.find(x=>x.id==orderId);
+  if(!order) return;
+
+  document.getElementById("poPiNo").value = order.orderSn.replace("ORD",document.getElementById("poPiType").value) + Date.now().toString().slice(-4);
+  document.getElementById("poPiDate").value = new Date().toISOString().split("T")[0];
+  document.getElementById("poPiCust").value = `${order.custName}\n聯絡人：${order.custContact}\n電話：${order.custPhone}`;
+  document.getElementById("poPiFactory").value = order.factoryName||"";
+  document.getElementById("poPiAmount").value = order.amount||"";
+  document.getElementById("poPiRemark").value = order.remark||"";
+  changePoPiType();
+
+  let styleName = order.styleList.map(s=>s.name).join("、");
+  let sizeTable = sizeTableList.find(x=>x.id==order.styleList[0].sizeId);
+  let qtyText = `S:${order.qty.S}件 M:${order.qty.M}件 L:${order.qty.L}件 XL:${order.qty.XL}件 2XL:${order.qty.XL2}件 3XL:${order.qty.XL3}件`;
+  let totalQty = Object.values(order.qty).reduce((a,b)=>a+b,0);
+
+  let itemHtml = `<table>
+    <thead><tr><th>款式編號</th><th>款式名稱</th><th>尺碼明細</th><th>總數量</th><th>尺碼表</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>${order.styleList[0].code}</td>
+        <td>${styleName}</td>
+        <td>${qtyText}</td>
+        <td>${totalQty}件</td>
+        <td>${order.styleList[0].sizeName}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="size-table-preview">
+    <p><b>標準尺碼表</b></p>
+    <table>
+      <thead><tr><th>EU</th><th>胸圍</th><th>腰圍</th><th>衣長</th><th>中國碼</th><th>身高</th></tr></thead>
+      <tbody>${sizeTable.data.map(row=>`<tr><td>${row.eu}</td><td>${row.chest}</td><td>${row.waist}</td><td>${row.length}</td><td>${row.china}</td><td>${row.height}</td></tr>`).join("")}</tbody>
+    </table>
+  </div>`;
+  document.getElementById("poPiItemTable").innerHTML = itemHtml;
+  document.getElementById("poPiForm").classList.remove("hide");
+}
+
+// 工廠異常反饋
+function renderFeedbackList(){
+  let html = "";
+  feedbackList.reverse().forEach(f=>{
+    html += `<tr>
+      <td>${f.createTime}</td>
+      <td>${f.factoryName}</td>
+      <td>${f.orderSn}</td>
+      <td>${f.content}</td>
+      <td>${f.status}</td>
+    </tr>`;
+  });
+  document.getElementById("feedbackList").innerHTML = html;
+}
+
+// 工廠端相關
+function renderFactoryOrderList(){
+  let factoryName = currentUser.name;
+  let myOrders = orderList.filter(x=>x.factoryName===factoryName).reverse();
+  let unHandleFeedback = feedbackList.filter(x=>x.factoryName===factoryName && x.status==="待處理").length;
+  
+  let noticeHtml = "";
+  if(unHandleFeedback>0){
+    noticeHtml = `<div class="factory-notice">您有${unHandleFeedback}條待處理的異常反饋</div>`;
+  }
+  document.getElementById("factoryNoticeWrap").innerHTML = noticeHtml;
+
+  let html = "";
+  myOrders.forEach(o=>{
+    let totalQty = Object.values(o.qty).reduce((a,b)=>a+b,0);
+    let styleName = o.styleList.map(s=>s.name).join("、");
+    html += `<tr>
+      <td>${o.orderSn}</td>
+      <td>${styleName}</td>
+      <td>${totalQty}件</td>
+      <td>${o.deliveryDate}</td>
+      <td>${o.status}</td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="viewFactoryOrderDetail(${o.id})">查看詳情</button>
+        <button class="btn btn-sm btn-warning" onclick="updateFactoryProgress(${o.id})">更新進度</button>
+        <button class="btn btn-sm btn-danger" onclick="submitFeedback(${o.id})">異常反饋</button>
+      </td>
+    </tr>`;
+  });
+  document.getElementById("factoryOrderList").innerHTML = html;
+}
+
+function viewFactoryOrderDetail(orderId){
+  currentFactoryOrderId = orderId;
+  switchPage("factoryOrderDetail");
+}
+
+function renderFactoryOrderDetail(){
+  let order = orderList.find(x=>x.id===currentFactoryOrderId);
+  if(!order) return;
+  let sizeTable = sizeTableList.find(x=>x.id==order.styleList[0].sizeId);
+  let totalQty = Object.values(order.qty).reduce((a,b)=>a+b,0);
+
+  let html = `<div class="grid-row">
+    <div><p><b>訂單編號：</b>${order.orderSn}</p></div>
+    <div><p><b>客戶名稱：</b>${order.custName}</p></div>
+  </div>
+  <div class="grid-row">
+    <div><p><b>交貨日期：</b>${order.deliveryDate}</p></div>
+    <div><p><b>當前狀態：</b>${order.status}</p></div>
+  </div>
+  <div class="card">
+    <div class="card-title">貨品明細</div>
+    <p><b>款式：</b>${order.styleList.map(s=>s.name).join("、")}</p>
+    <p><b>款式編號：</b>${order.styleList[0].code}</p>
+    <p><b>尺碼配比：</b>S:${order.qty.S}件 M:${order.qty.M}件 L:${order.qty.L}件 XL:${order.qty.XL}件 2XL:${order.qty.XL2}件 3XL:${order.qty.XL3}件</p>
+    <p><b>總數量：</b>${totalQty}件</p>
+    <div class="size-table-preview">
+      <p><b>標準尺碼表</b></p>
+      <table>
+        <thead><tr><th>EU</th><th>胸圍</th><th>腰圍</th><th>衣長</th><th>中國碼</th><th>身高</th></tr></thead>
+        <tbody>${sizeTable.data.map(row=>`<tr><td>${row.eu}</td><td>${row.chest}</td><td>${row.waist}</td><td>${row.length}</td><td>${row.china}</td><td>${row.height}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">工藝備註</div>
+    <p>${order.remark||"無"}</p>
+  </div>
+  <div class="no-print">
+    <button class="btn btn-success" onclick="window.print()">打印工藝單</button>
+  </div>`;
+  document.getElementById("factoryOrderDetail").innerHTML = html;
+}
+
+function updateFactoryProgress(orderId){
+  let order = orderList.find(x=>x.id===orderId);
+  if(!order) return;
+  let newStatus = prompt("請更新生產進度：\n1.待生產\n2.裁剪中\n3.車縫中\n4.後整理中\n5.已完成",order.status);
+  if(!newStatus) return;
+  order.status = newStatus;
+  saveOrder();
+  renderFactoryOrderList();
+}
+
+function submitFeedback(orderId){
+  let order = orderList.find(x=>x.id===orderId);
+  if(!order) return;
+  let content = prompt("請輸入異常內容：");
+  if(!content) return;
+  feedbackList.push({
+    id:Date.now(),
+    orderSn:order.orderSn,
+    factoryName:currentUser.name,
+    content:content,
+    status:"待處理",
+    createTime:new Date().toLocaleString("zh-HK")
+  });
+  saveFeedback();
+  alert("異常反饋已提交，管理員會盡快處理");
+  renderFactoryOrderList();
+}
+</script>
+
+</body>
+</html>

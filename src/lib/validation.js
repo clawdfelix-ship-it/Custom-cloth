@@ -25,10 +25,23 @@ function requiredSizeRatio(v) {
   });
 }
 
+function requiredQtyJson(v) {
+  if (!v || typeof v !== 'object') throw new Error('qty required');
+  const keys = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
+  const out = {};
+  for (const k of keys) {
+    const n = Number(v[k] || 0);
+    if (!Number.isFinite(n) || n < 0) throw new Error('qty invalid');
+    out[k] = n;
+  }
+  if (Object.values(out).reduce((a, b) => a + b, 0) <= 0) throw new Error('qty empty');
+  return out;
+}
+
 module.exports = {
   requiredString,
   requiredEnum,
   requiredYmd,
-  requiredSizeRatio
+  requiredSizeRatio,
+  requiredQtyJson
 };
-

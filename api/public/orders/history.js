@@ -1,30 +1,13 @@
-const { sql } = require('../../src/lib/db');
-const { sendJson } = require('../../src/lib/http');
-const { requireSession } = require('../../src/lib/auth');
-
-async function requireAdmin(req, res) {
-  const session = await requireSession(req);
-  if (!session || session.role !== 'admin') {
-    sendJson(res, 401, { ok: false, error: 'unauthorized' });
-    return null;
-  }
-  return session;
-}
+const { sql } = require('../../../src/lib/db');
+const { sendJson } = require('../../../src/lib/http');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
 
   const url = new URL(req.url, 'http://localhost');
-  const session = await requireAdmin(req, res);
-  if (!session) return;
-
-  const orderSn = (url.searchParams.get('orderSn') || '').trim();
   const companyName = (url.searchParams.get('companyName') || '').trim();
   const phone = (url.searchParams.get('phone') || '').trim();
-  const status = (url.searchParams.get('status') || '').trim();
-  const cate1 = (url.searchParams.get('cate1') || '').trim();
-  const cate2 = (url.searchParams.get('cate2') || '').trim();
-  const factoryName = (url.searchParams.get('factoryName') || '').trim();
+  if (!companyName || !phone) return sendJson(res, 400, { ok: false, error: 'bad_request' });
 
   try {
     const r = await sql`
@@ -32,16 +15,10 @@ module.exports = async function handler(req, res) {
         o.id,
         o.order_sn,
         o.create_time,
-        o.cust_name,
-        o.cust_contact,
-        o.cust_phone,
         o.cate1,
         o.cate2,
-        o.factory_name,
         o.order_type,
         o.status,
-        o.amount,
-        o.remark,
         o.requested_delivery_date,
         o.suggested_delivery_date,
         o.source_order_id,
@@ -59,33 +36,20 @@ module.exports = async function handler(req, res) {
       from orders o
       left join order_items oi on oi.order_id = o.id
       left join styles s on s.id = oi.style_id
-      where
-        (${orderSn} = '' or o.order_sn = ${orderSn})
-        and (${companyName} = '' or o.cust_name ilike ${'%' + companyName + '%'})
-        and (${phone} = '' or o.cust_phone = ${phone})
-        and (${status} = '' or o.status = ${status})
-        and (${cate1} = '' or o.cate1 = ${cate1})
-        and (${cate2} = '' or o.cate2 = ${cate2})
-        and (${factoryName} = '' or o.factory_name = ${factoryName})
+      where o.cust_name = ${companyName} and o.cust_phone = ${phone}
       group by o.id
       order by o.create_time desc
-      limit 300
+      limit 50
     `;
 
     const orders = r.rows.map((x) => ({
       id: x.id,
       orderSn: x.order_sn,
       createdAt: x.create_time,
-      companyName: x.cust_name,
-      contactName: x.cust_contact || '',
-      phone: x.cust_phone,
       cate1: x.cate1,
       cate2: x.cate2,
-      factoryName: x.factory_name || '',
       orderType: x.order_type,
       status: x.status,
-      amount: x.amount || '',
-      remark: x.remark || '',
       requestedDeliveryDate: x.requested_delivery_date ? String(x.requested_delivery_date) : '',
       suggestedDeliveryDate: x.suggested_delivery_date ? String(x.suggested_delivery_date) : '',
       sourceOrderId: x.source_order_id,
