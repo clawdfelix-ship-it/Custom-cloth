@@ -294,6 +294,47 @@
         <button id="confirmCopyBtn" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">確認翻單</button>
       </div>
     </div>
+
+    <div id="factoryModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4">
+      <div class="w-full max-w-xl rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b px-5 py-4">
+          <div class="text-base font-semibold">工廠訂單操作</div>
+          <button id="closeFactoryModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <div class="text-sm text-slate-600" id="factoryOrderInfo"></div>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label class="text-sm font-medium">更新狀態</label>
+              <select id="factoryStatusSel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="客戶已提交">客戶已提交</option>
+                <option value="待確認報價">待確認報價</option>
+                <option value="待確認樣板">待確認樣板</option>
+                <option value="生產中">生產中</option>
+                <option value="已出貨">已出貨</option>
+                <option value="已完成">已完成</option>
+                <option value="已取消">已取消</option>
+              </select>
+            </div>
+            <div class="sm:pt-6">
+              <button id="factoryUpdateStatusBtn" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">更新狀態</button>
+            </div>
+          </div>
+          <div>
+            <label class="text-sm font-medium">異常反饋內容</label>
+            <textarea id="factoryFeedbackText" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="4" placeholder="例如：尺寸/顏色/布料/加工問題..."></textarea>
+          </div>
+          <div>
+            <label class="text-sm font-medium">附件（最多 3 張，每張 < 500KB）</label>
+            <input id="factoryFiles" type="file" accept="image/*" multiple class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="factorySendFeedbackBtn" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">提交反饋</button>
+            <div id="factoryModalMsg" class="text-sm text-slate-600"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -345,6 +386,17 @@
     const copyMsg = document.getElementById('copyMsg');
     let copySourceOrderId = null;
     let factoryUsers = [];
+
+    const factoryModal = document.getElementById('factoryModal');
+    const closeFactoryModal = document.getElementById('closeFactoryModal');
+    const factoryOrderInfo = document.getElementById('factoryOrderInfo');
+    const factoryStatusSel = document.getElementById('factoryStatusSel');
+    const factoryFeedbackText = document.getElementById('factoryFeedbackText');
+    const factoryFiles = document.getElementById('factoryFiles');
+    const factoryUpdateStatusBtn = document.getElementById('factoryUpdateStatusBtn');
+    const factorySendFeedbackBtn = document.getElementById('factorySendFeedbackBtn');
+    const factoryModalMsg = document.getElementById('factoryModalMsg');
+    let factoryActiveOrderId = null;
 
     async function loadFactoryUsers() {
       if (sessionRole() !== 'admin') return;
@@ -550,6 +602,15 @@
     closeCopyModal.addEventListener('click', () => {
       copyModal.classList.add('hidden');
       copyModal.classList.remove('flex');
+    });
+
+    closeFactoryModal.addEventListener('click', () => {
+      factoryModal.classList.add('hidden');
+      factoryModal.classList.remove('flex');
+      factoryActiveOrderId = null;
+      factoryModalMsg.textContent = '';
+      factoryFeedbackText.value = '';
+      factoryFiles.value = '';
     });
 
     confirmCopyBtn.addEventListener('click', async () => {
@@ -774,13 +835,17 @@
       const list = data.feedback || [];
       feedbackBody.innerHTML = '';
       list.forEach((f) => {
+        const attachments = Array.isArray(f.attachments) ? f.attachments : [];
+        const attachHtml = attachments.length
+          ? `<div class="mt-1 text-xs">${attachments.map((a) => `<a class="underline" href="${a.url}" target="_blank" rel="noreferrer">附件</a>`).join(' ')}</div>`
+          : '';
         const tr = document.createElement('tr');
         tr.className = 'border-b';
         tr.innerHTML = `
           <td class="px-3 py-2 text-slate-700">${new Date(f.createdAt).toLocaleString('zh-HK')}</td>
           <td class="px-3 py-2 font-semibold">${f.orderSn}</td>
           <td class="px-3 py-2">${f.factoryName}</td>
-          <td class="px-3 py-2">${f.content}</td>
+          <td class="px-3 py-2">${f.content}${attachHtml}</td>
           <td class="px-3 py-2">${f.status}</td>
           <td class="px-3 py-2 text-right">
             <button data-id="${f.id}" data-status="已處理" class="markDone rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">標記已處理</button>
@@ -837,9 +902,93 @@
           }
           const o = data.order;
           appMsg.textContent = `訂單 ${o.orderSn}：${o.status}`;
+          factoryActiveOrderId = o.id;
+          factoryOrderInfo.textContent = `訂單：${o.orderSn}｜公司：${o.companyName}｜狀態：${o.status}`;
+          factoryStatusSel.value = o.status;
+          factoryFeedbackText.value = '';
+          factoryFiles.value = '';
+          factoryModalMsg.textContent = '';
+          factoryModal.classList.remove('hidden');
+          factoryModal.classList.add('flex');
         });
       });
     }
+
+    factoryUpdateStatusBtn.addEventListener('click', async () => {
+      if (!factoryActiveOrderId) return;
+      factoryModalMsg.textContent = '';
+      const status = factoryStatusSel.value;
+      const res = await apiFetch('/api/factory/orders/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: factoryActiveOrderId, status })
+      });
+      const out = await res.json().catch(() => null);
+      if (!out || !out.ok) {
+        factoryModalMsg.textContent = '更新狀態失敗';
+        return;
+      }
+      factoryModalMsg.textContent = '已更新狀態';
+      await loadFactoryOrders();
+    });
+
+    factorySendFeedbackBtn.addEventListener('click', async () => {
+      if (!factoryActiveOrderId) return;
+      factoryModalMsg.textContent = '';
+      const content = factoryFeedbackText.value.trim();
+      if (!content) {
+        factoryModalMsg.textContent = '請輸入反饋內容';
+        return;
+      }
+
+      const files = Array.from(factoryFiles.files || []);
+      if (files.length > 3) {
+        factoryModalMsg.textContent = '最多 3 張附件';
+        return;
+      }
+      for (const f of files) {
+        if (f.size > 500 * 1024) {
+          factoryModalMsg.textContent = '附件太大（>500KB）';
+          return;
+        }
+      }
+
+      const attachments = [];
+      for (const f of files) {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = reject;
+          reader.readAsDataURL(f);
+        });
+        const up = await apiFetch('/api/factory/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: f.name, dataUrl })
+        });
+        const upOut = await up.json().catch(() => null);
+        if (!upOut || !upOut.ok || !upOut.url) {
+          factoryModalMsg.textContent = '上傳附件失敗';
+          return;
+        }
+        attachments.push({ url: upOut.url, name: f.name, contentType: upOut.contentType || '', size: f.size });
+      }
+
+      const res = await apiFetch('/api/factory/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: factoryActiveOrderId, content, attachments })
+      });
+      const out = await res.json().catch(() => null);
+      if (!out || !out.ok) {
+        factoryModalMsg.textContent = '提交反饋失敗';
+        return;
+      }
+      factoryModalMsg.textContent = '已提交反饋';
+      factoryFeedbackText.value = '';
+      factoryFiles.value = '';
+      if (sessionRole() === 'admin') await loadFeedback().catch(() => null);
+    });
 
     loadFactoryOrdersBtn.addEventListener('click', loadFactoryOrders);
 
