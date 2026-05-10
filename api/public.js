@@ -24,7 +24,7 @@ async function handleStyles(req, res, url) {
   const cate2 = (url.searchParams.get('cate2') || '').trim();
   try {
     const r = await sql`
-      select s.id, s.code, s.name, s.cate1, s.cate2, s.size_table_id, s.img_base64, s.remark, st.name as size_table_name
+      select s.id, s.code, s.name, s.cate1, s.cate2, s.size_table_id, s.img_url, s.img_base64, s.remark, st.name as size_table_name
       from styles s
       join size_tables st on st.id = s.size_table_id
       where (${cate1} = '' or s.cate1 = ${cate1})
@@ -40,6 +40,7 @@ async function handleStyles(req, res, url) {
       cate2: x.cate2,
       sizeTableId: x.size_table_id,
       sizeTableName: x.size_table_name,
+      imgUrl: x.img_url || '',
       imgBase64: x.img_base64 || '',
       remark: x.remark || ''
     }));

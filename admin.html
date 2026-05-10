@@ -674,6 +674,7 @@
       const remark = document.getElementById('styleRemark').value.trim();
       const file = document.getElementById('styleImage').files[0];
       let imgBase64 = '';
+      let imgUrl = '';
       if (!code || !name || !cate1 || !cate2 || !sizeTableId) {
         appMsg.textContent = '請填齊款式資料';
         return;
@@ -689,11 +690,22 @@
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
+
+        const up = await apiFetch('/api/admin/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prefix: 'styles', filename: file.name, dataUrl: imgBase64 })
+        });
+        const upOut = await up.json().catch(() => null);
+        if (upOut && upOut.ok && upOut.url) {
+          imgUrl = upOut.url;
+          imgBase64 = '';
+        }
       }
       const res = await apiFetch('/api/admin/styles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, name, cate1, cate2, sizeTableId, imgBase64, remark })
+        body: JSON.stringify({ code, name, cate1, cate2, sizeTableId, imgUrl, imgBase64, remark })
       });
       const out = await res.json().catch(() => null);
       if (!out || !out.ok) {

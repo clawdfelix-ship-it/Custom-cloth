@@ -4,6 +4,7 @@ const { requireSession } = require('../src/lib/auth');
 const { ORDER_STATUS_ADMIN } = require('../src/lib/schema');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { audit } = require('../src/lib/audit');
+const { uploadDataUrl } = require('../src/lib/blob');
 
 async function requireFactory(req, res) {
   const session = await requireSession(req);
@@ -146,6 +147,7 @@ async function feedbackHandler(req, res, session) {
     const body = raw ? JSON.parse(raw) : {};
     const orderId = typeof body.orderId === 'string' ? body.orderId.trim() : '';
     const content = typeof body.content === 'string' ? body.content.trim() : '';
+    const attachments = Array.isArray(body.attachments) ? body.attachments : [];
     if (!orderId || !content) return sendJson(res, 400, { ok: false, error: 'bad_request' });
 
     const r = await sql`
@@ -159,14 +161,32 @@ async function feedbackHandler(req, res, session) {
     if (!o) return sendJson(res, 404, { ok: false, error: 'not_found' });
 
     const inserted = await sql`
-      insert into feedback (order_id, order_sn, factory_name, content, status)
-      values (${orderId}::uuid, ${o.order_sn}, ${session.name}, ${content}, ${'待處理'})
+      insert into feedback (order_id, order_sn, factory_name, content, status, attachments)
+      values (${orderId}::uuid, ${o.order_sn}, ${session.name}, ${content}, ${'待處理'}, ${JSON.stringify(attachments)}::jsonb)
       returning id, create_time
     `;
     await audit(session.userId, 'factory_feedback_create', 'feedback', String(inserted.rows[0].id), { orderId });
     return sendJson(res, 200, { ok: true, feedbackId: inserted.rows[0].id, createdAt: inserted.rows[0].create_time });
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
+}
+
+async function uploadHandler(req, res, session) {
+  if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const dataUrl = typeof body.dataUrl === 'string' ? body.dataUrl.trim() : '';
+    const filename = typeof body.filename === 'string' ? body.filename.trim() : '';
+    if (!dataUrl) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+
+    const r = await uploadDataUrl('feedback', filename, dataUrl);
+    if (!r) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+    await audit(session.userId, 'factory_upload', 'blob', r.pathname, null);
+    return sendJson(res, 200, { ok: true, url: r.url, pathname: r.pathname, contentType: r.contentType });
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'server_error' });
   }
 }
 
@@ -182,6 +202,7 @@ module.exports = async function handler(req, res) {
   if (action === 'orderDetail') return orderDetailHandler(req, res, session, url);
   if (action === 'orderStatus') return orderStatusHandler(req, res, session);
   if (action === 'feedback') return feedbackHandler(req, res, session);
+  if (action === 'upload') return uploadHandler(req, res, session);
 
   return sendJson(res, 404, { ok: false, error: 'not_found' });
 };

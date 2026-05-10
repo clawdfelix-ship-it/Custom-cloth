@@ -9,6 +9,7 @@ const { generateLookupCode } = require('../src/lib/lookup-code');
 const { requiredYmd } = require('../src/lib/validation');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { audit } = require('../src/lib/audit');
+const { uploadDataUrl } = require('../src/lib/blob');
 
 async function requireAdmin(req, res) {
   const session = await requireSession(req);
@@ -114,7 +115,7 @@ async function stylesHandler(req, res, url) {
     const cate1 = (url.searchParams.get('cate1') || '').trim();
     const cate2 = (url.searchParams.get('cate2') || '').trim();
     const r = await sql`
-      select id, code, name, cate1, cate2, size_table_id, img_base64, remark, created_at
+      select id, code, name, cate1, cate2, size_table_id, img_url, img_base64, remark, created_at
       from styles
       where (${cate1} = '' or cate1 = ${cate1})
         and (${cate2} = '' or cate2 = ${cate2})
@@ -128,6 +129,7 @@ async function stylesHandler(req, res, url) {
       cate1: x.cate1,
       cate2: x.cate2,
       sizeTableId: x.size_table_id,
+      imgUrl: x.img_url || '',
       imgBase64: x.img_base64 || '',
       remark: x.remark || '',
       createdAt: x.created_at
@@ -145,14 +147,15 @@ async function stylesHandler(req, res, url) {
       const cate2 = typeof body.cate2 === 'string' ? body.cate2.trim() : '';
       const sizeTableId = typeof body.sizeTableId === 'string' ? body.sizeTableId.trim() : '';
       const remark = typeof body.remark === 'string' ? body.remark.trim() : '';
+      const imgUrl = typeof body.imgUrl === 'string' ? body.imgUrl.trim() : '';
       const imgBase64 = typeof body.imgBase64 === 'string' ? body.imgBase64.trim() : '';
       if (!code || !name || !cate1 || !cate2 || !sizeTableId) return sendJson(res, 400, { ok: false, error: 'bad_request' });
       if (imgBase64 && imgBase64.length > 700000) return sendJson(res, 400, { ok: false, error: 'image_too_large' });
 
       const inserted = await sql`
-        insert into styles (code, name, cate1, cate2, size_table_id, img_base64, remark)
-        values (${code}, ${name}, ${cate1}, ${cate2}, ${sizeTableId}::uuid, ${imgBase64 || null}, ${remark || null})
-        returning id, code, name, cate1, cate2, size_table_id, img_base64, remark, created_at
+        insert into styles (code, name, cate1, cate2, size_table_id, img_url, img_base64, remark)
+        values (${code}, ${name}, ${cate1}, ${cate2}, ${sizeTableId}::uuid, ${imgUrl || null}, ${imgBase64 || null}, ${remark || null})
+        returning id, code, name, cate1, cate2, size_table_id, img_url, img_base64, remark, created_at
       `;
       const x = inserted.rows[0];
       await audit(session.userId, 'admin_create_style', 'style', String(x.id), { code: x.code, name: x.name });
@@ -165,6 +168,7 @@ async function stylesHandler(req, res, url) {
           cate1: x.cate1,
           cate2: x.cate2,
           sizeTableId: x.size_table_id,
+          imgUrl: x.img_url || '',
           imgBase64: x.img_base64 || '',
           remark: x.remark || '',
           createdAt: x.created_at
@@ -412,7 +416,7 @@ async function feedbackHandler(req, res, url) {
 
   try {
     const r = await sql`
-      select id, order_id, order_sn, factory_name, content, status, create_time
+      select id, order_id, order_sn, factory_name, content, status, attachments, create_time
       from feedback
       where
         (${factoryName} = '' or factory_name = ${factoryName})
@@ -428,9 +432,32 @@ async function feedbackHandler(req, res, url) {
       factoryName: x.factory_name,
       content: x.content,
       status: x.status,
+      attachments: x.attachments || [],
       createdAt: x.create_time
     }));
     return sendJson(res, 200, { ok: true, feedback });
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'server_error' });
+  }
+}
+
+async function uploadHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const dataUrl = typeof body.dataUrl === 'string' ? body.dataUrl.trim() : '';
+    const filename = typeof body.filename === 'string' ? body.filename.trim() : '';
+    const prefix = typeof body.prefix === 'string' ? body.prefix.trim() : 'styles';
+    if (!dataUrl) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+
+    const r = await uploadDataUrl(prefix, filename, dataUrl);
+    if (!r) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+    await audit(session.userId, 'admin_upload', 'blob', r.pathname, { prefix });
+    return sendJson(res, 200, { ok: true, url: r.url, pathname: r.pathname, contentType: r.contentType });
   } catch (e) {
     return sendJson(res, 500, { ok: false, error: 'server_error' });
   }
@@ -476,6 +503,7 @@ module.exports = async function handler(req, res) {
   if (action === 'assignFactory') return assignFactoryHandler(req, res);
   if (action === 'orderStatus') return orderStatusHandler(req, res);
   if (action === 'orderCopy') return orderCopyHandler(req, res);
+  if (action === 'upload') return uploadHandler(req, res);
   if (action === 'feedback') return feedbackHandler(req, res, url);
   if (action === 'feedbackStatus') return feedbackStatusHandler(req, res);
 

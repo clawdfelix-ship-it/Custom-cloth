@@ -18,12 +18,14 @@
     { "source": "/api/admin/orders/status", "destination": "/api/admin?action=orderStatus" },
     { "source": "/api/admin/orders/copy", "destination": "/api/admin?action=orderCopy" },
     { "source": "/api/admin/orders/assign-factory", "destination": "/api/admin?action=assignFactory" },
+    { "source": "/api/admin/upload", "destination": "/api/admin?action=upload" },
     { "source": "/api/admin/feedback", "destination": "/api/admin?action=feedback" },
     { "source": "/api/admin/feedback/status", "destination": "/api/admin?action=feedbackStatus" },
 
     { "source": "/api/factory/orders/status", "destination": "/api/factory?action=orderStatus" },
     { "source": "/api/factory/orders/:id", "destination": "/api/factory?action=orderDetail&id=:id" },
     { "source": "/api/factory/orders", "destination": "/api/factory?action=orders" },
-    { "source": "/api/factory/feedback", "destination": "/api/factory?action=feedback" }
+    { "source": "/api/factory/feedback", "destination": "/api/factory?action=feedback" },
+    { "source": "/api/factory/upload", "destination": "/api/factory?action=upload" }
   ]
 }
