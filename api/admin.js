@@ -459,7 +459,7 @@ async function uploadHandler(req, res) {
     await audit(session.userId, 'admin_upload', 'blob', r.pathname, { prefix });
     return sendJson(res, 200, { ok: true, url: r.url, pathname: r.pathname, contentType: r.contentType });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 

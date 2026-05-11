@@ -186,7 +186,7 @@ async function uploadHandler(req, res, session) {
     await audit(session.userId, 'factory_upload', 'blob', r.pathname, null);
     return sendJson(res, 200, { ok: true, url: r.url, pathname: r.pathname, contentType: r.contentType });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 
