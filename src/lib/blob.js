@@ -21,10 +21,11 @@ function buildBlobPath(prefix, filename) {
 async function uploadDataUrl(prefix, filename, dataUrl) {
   const parsed = parseDataUrl(dataUrl);
   if (!parsed) return null;
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(parsed.contentType)) return null;
+  if (parsed.buf.length > 500 * 1024) return null;
   const key = buildBlobPath(prefix, filename);
   const r = await put(key, parsed.buf, { access: 'public', contentType: parsed.contentType });
   return { url: r.url, pathname: r.pathname, contentType: parsed.contentType };
 }
 
 module.exports = { uploadDataUrl };
-
