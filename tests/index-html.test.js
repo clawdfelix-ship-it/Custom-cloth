@@ -35,3 +35,10 @@ test('index.html includes jersey cate3/cate4 selectors', async () => {
   assert.match(html, /id="cate3"/);
   assert.match(html, /id="cate4"/);
 });
+
+test('index.html supports copying lookup code and link', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /copyLookupCode/);
+  assert.match(html, /copyLookupLink/);
+});

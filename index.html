@@ -549,6 +549,46 @@
       return out;
     }
 
+    async function copyText(s) {
+      const text = String(s || '');
+      if (!text) return false;
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          return true;
+        } catch (e2) {
+          document.body.removeChild(ta);
+          return false;
+        }
+      }
+    }
+
+    async function copyLookupCode(orderSn, lookupCode) {
+      const ok = await copyText(lookupCode);
+      const msg = document.getElementById('newMsg');
+      if (msg) msg.textContent = ok ? '已複製查單碼' : '複製失敗';
+    }
+
+    async function copyLookupLink(orderSn, lookupCode) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('orderSn', String(orderSn || ''));
+      url.searchParams.set('lookupCode', String(lookupCode || ''));
+      const ok = await copyText(url.toString());
+      const msg = document.getElementById('newMsg');
+      if (msg) msg.textContent = ok ? '已複製查單連結' : '複製失敗';
+    }
+
     async function submitOrder(mode) {
       const msgId = mode === 'repeat' ? 'repeatMsg' : 'newMsg';
       const msgEl = document.getElementById(msgId);
@@ -650,6 +690,10 @@
       box.innerHTML = `<div style="font-weight:bold;">提交成功</div>
         <div>訂單編號：<b>${escapeHtml(data.orderSn)}</b></div>
         <div>查單碼：<b>${escapeHtml(data.lookupCode || '')}</b></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" type="button" onclick="copyLookupCode('${escapeHtml(data.orderSn)}','${escapeHtml(data.lookupCode || '')}')">複製查單碼</button>
+          <button class="btn btn-sm" type="button" onclick="copyLookupLink('${escapeHtml(data.orderSn)}','${escapeHtml(data.lookupCode || '')}')">複製查單連結</button>
+        </div>
         <div>狀態：${escapeHtml(data.status)}</div>
         <div>建議交貨日：${escapeHtml(data.suggestedDeliveryDate)}</div>`;
 
@@ -753,15 +797,34 @@
         return;
       }
 
-      const o = data.order;
+          const o = data.order;
       box.classList.remove('hide');
+          const items = Array.isArray(o.items) ? o.items : [];
+          const extra = items
+            .filter((it) => (it.customText && String(it.customText).trim()) || (Array.isArray(it.customAttachments) && it.customAttachments.length))
+            .map((it) => {
+              const text = it.customText ? `<div class="muted">${escapeHtml(it.customText)}</div>` : '';
+              const att = Array.isArray(it.customAttachments) ? it.customAttachments : [];
+              const imgs = att.length
+                ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">${att
+                    .map((a) => `<a class="muted" style="text-decoration:underline;" href="${escapeHtml(a.url)}" target="_blank" rel="noreferrer">參考圖</a>`)
+                    .join('')}</div>`
+                : '';
+              return `<div style="margin-top:8px;">
+                <div style="font-weight:bold;">${escapeHtml(it.styleName || it.styleCode || '客戶提供')}</div>
+                ${text}
+                ${imgs}
+              </div>`;
+            })
+            .join('');
       box.innerHTML = `<div style="font-weight:bold;">訂單狀態</div>
         <div>訂單編號：<b>${escapeHtml(o.orderSn)}</b></div>
         <div>公司：${escapeHtml(o.companyName)}</div>
         <div>狀態：<b>${escapeHtml(o.status)}</b></div>
         <div>建議交貨日：${escapeHtml(o.suggestedDeliveryDate || '—')}</div>
         <div>客戶交貨日：${escapeHtml(o.requestedDeliveryDate || '—')}</div>
-        <div class="muted">分類：${escapeHtml(o.cate1)} / ${escapeHtml(o.cate2)}</div>`;
+            <div class="muted">分類：${escapeHtml(o.cate1)} / ${escapeHtml(o.cate2)}${o.cate2 === '球衣' && o.cate3 && o.cate4 ? ` / ${escapeHtml(o.cate3)} / ${escapeHtml(o.cate4)}` : ''}</div>
+            ${extra ? `<div style="margin-top:10px;">${extra}</div>` : ''}`;
     }
 
     async function init() {

@@ -380,6 +380,19 @@ async function handleStatus(req, res, url) {
         `;
     const o = r.rows[0];
     if (!o) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    const itemsR = await sql`
+      select
+        s.code as style_code,
+        s.name as style_name,
+        oi.qty,
+        oi.custom_text,
+        oi.custom_attachments
+      from order_items oi
+      left join styles s on s.id = oi.style_id
+      where oi.order_id = ${o.id}::uuid
+      order by oi.create_time asc
+      limit 50
+    `;
     return sendJson(res, 200, {
       ok: true,
       order: {
@@ -390,13 +403,22 @@ async function handleStatus(req, res, url) {
         phone: o.cust_phone,
         cate1: o.cate1,
         cate2: o.cate2,
-            cate3: o.cate3 || '',
-            cate4: o.cate4 || '',
+        cate3: o.cate3 || '',
+        cate4: o.cate4 || '',
         orderType: o.order_type,
         status: o.status,
         requestedDeliveryDate: o.requested_delivery_date ? String(o.requested_delivery_date) : '',
         suggestedDeliveryDate: o.suggested_delivery_date ? String(o.suggested_delivery_date) : '',
-        factoryName: o.factory_name || ''
+        factoryName: o.factory_name || '',
+        items: normalizeItemsQty(
+          itemsR.rows.map((x) => ({
+            styleCode: x.style_code || '',
+            styleName: x.style_name || '',
+            qty: x.qty,
+            customText: x.custom_text || '',
+            customAttachments: x.custom_attachments || []
+          }))
+        )
       }
     });
   } catch (e) {
