@@ -7,6 +7,8 @@ const { audit } = require('../src/lib/audit');
 const { uploadDataUrl } = require('../src/lib/blob');
 const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
 
+const FACTORY_ALLOWED_STATUS = ['生產中', '已出貨', '已完成'];
+
 function normalizeItemsQty(items) {
   return (Array.isArray(items) ? items : []).map((it) => {
     const qtyRaw = it && it.qty;
@@ -138,6 +140,7 @@ async function orderStatusHandler(req, res, session) {
     const status = typeof body.status === 'string' ? body.status.trim() : '';
     if (!orderId) return sendJson(res, 400, { ok: false, error: 'orderId_required' });
     if (!ORDER_STATUS_ADMIN.includes(status)) return sendJson(res, 400, { ok: false, error: 'status_invalid' });
+    if (!FACTORY_ALLOWED_STATUS.includes(status)) return sendJson(res, 403, { ok: false, error: 'forbidden_status' });
 
     const updated = await sql`
       update orders
