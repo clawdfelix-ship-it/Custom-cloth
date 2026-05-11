@@ -58,13 +58,12 @@ test('index.html includes zenex brand css and header', async () => {
   assert.match(html, /ZENEX-SPORTS/);
 });
 
-test('index.html includes customer auth ui and reset mode', async () => {
+test('index.html redirects to /login when not authenticated', async () => {
   const fs = require('node:fs/promises');
   const html = await fs.readFile('index.html', 'utf8');
-  assert.match(html, /customerLogin/);
-  assert.match(html, /customerRegister/);
-  assert.match(html, /customerToken/);
-  assert.match(html, /mode=reset/);
+  assert.doesNotMatch(html, /customerLoginEmail/);
+  assert.doesNotMatch(html, /customerRegisterEmail/);
+  assert.match(html, /location\.href\s*=\s*['"]\/login/);
 });
 
 test('index.html provides goToOrder helper for auto navigation and scroll', async () => {

@@ -1,9 +1,12 @@
 {
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/login", "destination": "/login.html" },
 
     { "source": "/api/auth/login", "destination": "/api/auth?action=login" },
     { "source": "/api/auth/logout", "destination": "/api/auth?action=logout" },
+
+    { "source": "/api/customer", "destination": "/api/customer" },
 
     { "source": "/api/public/styles", "destination": "/api/public?action=styles" },
     { "source": "/api/public/categories", "destination": "/api/public?action=categories" },

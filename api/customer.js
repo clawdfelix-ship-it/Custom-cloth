@@ -12,7 +12,7 @@ function buildResetUrl(token) {
   const base = String(process.env.PUBLIC_BASE_URL || '').trim();
   if (!base) return '';
   try {
-    const u = new URL('/', base);
+    const u = new URL('/login', base);
     u.searchParams.set('mode', 'reset');
     u.searchParams.set('token', token);
     return u.toString();

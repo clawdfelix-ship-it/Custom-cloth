@@ -10,3 +10,8 @@ test('public createOrder/history require customer session', async () => {
   assert.match(js, /where o\.customer_id/);
 });
 
+test('public order status requires customer session', async () => {
+  const js = await fs.readFile('api/public.js', 'utf8');
+  assert.match(js, /async function handleStatus/);
+  assert.match(js, /handleStatus[\s\S]*await requireCustomerSession/);
+});

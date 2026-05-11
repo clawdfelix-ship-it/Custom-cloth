@@ -351,10 +351,11 @@ async function handleHistory(req, res, url) {
 
 async function handleStatus(req, res, url) {
   if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+  const session = await requireCustomerSession(req);
+  if (!session) return sendJson(res, 401, { ok: false, error: 'not_authenticated' });
   const orderSn = (url.searchParams.get('orderSn') || '').trim();
   const lookupCode = (url.searchParams.get('lookupCode') || '').trim();
-  const phone = (url.searchParams.get('phone') || '').trim();
-  if (!orderSn || (!lookupCode && !phone)) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  if (!orderSn) return sendJson(res, 400, { ok: false, error: 'bad_request' });
 
   try {
     const r = lookupCode
@@ -362,14 +363,14 @@ async function handleStatus(req, res, url) {
               select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, cate3, cate4, order_type, status,
             requested_delivery_date, suggested_delivery_date, factory_name
           from orders
-          where order_sn = ${orderSn} and lookup_code = ${lookupCode}
+          where order_sn = ${orderSn} and lookup_code = ${lookupCode} and customer_id = ${session.customerId}::uuid
           limit 1
         `
       : await sql`
               select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, cate3, cate4, order_type, status,
             requested_delivery_date, suggested_delivery_date, factory_name
           from orders
-          where order_sn = ${orderSn} and cust_phone = ${phone}
+          where order_sn = ${orderSn} and customer_id = ${session.customerId}::uuid
           limit 1
         `;
     const o = r.rows[0];

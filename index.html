@@ -75,87 +75,17 @@
     <div class="card-title">客戶訂單下單系統</div>
 
     <div id="customerAuthCard" class="result-box" style="margin-bottom:16px;">
-      <div id="customerAuthLoggedOut">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-          <button id="customerLoginTab" class="btn btn-sm btn-secondary" type="button" onclick="setCustomerAuthMode('login')">登入</button>
-          <button id="customerRegisterTab" class="btn btn-sm btn-secondary" type="button" onclick="setCustomerAuthMode('register')">註冊</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:900;">已登入：<span id="customerEmail"></span></div>
+          <div class="muted">如要切換帳戶，請到登入頁。</div>
         </div>
-
-        <div id="customerLogin">
-          <div class="form-item">
-            <label for="customerLoginEmail">Email</label>
-            <input type="email" id="customerLoginEmail" autocomplete="email" placeholder="例如：name@example.com" spellcheck="false">
-          </div>
-          <div class="form-item">
-            <label for="customerLoginPassword">密碼</label>
-            <input type="password" id="customerLoginPassword" autocomplete="current-password" placeholder="請輸入密碼" spellcheck="false">
-          </div>
-          <button class="btn btn-success" type="button" onclick="customerLogin()">登入</button>
-          <button class="btn btn-secondary" style="margin-top:10px;" type="button" onclick="setCustomerAuthMode('forgot')">忘記密碼</button>
-        </div>
-
-        <div id="customerRegister" class="hide">
-          <div class="form-item">
-            <label for="customerRegisterEmail">Email</label>
-            <input type="email" id="customerRegisterEmail" autocomplete="email" placeholder="例如：name@example.com" spellcheck="false">
-          </div>
-          <div class="form-item">
-            <label for="customerRegisterPassword">密碼</label>
-            <input type="password" id="customerRegisterPassword" autocomplete="new-password" placeholder="請設定密碼" spellcheck="false">
-          </div>
-          <div class="form-item">
-            <label for="customerRegisterCompanyName">公司名</label>
-            <input type="text" id="customerRegisterCompanyName" autocomplete="organization" placeholder="請輸入公司名">
-          </div>
-          <div class="form-item">
-            <label for="customerRegisterContactName">聯絡人</label>
-            <input type="text" id="customerRegisterContactName" autocomplete="name" placeholder="請輸入聯絡人">
-          </div>
-          <div class="form-item">
-            <label for="customerRegisterPhone">電話</label>
-            <input type="tel" id="customerRegisterPhone" inputmode="tel" autocomplete="tel" placeholder="請輸入電話" spellcheck="false">
-          </div>
-          <div class="form-item">
-            <label for="customerRegisterAddress">送貨地址</label>
-            <input type="text" id="customerRegisterAddress" autocomplete="street-address" placeholder="請輸入送貨地址">
-          </div>
-          <button class="btn btn-success" type="button" onclick="customerRegister()">註冊並登入</button>
-        </div>
-
-        <div id="customerForgot" class="hide">
-          <div class="form-item">
-            <label for="customerForgotEmail">Email</label>
-            <input type="email" id="customerForgotEmail" autocomplete="email" placeholder="請輸入註冊 Email" spellcheck="false">
-          </div>
-          <button class="btn btn-success" type="button" onclick="customerRequestPasswordReset()">發送重設密碼連結</button>
-          <button class="btn btn-secondary" style="margin-top:10px;" type="button" onclick="setCustomerAuthMode('login')">返回登入</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a class="btn btn-sm btn-secondary" href="/login" style="width:auto;">登入/註冊</a>
+          <button id="customerLogoutBtn" class="btn btn-sm btn-secondary" type="button" onclick="customerLogout()" style="width:auto;">登出</button>
         </div>
       </div>
-
-      <div id="customerAuthLoggedIn" class="hide">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div>
-            <div style="font-weight:900;">已登入：<span id="customerEmail"></span></div>
-            <div class="muted">下單/翻單需要登入；公司/聯絡人/電話/地址已自動填入（可修改但唔會回寫帳戶）。</div>
-          </div>
-          <button id="customerLogoutBtn" class="btn btn-sm btn-secondary" type="button" onclick="customerLogout()">登出</button>
-        </div>
-      </div>
-
-      <div id="customerResetWrap" class="hide">
-        <div style="font-weight:900;margin-bottom:10px;">重設密碼</div>
-        <div class="form-item">
-          <label for="customerResetNewPassword">新密碼</label>
-          <input type="password" id="customerResetNewPassword" autocomplete="new-password" placeholder="請輸入新密碼" spellcheck="false">
-        </div>
-        <div class="form-item">
-          <label for="customerResetConfirmPassword">確認新密碼</label>
-          <input type="password" id="customerResetConfirmPassword" autocomplete="new-password" placeholder="請再輸入一次" spellcheck="false">
-        </div>
-        <button class="btn btn-success" type="button" onclick="customerResetPassword()">確認重設</button>
-      </div>
-
-      <div id="customerAuthMsg" class="muted" style="margin-top:10px;"></div>
+      <div id="customerAuthMsg" class="muted" style="margin-top:10px;" aria-live="polite"></div>
     </div>
 
     <div class="tab-group">
@@ -297,8 +227,8 @@
     let customerProvided = { enabled: false, text: '', images: [] };
     let customerToken = '';
     let customerMe = null;
-    let customerAuthMode = 'login';
     let customerResetToken = '';
+    let customerAuthMode = '';
     const customerTokenKey = 'customerToken';
 
     function escapeHtml(s) {
@@ -313,8 +243,8 @@
     function switchTab(tab) {
       if ((tab === 'new' || tab === 'repeat') && !customerToken) {
         setCustomerAuthMsg('請先登入，先可以使用下單/翻單。');
-        setCustomerAuthMode('login');
-        tab = 'query';
+        location.href = '/login';
+        return;
       }
       document.getElementById('tab-new').classList.add('hide');
       document.getElementById('tab-repeat').classList.add('hide');
@@ -339,36 +269,7 @@
       if (el) el.textContent = String(s || '');
     }
 
-    function setCustomerAuthMode(mode) {
-      customerAuthMode = String(mode || 'login');
-      renderCustomerAuth();
-    }
-
     function renderCustomerAuth() {
-      const loggedOut = document.getElementById('customerAuthLoggedOut');
-      const loggedIn = document.getElementById('customerAuthLoggedIn');
-      const resetWrap = document.getElementById('customerResetWrap');
-
-      const login = document.getElementById('customerLogin');
-      const reg = document.getElementById('customerRegister');
-      const forgot = document.getElementById('customerForgot');
-      const loginTab = document.getElementById('customerLoginTab');
-      const regTab = document.getElementById('customerRegisterTab');
-
-      const isReset = customerAuthMode === 'reset';
-      if (resetWrap) resetWrap.classList.toggle('hide', !isReset);
-
-      const isLoggedIn = !!customerMe && !!customerToken;
-      if (loggedIn) loggedIn.classList.toggle('hide', !isLoggedIn || isReset);
-      if (loggedOut) loggedOut.classList.toggle('hide', isLoggedIn || isReset);
-
-      if (login) login.classList.toggle('hide', customerAuthMode !== 'login');
-      if (reg) reg.classList.toggle('hide', customerAuthMode !== 'register');
-      if (forgot) forgot.classList.toggle('hide', customerAuthMode !== 'forgot');
-
-      if (loginTab) loginTab.classList.toggle('active', customerAuthMode === 'login');
-      if (regTab) regTab.classList.toggle('active', customerAuthMode === 'register');
-
       const emailEl = document.getElementById('customerEmail');
       if (emailEl) emailEl.textContent = customerMe && customerMe.email ? customerMe.email : '';
     }
@@ -410,60 +311,11 @@
     }
 
     async function customerRegister() {
-      setCustomerAuthMsg('');
-      const email = document.getElementById('customerRegisterEmail').value.trim();
-      const password = document.getElementById('customerRegisterPassword').value;
-      const companyName = document.getElementById('customerRegisterCompanyName').value.trim();
-      const contactName = document.getElementById('customerRegisterContactName').value.trim();
-      const phone = document.getElementById('customerRegisterPhone').value.trim();
-      const address = document.getElementById('customerRegisterAddress').value.trim();
-
-      if (!email || !password || !companyName || !contactName || !phone || !address) {
-        setCustomerAuthMsg('請填妥所有註冊資料。');
-        return;
-      }
-
-      const res = await fetch('/api/customer?action=register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, companyName, contactName, phone, address })
-      });
-      const data = await res.json().catch(() => null);
-      if (!data || !data.ok || !data.token) {
-        if (data && data.error === 'email_exists') setCustomerAuthMsg('呢個 Email 已經註冊過。');
-        else if (data && data.error === 'company_phone_exists') setCustomerAuthMsg('呢個公司名 + 電話已經註冊過。');
-        else setCustomerAuthMsg('註冊失敗。');
-        return;
-      }
-
-      setCustomerSession(data.token, data.customer);
-      setCustomerAuthMsg('');
-      goToOrder();
+      location.href = '/login';
     }
 
     async function customerLogin() {
-      setCustomerAuthMsg('');
-      const email = document.getElementById('customerLoginEmail').value.trim();
-      const password = document.getElementById('customerLoginPassword').value;
-      if (!email || !password) {
-        setCustomerAuthMsg('請輸入 Email 同密碼。');
-        return;
-      }
-
-      const res = await fetch('/api/customer?action=login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json().catch(() => null);
-      if (!data || !data.ok || !data.token) {
-        setCustomerAuthMsg('Email 或密碼唔正確。');
-        return;
-      }
-
-      setCustomerSession(data.token, data.customer);
-      setCustomerAuthMsg('');
-      goToOrder();
+      location.href = '/login';
     }
 
     async function customerLogout() {
@@ -480,66 +332,11 @@
     }
 
     async function customerRequestPasswordReset() {
-      setCustomerAuthMsg('');
-      const email = document.getElementById('customerForgotEmail').value.trim();
-      if (!email) {
-        setCustomerAuthMsg('請輸入 Email。');
-        return;
-      }
-
-      const res = await fetch('/api/customer?action=requestPasswordReset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json().catch(() => null);
-      if (!data || !data.ok) {
-        if (data && data.error === 'base_url_not_configured') setCustomerAuthMsg('系統未設定重設密碼連結網址（PUBLIC_BASE_URL）。');
-        else setCustomerAuthMsg('發送失敗，請稍後再試。');
-        return;
-      }
-
-      setCustomerAuthMsg('如果 Email 存在，重設密碼連結已經發送。');
-      setCustomerAuthMode('login');
+      location.href = '/login';
     }
 
     async function customerResetPassword() {
-      setCustomerAuthMsg('');
-      const p1 = document.getElementById('customerResetNewPassword').value;
-      const p2 = document.getElementById('customerResetConfirmPassword').value;
-      if (!customerResetToken) {
-        setCustomerAuthMsg('重設 token 不存在。');
-        return;
-      }
-      if (!p1 || p1.length < 6) {
-        setCustomerAuthMsg('請輸入新密碼（最少 6 個字）。');
-        return;
-      }
-      if (p1 !== p2) {
-        setCustomerAuthMsg('兩次輸入密碼唔一致。');
-        return;
-      }
-
-      const res = await fetch('/api/customer?action=resetPassword', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: customerResetToken, newPassword: p1 })
-      });
-      const data = await res.json().catch(() => null);
-      if (!data || !data.ok) {
-        if (data && data.error === 'token_expired') setCustomerAuthMsg('重設連結已過期，請重新申請。');
-        else if (data && data.error === 'token_used') setCustomerAuthMsg('重設連結已經用過，請重新申請。');
-        else setCustomerAuthMsg('重設失敗，請重新申請重設密碼。');
-        return;
-      }
-
-      customerResetToken = '';
-      const url = new URL(window.location.href);
-      url.searchParams.delete('mode');
-      url.searchParams.delete('token');
-      history.replaceState({}, '', url.toString());
-      setCustomerAuthMsg('重設成功，請用新密碼登入。');
-      setCustomerAuthMode('login');
+      location.href = '/login';
     }
 
     function pad(n) { return String(n).padStart(2, '0'); }
@@ -940,8 +737,7 @@
 
       if (!customerToken) {
         msgEl.textContent = '請先登入先可以提交訂單';
-        setCustomerAuthMode('login');
-        switchTab('query');
+        location.href = '/login';
         return;
       }
 
@@ -1064,8 +860,7 @@
 
       if (!customerToken) {
         msg.textContent = '請先登入先可以查找歷史訂單';
-        setCustomerAuthMode('login');
-        switchTab('query');
+        location.href = '/login';
         return;
       }
 
@@ -1208,8 +1003,8 @@
       const mode = (u.searchParams.get('mode') || '').trim();
       const token = (u.searchParams.get('token') || '').trim();
       if ((mode === 'reset' || u.search.includes('mode=reset')) && token) {
-        customerResetToken = token;
-        customerAuthMode = 'reset';
+        location.href = `/login?mode=reset&token=${encodeURIComponent(token)}`;
+        return;
       }
 
       const r = await fetch('/data/hk-holidays/2026.json').catch(() => null);
@@ -1217,7 +1012,7 @@
       holidays = new Set(Array.isArray(list) ? list.map(String) : []);
       await loadCategories().catch(() => null);
 
-      if (customerAuthMode !== 'reset' && customerToken) {
+      if (customerToken) {
         const res = await fetch('/api/customer?action=me', { headers: { ...authHeaders() } }).catch(() => null);
         const data = res ? await res.json().catch(() => null) : null;
         if (data && data.ok && data.customer) {
@@ -1230,7 +1025,10 @@
       }
 
       renderCustomerAuth();
-      if (!customerToken) switchTab('query');
+      if (!customerToken) {
+        location.href = '/login';
+        return;
+      }
     }
 
     init();

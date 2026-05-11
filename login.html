@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f6f8fb">
+  <title>ZENEX-SPORTS｜登入</title>
+  <link rel="stylesheet" href="/assets/zenex.css">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{margin:0;}
+    .zenex-shell{max-width:720px;margin:0 auto;padding:18px 16px 40px;}
+    .zenex-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;}
+    .zenex-brand{font-weight:900;letter-spacing:.3px;}
+    .zenex-subtitle{color:var(--zenex-muted);font-size:13px;margin-top:2px;}
+    .card{padding:24px;margin-top:16px;}
+    .card-title{font-size:20px;font-weight:900;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--zenex-border);}
+    .form-item{margin-bottom:15px;}
+    .form-item label{display:block;margin-bottom:6px;font-weight:700;}
+    .form-item input,.form-item textarea{width:100%;padding:12px 14px;border:1px solid var(--zenex-border);border-radius:var(--zenex-radius-control);font-size:15px;background:#fff;color:var(--zenex-text);}
+    .form-item input:focus-visible,.form-item textarea:focus-visible{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 16px;border:1px solid transparent;border-radius:var(--zenex-radius-control);background:var(--zenex-brand-500);color:#fff;font-size:16px;cursor:pointer;font-weight:800;text-decoration:none;}
+    .btn:hover{background:var(--zenex-brand-600);}
+    .btn:focus-visible{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
+    .btn-sm{padding:8px 12px;width:auto;font-size:14px;}
+    .btn-success{background:var(--zenex-success);}
+    .btn-success:hover{filter:brightness(.95);}
+    .btn-secondary{background:#fff;border-color:var(--zenex-border);color:var(--zenex-text);border:1px solid var(--zenex-border);}
+    .btn-secondary:hover{background:var(--zenex-brand-50);}
+    .hide{display:none !important;}
+    .muted{color:var(--zenex-muted);font-size:13px;}
+    .result-box{background:#fff;border:1px solid var(--zenex-border);padding:12px;border-radius:var(--zenex-radius-control);margin-top:10px;}
+    .zenex-skip{position:absolute;left:-9999px;top:10px;background:#fff;border:1px solid var(--zenex-border);padding:10px 12px;border-radius:12px;z-index:50;box-shadow:var(--zenex-shadow);}
+    .zenex-skip:focus-visible{left:16px;}
+  </style>
+</head>
+<body class="zenex-page">
+  <a class="zenex-skip" href="#main">跳至主要內容</a>
+  <div class="zenex-shell">
+    <header class="zenex-topbar zenex-header zenex-card">
+      <div>
+        <div class="zenex-brand">ZENEX-SPORTS</div>
+        <div class="zenex-subtitle">客戶登入 / 註冊</div>
+      </div>
+      <a class="btn btn-sm btn-secondary" href="/admin">後台</a>
+    </header>
+
+    <main id="main">
+      <div class="card zenex-card">
+        <div class="card-title">登入</div>
+
+        <div id="customerAuthLoggedOut">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            <button id="customerLoginTab" class="btn btn-sm btn-secondary" type="button" onclick="setCustomerAuthMode('login')">登入</button>
+            <button id="customerRegisterTab" class="btn btn-sm btn-secondary" type="button" onclick="setCustomerAuthMode('register')">註冊</button>
+          </div>
+
+          <div id="customerLogin">
+            <div class="form-item">
+              <label for="customerLoginEmail">Email</label>
+              <input type="email" id="customerLoginEmail" autocomplete="email" placeholder="例如：name@example.com" spellcheck="false">
+            </div>
+            <div class="form-item">
+              <label for="customerLoginPassword">密碼</label>
+              <input type="password" id="customerLoginPassword" autocomplete="current-password" placeholder="請輸入密碼" spellcheck="false">
+            </div>
+            <button class="btn btn-success" type="button" onclick="customerLogin()">登入</button>
+            <button class="btn btn-secondary" style="margin-top:10px;" type="button" onclick="setCustomerAuthMode('forgot')">忘記密碼</button>
+          </div>
+
+          <div id="customerRegister" class="hide">
+            <div class="form-item">
+              <label for="customerRegisterEmail">Email</label>
+              <input type="email" id="customerRegisterEmail" autocomplete="email" placeholder="例如：name@example.com" spellcheck="false">
+            </div>
+            <div class="form-item">
+              <label for="customerRegisterPassword">密碼</label>
+              <input type="password" id="customerRegisterPassword" autocomplete="new-password" placeholder="請設定密碼" spellcheck="false">
+            </div>
+            <div class="form-item">
+              <label for="customerRegisterCompanyName">公司名</label>
+              <input type="text" id="customerRegisterCompanyName" autocomplete="organization" placeholder="請輸入公司名">
+            </div>
+            <div class="form-item">
+              <label for="customerRegisterContactName">聯絡人</label>
+              <input type="text" id="customerRegisterContactName" autocomplete="name" placeholder="請輸入聯絡人">
+            </div>
+            <div class="form-item">
+              <label for="customerRegisterPhone">電話</label>
+              <input type="tel" id="customerRegisterPhone" inputmode="tel" autocomplete="tel" placeholder="請輸入電話" spellcheck="false">
+            </div>
+            <div class="form-item">
+              <label for="customerRegisterAddress">送貨地址</label>
+              <input type="text" id="customerRegisterAddress" autocomplete="street-address" placeholder="請輸入送貨地址">
+            </div>
+            <button class="btn btn-success" type="button" onclick="customerRegister()">註冊並登入</button>
+          </div>
+
+          <div id="customerForgot" class="hide">
+            <div class="form-item">
+              <label for="customerForgotEmail">Email</label>
+              <input type="email" id="customerForgotEmail" autocomplete="email" placeholder="例如：name@example.com" spellcheck="false">
+            </div>
+            <button class="btn btn-secondary" type="button" onclick="customerRequestPasswordReset()">發送重設密碼連結</button>
+            <button class="btn btn-secondary" style="margin-top:10px;" type="button" onclick="setCustomerAuthMode('login')">返回登入</button>
+          </div>
+
+          <div id="customerResetWrap" class="hide">
+            <div class="form-item">
+              <label for="customerResetNewPassword">新密碼</label>
+              <input type="password" id="customerResetNewPassword" autocomplete="new-password" placeholder="請輸入新密碼" spellcheck="false">
+            </div>
+            <div class="form-item">
+              <label for="customerResetConfirmPassword">確認新密碼</label>
+              <input type="password" id="customerResetConfirmPassword" autocomplete="new-password" placeholder="再輸入一次新密碼" spellcheck="false">
+            </div>
+            <button class="btn btn-success" type="button" onclick="customerResetPassword()">重設密碼</button>
+          </div>
+
+          <div id="customerAuthMsg" class="muted" aria-live="polite" style="margin-top:10px;"></div>
+        </div>
+
+        <div id="customerAuthLoggedIn" class="hide">
+          <div class="result-box">
+            <div style="font-weight:800;">已登入</div>
+            <div class="muted" id="customerEmail"></div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+            <a class="btn btn-success btn-sm" href="/" style="width:auto;">去下單</a>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="customerLogout()" style="width:auto;">登出</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let customerToken = '';
+    let customerMe = null;
+    let customerAuthMode = 'login';
+    let customerResetToken = '';
+    const customerTokenKey = 'customerToken';
+
+    function setCustomerAuthMsg(s) {
+      const el = document.getElementById('customerAuthMsg');
+      if (el) el.textContent = String(s || '');
+    }
+
+    function setCustomerAuthMode(mode) {
+      customerAuthMode = String(mode || 'login');
+      renderCustomerAuth();
+    }
+
+    function renderCustomerAuth() {
+      const loggedOut = document.getElementById('customerAuthLoggedOut');
+      const loggedIn = document.getElementById('customerAuthLoggedIn');
+      const resetWrap = document.getElementById('customerResetWrap');
+
+      const login = document.getElementById('customerLogin');
+      const reg = document.getElementById('customerRegister');
+      const forgot = document.getElementById('customerForgot');
+      const loginTab = document.getElementById('customerLoginTab');
+      const regTab = document.getElementById('customerRegisterTab');
+
+      const isReset = customerAuthMode === 'reset';
+      if (resetWrap) resetWrap.classList.toggle('hide', !isReset);
+
+      const isLoggedIn = !!customerMe && !!customerToken;
+      if (loggedIn) loggedIn.classList.toggle('hide', !isLoggedIn || isReset);
+      if (loggedOut) loggedOut.classList.toggle('hide', isLoggedIn || isReset);
+
+      if (login) login.classList.toggle('hide', customerAuthMode !== 'login');
+      if (reg) reg.classList.toggle('hide', customerAuthMode !== 'register');
+      if (forgot) forgot.classList.toggle('hide', customerAuthMode !== 'forgot');
+
+      if (loginTab) loginTab.classList.toggle('active', customerAuthMode === 'login');
+      if (regTab) regTab.classList.toggle('active', customerAuthMode === 'register');
+
+      const emailEl = document.getElementById('customerEmail');
+      if (emailEl) emailEl.textContent = customerMe && customerMe.email ? customerMe.email : '';
+    }
+
+    function setCustomerSession(token, customer) {
+      customerToken = String(token || '');
+      customerMe = customer && typeof customer === 'object' ? customer : null;
+      if (customerToken) localStorage.setItem(customerTokenKey, customerToken);
+      else localStorage.removeItem(customerTokenKey);
+      renderCustomerAuth();
+    }
+
+    function clearCustomerSession() {
+      customerToken = '';
+      customerMe = null;
+      localStorage.removeItem(customerTokenKey);
+      renderCustomerAuth();
+    }
+
+    async function customerRegister() {
+      setCustomerAuthMsg('');
+      const email = document.getElementById('customerRegisterEmail').value.trim();
+      const password = document.getElementById('customerRegisterPassword').value;
+      const companyName = document.getElementById('customerRegisterCompanyName').value.trim();
+      const contactName = document.getElementById('customerRegisterContactName').value.trim();
+      const phone = document.getElementById('customerRegisterPhone').value.trim();
+      const address = document.getElementById('customerRegisterAddress').value.trim();
+
+      if (!email || !password || !companyName || !contactName || !phone || !address) {
+        setCustomerAuthMsg('請填妥所有註冊資料。');
+        return;
+      }
+
+      const res = await fetch('/api/customer?action=register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, companyName, contactName, phone, address })
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok || !data.token) {
+        if (data && data.error === 'email_exists') setCustomerAuthMsg('呢個 Email 已經註冊過。');
+        else if (data && data.error === 'company_phone_exists') setCustomerAuthMsg('呢個公司名 + 電話已經註冊過。');
+        else setCustomerAuthMsg('註冊失敗。');
+        return;
+      }
+
+      setCustomerSession(data.token, data.customer);
+      location.href = '/';
+    }
+
+    async function customerLogin() {
+      setCustomerAuthMsg('');
+      const email = document.getElementById('customerLoginEmail').value.trim();
+      const password = document.getElementById('customerLoginPassword').value;
+      if (!email || !password) {
+        setCustomerAuthMsg('請輸入 Email 同密碼。');
+        return;
+      }
+
+      const res = await fetch('/api/customer?action=login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok || !data.token) {
+        setCustomerAuthMsg('Email 或密碼唔正確。');
+        return;
+      }
+
+      setCustomerSession(data.token, data.customer);
+      location.href = '/';
+    }
+
+    async function customerLogout() {
+      setCustomerAuthMsg('');
+      const token = customerToken;
+      clearCustomerSession();
+      if (token) {
+        await fetch('/api/customer?action=logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => null);
+      }
+      location.href = '/login';
+    }
+
+    async function customerRequestPasswordReset() {
+      setCustomerAuthMsg('');
+      const email = document.getElementById('customerForgotEmail').value.trim();
+      if (!email) {
+        setCustomerAuthMsg('請輸入 Email。');
+        return;
+      }
+
+      const res = await fetch('/api/customer?action=requestPasswordReset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        if (data && data.error === 'base_url_not_configured') setCustomerAuthMsg('系統未設定重設密碼連結網址（PUBLIC_BASE_URL）。');
+        else setCustomerAuthMsg('發送失敗，請稍後再試。');
+        return;
+      }
+
+      setCustomerAuthMsg('如果 Email 存在，重設密碼連結已經發送。');
+      setCustomerAuthMode('login');
+    }
+
+    async function customerResetPassword() {
+      setCustomerAuthMsg('');
+      const p1 = document.getElementById('customerResetNewPassword').value;
+      const p2 = document.getElementById('customerResetConfirmPassword').value;
+      if (!customerResetToken) {
+        setCustomerAuthMsg('重設 token 不存在。');
+        return;
+      }
+      if (!p1 || p1.length < 6) {
+        setCustomerAuthMsg('請輸入新密碼（最少 6 個字）。');
+        return;
+      }
+      if (p1 !== p2) {
+        setCustomerAuthMsg('兩次輸入密碼唔一致。');
+        return;
+      }
+
+      const res = await fetch('/api/customer?action=resetPassword', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: customerResetToken, newPassword: p1 })
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        if (data && data.error === 'token_expired') setCustomerAuthMsg('重設連結已過期，請重新申請。');
+        else if (data && data.error === 'token_used') setCustomerAuthMsg('重設連結已經用過，請重新申請。');
+        else setCustomerAuthMsg('重設失敗，請重新申請重設密碼。');
+        return;
+      }
+
+      customerResetToken = '';
+      const url = new URL(window.location.href);
+      url.searchParams.delete('mode');
+      url.searchParams.delete('token');
+      history.replaceState({}, '', url.toString());
+      setCustomerAuthMsg('重設成功，請用新密碼登入。');
+      setCustomerAuthMode('login');
+    }
+
+    async function init() {
+      customerToken = localStorage.getItem(customerTokenKey) || '';
+
+      const url = new URL(window.location.href);
+      const mode = (url.searchParams.get('mode') || '').trim();
+      const token = (url.searchParams.get('token') || '').trim();
+      if (mode === 'reset' && token) {
+        customerResetToken = token;
+        setCustomerAuthMode('reset');
+        renderCustomerAuth();
+        return;
+      }
+
+      if (customerToken) {
+        const res = await fetch('/api/customer?action=me', { headers: { Authorization: `Bearer ${customerToken}` } });
+        const data = await res.json().catch(() => null);
+        if (data && data.ok && data.customer) {
+          customerMe = data.customer;
+          renderCustomerAuth();
+          return;
+        }
+        clearCustomerSession();
+      }
+
+      renderCustomerAuth();
+    }
+
+    init();
+  </script>
+</body>
+</html>
+
