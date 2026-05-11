@@ -15,3 +15,23 @@ test('requireCustomerSession queries customer_sessions join customers', async ()
   assert.match(js, /where\s+s\.token\s*=\s*\$\{/i);
 });
 
+test('email lib exports sendMail', () => {
+  const m = require('../src/lib/email');
+  assert.equal(typeof m.sendMail, 'function');
+});
+
+test('sendMail returns email_not_configured when SMTP env missing', async () => {
+  const { sendMail } = require('../src/lib/email');
+  const keys = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'];
+  const oldValues = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+  for (const k of keys) delete process.env[k];
+
+  const r = await sendMail({ to: 'a@b.com', subject: 'x', text: 'y' });
+
+  for (const k of keys) {
+    const v = oldValues[k];
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
+  assert.deepEqual(r, { ok: false, error: 'email_not_configured' });
+});
