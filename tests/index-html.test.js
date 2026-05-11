@@ -57,3 +57,12 @@ test('index.html includes zenex brand css and header', async () => {
   assert.match(html, /\/assets\/zenex\.css/);
   assert.match(html, /ZENEX-SPORTS/);
 });
+
+test('index.html includes customer auth ui and reset mode', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /customerLogin/);
+  assert.match(html, /customerRegister/);
+  assert.match(html, /customerToken/);
+  assert.match(html, /mode=reset/);
+});
