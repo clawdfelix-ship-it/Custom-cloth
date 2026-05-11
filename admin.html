@@ -211,6 +211,7 @@
               <tr class="border-b bg-slate-50 text-left">
                 <th class="px-3 py-2 font-medium">名稱</th>
                 <th class="px-3 py-2 font-medium">ID</th>
+                <th class="px-3 py-2 font-medium">Preview</th>
                 <th class="px-3 py-2 text-right font-medium">操作</th>
               </tr>
             </thead>
@@ -361,6 +362,21 @@
             <button id="factorySendFeedbackBtn" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">提交反饋</button>
             <div id="factoryModalMsg" class="text-sm text-slate-600"></div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sizePreviewModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
+      <div class="flex items-center justify-between border-b px-5 py-4">
+        <div class="text-base font-semibold">尺碼表預覽</div>
+        <button id="closeSizePreviewModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+      </div>
+      <div class="px-5 py-4 space-y-2">
+        <div class="text-sm text-slate-600" id="sizePreviewInfo"></div>
+        <div class="overflow-x-auto rounded-lg border bg-white p-3">
+          <img id="sizePreviewImg" alt="size table preview" class="block max-w-none" />
         </div>
       </div>
     </div>
@@ -666,6 +682,11 @@
     const factoryModalMsg = document.getElementById('factoryModalMsg');
     let factoryActiveOrderId = null;
 
+    const sizePreviewModal = document.getElementById('sizePreviewModal');
+    const closeSizePreviewModal = document.getElementById('closeSizePreviewModal');
+    const sizePreviewInfo = document.getElementById('sizePreviewInfo');
+    const sizePreviewImg = document.getElementById('sizePreviewImg');
+
     async function loadFactoryUsers() {
       if (sessionRole() !== 'admin') return;
       const res = await apiFetch('/api/admin/users', {});
@@ -881,6 +902,22 @@
       factoryFiles.value = '';
     });
 
+    closeSizePreviewModal.addEventListener('click', () => {
+      sizePreviewModal.classList.add('hidden');
+      sizePreviewModal.classList.remove('flex');
+      sizePreviewImg.removeAttribute('src');
+      sizePreviewInfo.textContent = '';
+    });
+
+    sizePreviewModal.addEventListener('click', (e) => {
+      if (e.target === sizePreviewModal) {
+        sizePreviewModal.classList.add('hidden');
+        sizePreviewModal.classList.remove('flex');
+        sizePreviewImg.removeAttribute('src');
+        sizePreviewInfo.textContent = '';
+      }
+    });
+
     confirmCopyBtn.addEventListener('click', async () => {
       copyMsg.textContent = '';
       if (!copySourceOrderId) return;
@@ -902,6 +939,72 @@
       loadOrders();
     });
 
+    function escapeXml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function buildSizePreviewColumns(rows) {
+      const list = Array.isArray(rows) ? rows : [];
+      const hasSeat = list.some((r) => r && r.seat != null && String(r.seat).trim() !== '');
+      const hasChina = list.some((r) => r && r.china != null && String(r.china).trim() !== '');
+      const hasHeight = list.some((r) => r && r.height != null && String(r.height).trim() !== '');
+      return [
+        { key: 'eu', label: 'EU' },
+        { key: 'length', label: '衣長' },
+        { key: 'chest', label: '胸圍' },
+        { key: 'waist', label: '腰圍' },
+        ...(hasSeat ? [{ key: 'seat', label: '臀圍' }] : []),
+        ...(hasChina ? [{ key: 'china', label: '中國碼' }] : []),
+        ...(hasHeight ? [{ key: 'height', label: '身高' }] : [])
+      ];
+    }
+
+    function svgToDataUri(svg) {
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    }
+
+    function buildSizeTableSvg(rows, opts) {
+      const list = Array.isArray(rows) ? rows : [];
+      if (!list.length) return '';
+      const cols = buildSizePreviewColumns(list);
+
+      const variant = opts && opts.variant === 'modal' ? 'modal' : 'thumb';
+      const fontSize = variant === 'modal' ? 14 : 10;
+      const cellH = variant === 'modal' ? 26 : 18;
+      const cellW = variant === 'modal' ? 120 : 70;
+      const pad = variant === 'modal' ? 12 : 8;
+      const w = pad * 2 + cols.length * cellW;
+      const h = pad * 2 + (list.length + 1) * cellH;
+
+      let parts = '';
+      parts += `<rect x="0" y="0" width="${w}" height="${h}" fill="#ffffff" stroke="#cbd5e1"/>`;
+
+      cols.forEach((c, idx) => {
+        const x = pad + idx * cellW;
+        const y = pad;
+        parts += `<rect x="${x}" y="${y}" width="${cellW}" height="${cellH}" fill="#f1f5f9" stroke="#cbd5e1"/>`;
+        parts += `<text x="${x + 6}" y="${y + Math.floor(cellH * 0.7)}" font-size="${fontSize}" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" fill="#0f172a">${escapeXml(c.label)}</text>`;
+      });
+
+      list.forEach((r, rowIdx) => {
+        cols.forEach((c, colIdx) => {
+          const x = pad + colIdx * cellW;
+          const y = pad + (rowIdx + 1) * cellH;
+          const v = r && r[c.key] != null ? String(r[c.key]) : '';
+          parts += `<rect x="${x}" y="${y}" width="${cellW}" height="${cellH}" fill="#ffffff" stroke="#e2e8f0"/>`;
+          parts += `<text x="${x + 6}" y="${y + Math.floor(cellH * 0.7)}" font-size="${fontSize}" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" fill="#0f172a">${escapeXml(v)}</text>`;
+        });
+      });
+
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${parts}</svg>`;
+      return svgToDataUri(svg);
+    }
+
     async function loadSizes() {
       const res = await apiFetch('/api/admin/size-tables', {});
       const data = await res.json().catch(() => null);
@@ -910,11 +1013,17 @@
       sizesBody.innerHTML = '';
       styleSizeTableId.innerHTML = '';
       list.forEach((st) => {
+        const rows = Array.isArray(st.data) ? st.data : [];
+        const hasEu = rows.some((r) => r && r.eu != null && String(r.eu).trim() !== '');
+        const thumbSrc = hasEu ? buildSizeTableSvg(rows, { variant: 'thumb' }) : '';
         const tr = document.createElement('tr');
         tr.className = 'border-b';
         tr.innerHTML = `
           <td class="px-3 py-2 font-medium">${st.name}</td>
           <td class="px-3 py-2 text-xs text-slate-600">${st.id}</td>
+          <td class="px-3 py-2">
+            ${thumbSrc ? `<img data-id="${st.id}" data-name="${st.name}" class="sizePreviewThumb cursor-pointer rounded border" style="width:240px;max-width:240px;height:auto;" src="${thumbSrc}" />` : `<span class="text-xs text-slate-500">無資料</span>`}
+          </td>
           <td class="px-3 py-2 text-right">
             <button data-id="${st.id}" class="delSize rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
           </td>
@@ -931,6 +1040,21 @@
           const id = b.dataset.id;
           await apiFetch(`/api/admin/size-tables?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
           loadSizes();
+        });
+      });
+
+      document.querySelectorAll('.sizePreviewThumb').forEach((img) => {
+        img.addEventListener('click', () => {
+          const id = img.dataset.id;
+          const name = img.dataset.name || '';
+          const st = (list || []).find((x) => x && x.id === id);
+          const rows = st && Array.isArray(st.data) ? st.data : [];
+          const src = buildSizeTableSvg(rows, { variant: 'modal' });
+          if (!src) return;
+          sizePreviewInfo.textContent = `${name}（${id}）`;
+          sizePreviewImg.src = src;
+          sizePreviewModal.classList.remove('hidden');
+          sizePreviewModal.classList.add('flex');
         });
       });
     }

@@ -15,3 +15,10 @@ test('admin.html contains size table paste inputs', async () => {
   assert.match(html, /id="sizePasteHasHeader"/);
   assert.match(html, /id="previewSizeBtn"/);
 });
+
+test('admin.html contains size table preview thumbnail UI', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('admin.html', 'utf8');
+  assert.match(html, />\s*Preview\s*</);
+  assert.match(html, /id="sizePreviewModal"/);
+});
