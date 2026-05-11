@@ -84,14 +84,7 @@
 
         <div class="form-item">
           <label>填寫各尺碼數量</label>
-          <div class="size-qty-row">
-            <div><label>S</label><input type="number" id="qty_S" value="0" min="0"></div>
-            <div><label>M</label><input type="number" id="qty_M" value="0" min="0"></div>
-            <div><label>L</label><input type="number" id="qty_L" value="0" min="0"></div>
-            <div><label>XL</label><input type="number" id="qty_XL" value="0" min="0"></div>
-            <div><label>2XL</label><input type="number" id="qty_2XL" value="0" min="0"></div>
-            <div><label>3XL</label><input type="number" id="qty_3XL" value="0" min="0"></div>
-          </div>
+          <div id="qtyWrap" class="size-qty-row"></div>
         </div>
 
         <div class="form-item">
@@ -307,27 +300,73 @@
       }
       const st = data.sizeTable;
       const rows = Array.isArray(st.data) ? st.data : [];
+      const hasSeat = rows.some((r) => r && r.seat != null && String(r.seat).trim() !== '');
+      const hasChina = rows.some((r) => r && r.china != null && String(r.china).trim() !== '');
+      const hasHeight = rows.some((r) => r && r.height != null && String(r.height).trim() !== '');
+
+      const cols = [
+        { key: 'eu', label: 'EU' },
+        { key: 'length', label: '衣長' },
+        { key: 'chest', label: '胸圍' },
+        { key: 'waist', label: '腰圍' },
+        ...(hasSeat ? [{ key: 'seat', label: '臀圍' }] : []),
+        ...(hasChina ? [{ key: 'china', label: '中國碼' }] : []),
+        ...(hasHeight ? [{ key: 'height', label: '身高' }] : [])
+      ];
+
       const html = `
         <table>
-          <thead><tr><th>EU</th><th>胸圍</th><th>腰圍</th><th>衣長</th><th>中國碼</th><th>身高</th></tr></thead>
+          <thead><tr>${cols.map((c) => `<th>${c.label}</th>`).join('')}</tr></thead>
           <tbody>
-            ${rows.map((r) => `<tr><td>${r.eu||''}</td><td>${r.chest||''}</td><td>${r.waist||''}</td><td>${r.length||''}</td><td>${r.china||''}</td><td>${r.height||''}</td></tr>`).join('')}
+            ${rows.map((r) => `<tr>${cols.map((c) => `<td>${(r && r[c.key]) != null ? String(r[c.key]) : ''}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
       `;
       document.getElementById('sizeTablePreview').innerHTML = html;
+
+      const sizes = rows.map((r) => (r && r.eu != null ? String(r.eu).trim() : '')).filter(Boolean);
+      renderQtyInputs(sizes, null);
+    }
+
+    function renderQtyInputs(sizes, preset) {
+      const wrap = document.getElementById('qtyWrap');
+      const list = Array.isArray(sizes) ? sizes.map(String).map((s) => s.trim()).filter(Boolean) : [];
+      const seen = new Set();
+      const uniq = list.filter((s) => {
+        if (seen.has(s)) return false;
+        seen.add(s);
+        return true;
+      });
+
+      const presetMap = new Map();
+      if (Array.isArray(preset)) {
+        preset.forEach((x) => {
+          const size = x && x.size != null ? String(x.size).trim() : '';
+          const qty = Number(x && x.qty);
+          if (size) presetMap.set(size, Number.isFinite(qty) ? qty : 0);
+        });
+      }
+
+      wrap.innerHTML = uniq
+        .map(
+          (s) => `
+          <div>
+            <label>${s}</label>
+            <input type="number" data-size="${s}" value="${presetMap.has(s) ? presetMap.get(s) : 0}" min="0">
+          </div>
+        `
+        )
+        .join('');
     }
 
     function readQty() {
-      const qty = {
-        S: Number(document.getElementById('qty_S').value || 0),
-        M: Number(document.getElementById('qty_M').value || 0),
-        L: Number(document.getElementById('qty_L').value || 0),
-        XL: Number(document.getElementById('qty_XL').value || 0),
-        '2XL': Number(document.getElementById('qty_2XL').value || 0),
-        '3XL': Number(document.getElementById('qty_3XL').value || 0)
-      };
-      return qty;
+      const inputs = Array.from(document.querySelectorAll('#qtyWrap input[data-size]'));
+      const out = inputs.map((el) => {
+        const size = String(el.getAttribute('data-size') || '').trim();
+        const n = Number(el.value || 0);
+        return { size, qty: Number.isFinite(n) ? n : 0 };
+      });
+      return out;
     }
 
     async function submitOrder(mode) {
@@ -358,7 +397,7 @@
       }
 
       const qty = readQty();
-      const qtyTotal = Object.values(qty).reduce((a, b) => a + b, 0);
+      const qtyTotal = qty.reduce((a, b) => a + Number(b && b.qty ? b.qty : 0), 0);
       if (qtyTotal <= 0) {
         msgEl.textContent = '請填寫尺碼數量';
         return;
@@ -483,13 +522,9 @@
 
       const items = Array.isArray(o.items) ? o.items : [];
       const firstQty = items[0] && items[0].qty ? items[0].qty : null;
-      if (firstQty) {
-        document.getElementById('qty_S').value = Number(firstQty.S || 0);
-        document.getElementById('qty_M').value = Number(firstQty.M || 0);
-        document.getElementById('qty_L').value = Number(firstQty.L || 0);
-        document.getElementById('qty_XL').value = Number(firstQty.XL || 0);
-        document.getElementById('qty_2XL').value = Number(firstQty['2XL'] || 0);
-        document.getElementById('qty_3XL').value = Number(firstQty['3XL'] || 0);
+      if (Array.isArray(firstQty) && firstQty.length) {
+        const sizes = firstQty.map((x) => String(x && x.size ? x.size : '')).filter(Boolean);
+        renderQtyInputs(sizes, firstQty);
       }
 
       document.getElementById('repeatSelected').classList.remove('hide');
