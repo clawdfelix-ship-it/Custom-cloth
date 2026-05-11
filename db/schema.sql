@@ -40,8 +40,29 @@ create table if not exists customers (
   company_name text not null,
   contact_name text,
   phone text not null,
+  email text,
+  pwd_hash text,
+  address text,
+  is_registered boolean not null default false,
   created_at timestamptz not null default now(),
   unique (company_name, phone)
+);
+
+create unique index if not exists idx_customers_email_unique on customers(email) where email is not null;
+
+create table if not exists customer_sessions (
+  token text primary key,
+  customer_id uuid not null references customers(id) on delete cascade,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists customer_password_resets (
+  token text primary key,
+  customer_id uuid not null references customers(id) on delete cascade,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
 );
 
 create table if not exists orders (
@@ -85,4 +106,3 @@ create index if not exists idx_orders_created_time on orders(create_time desc);
 create index if not exists idx_orders_phone on orders(cust_phone);
 create index if not exists idx_orders_factory on orders(factory_name);
 create index if not exists idx_feedback_factory on feedback(factory_name);
-
