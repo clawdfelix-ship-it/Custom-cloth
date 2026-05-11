@@ -1,10 +1,22 @@
 const { sql } = require('../src/lib/db');
 const { sendJson, readBody } = require('../src/lib/http');
 const { hkTodayYmd, addBusinessDays } = require('../src/lib/hk-date');
-const { requiredString, requiredEnum, requiredYmd, requiredQtyJson } = require('../src/lib/validation');
+const { requiredString, requiredEnum, requiredYmd } = require('../src/lib/validation');
 const { generateOrderSn } = require('../src/lib/order-sn');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { generateLookupCode } = require('../src/lib/lookup-code');
+const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
+
+function normalizeItemsQty(items) {
+  return (Array.isArray(items) ? items : []).map((it) => {
+    const qtyRaw = it && it.qty;
+    try {
+      return { ...it, qty: normalizeQtyToSizeRatio(qtyRaw) };
+    } catch (e) {
+      return { ...it, qty: [] };
+    }
+  });
+}
 
 const CATE1 = ['現貨款式加工', '熱昇華訂製', '開板訂製'];
 
@@ -86,7 +98,7 @@ async function handleCreateOrder(req, res) {
     if (!itemsRaw.length) return sendJson(res, 400, { ok: false, error: 'items_required' });
     const items = itemsRaw.map((it) => {
       const styleId = requiredString(it && it.styleId, 'styleId');
-      const qty = requiredQtyJson(it && it.qty);
+      const qty = normalizeQtyToSizeRatio(it && it.qty);
       return { styleId, qty };
     });
 
@@ -190,7 +202,7 @@ async function handleHistory(req, res, url) {
       requestedDeliveryDate: x.requested_delivery_date ? String(x.requested_delivery_date) : '',
       suggestedDeliveryDate: x.suggested_delivery_date ? String(x.suggested_delivery_date) : '',
       sourceOrderId: x.source_order_id,
-      items: x.items || []
+      items: normalizeItemsQty(x.items || [])
     }));
 
     return sendJson(res, 200, { ok: true, orders });

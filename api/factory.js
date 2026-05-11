@@ -5,6 +5,18 @@ const { ORDER_STATUS_ADMIN } = require('../src/lib/schema');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { audit } = require('../src/lib/audit');
 const { uploadDataUrl } = require('../src/lib/blob');
+const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
+
+function normalizeItemsQty(items) {
+  return (Array.isArray(items) ? items : []).map((it) => {
+    const qtyRaw = it && it.qty;
+    try {
+      return { ...it, qty: normalizeQtyToSizeRatio(qtyRaw) };
+    } catch (e) {
+      return { ...it, qty: [] };
+    }
+  });
+}
 
 async function requireFactory(req, res) {
   const session = await requireSession(req);
@@ -107,7 +119,7 @@ async function orderDetailHandler(req, res, session, url) {
         remark: o.remark || '',
         requestedDeliveryDate: o.requested_delivery_date ? String(o.requested_delivery_date) : '',
         suggestedDeliveryDate: o.suggested_delivery_date ? String(o.suggested_delivery_date) : '',
-        items: o.items || []
+        items: normalizeItemsQty(o.items || [])
       }
     });
   } catch (e) {

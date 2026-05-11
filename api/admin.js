@@ -10,6 +10,7 @@ const { requiredYmd } = require('../src/lib/validation');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { audit } = require('../src/lib/audit');
 const { uploadDataUrl } = require('../src/lib/blob');
+const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
 
 async function requireAdmin(req, res) {
   const session = await requireSession(req);
@@ -386,9 +387,10 @@ async function orderCopyHandler(req, res) {
     const newOrderId = inserted.rows[0].id;
 
     for (const it of items) {
+      const qty = normalizeQtyToSizeRatio(it.qty);
       await sql`
         insert into order_items (order_id, style_id, qty)
-        values (${newOrderId}::uuid, ${it.style_id}::uuid, ${JSON.stringify(it.qty)}::jsonb)
+        values (${newOrderId}::uuid, ${it.style_id}::uuid, ${JSON.stringify(qty)}::jsonb)
       `;
     }
 
