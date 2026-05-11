@@ -3,19 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>後台管理系統</title>
+  <title>ZENEX-SPORTS｜後台管理</title>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            zenex: {
+              bg: '#f6f8fb',
+              surface: '#ffffff',
+              text: '#0f172a',
+              muted: '#64748b',
+              border: '#e2e8f0',
+              50: '#eaf2ff',
+              500: '#0066ff',
+              600: '#0052cc',
+              700: '#0047b3'
+            }
+          },
+          fontFamily: {
+            sans: [
+              'ui-sans-serif',
+              'system-ui',
+              '-apple-system',
+              '"Segoe UI"',
+              'Roboto',
+              'Helvetica',
+              'Arial',
+              '"Microsoft JhengHei"',
+              '"PingFang HK"',
+              '"Noto Sans CJK TC"',
+              'sans-serif'
+            ]
+          }
+        }
+      }
+    };
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-zenex-bg text-zenex-text font-sans">
   <div class="mx-auto w-full max-w-7xl px-4 py-8">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight">後台管理系統</h1>
-        <p class="mt-1 text-sm text-slate-600">帳密登入（admin/factory）、訂單、款式、尺碼表、帳號、異常反饋。</p>
+        <h1 class="text-2xl font-semibold tracking-tight">ZENEX-SPORTS 後台管理</h1>
+        <p class="mt-1 text-sm text-zenex-muted">帳密登入（admin/factory）、訂單、款式、尺碼表、帳號、異常反饋。</p>
       </div>
       <div class="flex items-center gap-2">
-        <a href="/" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">客戶端</a>
-        <button id="logoutBtn" class="hidden rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">登出</button>
+        <a href="/" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold text-zenex-text hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">客戶端</a>
+        <button id="logoutBtn" class="hidden rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold text-zenex-text hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">登出</button>
       </div>
     </div>
 
@@ -23,31 +59,31 @@
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <label class="text-sm font-medium">帳號</label>
-          <input id="accInput" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：admin" />
+          <input id="accInput" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2" placeholder="例如：admin" />
         </div>
         <div>
           <label class="text-sm font-medium">密碼</label>
-          <input id="pwdInput" type="password" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="例如：123456" />
+          <input id="pwdInput" type="password" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2" placeholder="例如：123456" />
         </div>
         <div class="flex items-end">
-          <button id="loginBtn" class="w-full rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800">登入</button>
+          <button id="loginBtn" class="w-full rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">登入</button>
         </div>
       </div>
       <div id="loginMsg" class="mt-3 text-sm font-medium"></div>
-      <div class="mt-2 text-xs text-slate-600">預設 seed：admin / 123456；factory1 / 123456（需先跑 db/schema.sql + db/seed.sql）</div>
+      <div class="mt-2 text-xs text-zenex-muted">預設 seed：admin / 123456；factory1 / 123456（需先跑 db/schema.sql + db/seed.sql）</div>
     </section>
 
     <section id="appSection" class="mt-6 hidden rounded-xl border bg-white p-5 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap gap-2">
-          <button data-tab="orders" class="tabBtn rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white">訂單</button>
-          <button data-tab="styles" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">款式庫</button>
-          <button data-tab="sizes" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">尺碼表庫</button>
-          <button data-tab="users" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">帳號</button>
-          <button data-tab="feedback" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">異常反饋</button>
-          <button data-tab="factory" class="tabBtn rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">工廠端</button>
+          <button data-tab="orders" class="tabBtn rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">訂單</button>
+          <button data-tab="styles" class="tabBtn rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold text-zenex-text hover:bg-zenex-50 hover:border-zenex-500/30 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">款式庫</button>
+          <button data-tab="sizes" class="tabBtn rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold text-zenex-text hover:bg-zenex-50 hover:border-zenex-500/30 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">尺碼表庫</button>
+          <button data-tab="users" class="tabBtn rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold text-zenex-text hover:bg-zenex-50 hover:border-zenex-500/30 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">帳號</button>
+          <button data-tab="feedback" class="tabBtn rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold text-zenex-text hover:bg-zenex-50 hover:border-zenex-500/30 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">異常反饋</button>
+          <button data-tab="factory" class="tabBtn rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold text-zenex-text hover:bg-zenex-50 hover:border-zenex-500/30 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">工廠端</button>
         </div>
-        <div id="whoami" class="text-sm text-slate-600"></div>
+        <div id="whoami" class="text-sm text-zenex-muted"></div>
       </div>
 
       <div id="appMsg" class="mt-3 text-sm font-medium"></div>
@@ -56,19 +92,19 @@
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-6">
           <div class="sm:col-span-2">
             <label class="text-sm font-medium">訂單編號</label>
-            <input id="fOrderSn" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            <input id="fOrderSn" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2" />
           </div>
           <div class="sm:col-span-2">
             <label class="text-sm font-medium">公司</label>
-            <input id="fCompany" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            <input id="fCompany" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2" />
           </div>
           <div>
             <label class="text-sm font-medium">電話</label>
-            <input id="fPhone" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            <input id="fPhone" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2" />
           </div>
           <div>
             <label class="text-sm font-medium">狀態</label>
-            <select id="fStatus" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+            <select id="fStatus" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">
               <option value="">全部</option>
               <option value="客戶已提交">客戶已提交</option>
               <option value="待確認報價">待確認報價</option>
@@ -81,27 +117,27 @@
           </div>
           <div>
             <label class="text-sm font-medium">建立日（從）</label>
-            <input id="fCreatedFrom" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            <input id="fCreatedFrom" type="date" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2" />
           </div>
           <div>
             <label class="text-sm font-medium">建立日（至）</label>
-            <input id="fCreatedTo" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+            <input id="fCreatedTo" type="date" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2" />
           </div>
           <div>
             <label class="text-sm font-medium">大類</label>
-            <select id="fCate1" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+            <select id="fCate1" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">
               <option value="">全部</option>
             </select>
           </div>
           <div>
             <label class="text-sm font-medium">子類</label>
-            <select id="fCate2" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+            <select id="fCate2" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">
               <option value="">全部</option>
             </select>
           </div>
           <div>
             <label class="text-sm font-medium">球衣子類</label>
-            <select id="fCate3" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+            <select id="fCate3" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">
               <option value="">全部</option>
               <option value="足球">足球</option>
               <option value="籃球">籃球</option>
@@ -111,7 +147,7 @@
           </div>
           <div>
             <label class="text-sm font-medium">再子類</label>
-            <select id="fCate4" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+            <select id="fCate4" class="mt-1 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">
               <option value="">全部</option>
               <option value="上衣">上衣</option>
               <option value="褲子">褲子</option>
@@ -120,16 +156,16 @@
           </div>
           <div class="sm:col-span-2">
             <div class="mt-6 flex flex-wrap gap-2">
-              <button id="loadOrdersBtn" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">載入訂單</button>
-              <button id="exportOrdersBtn" class="rounded-lg border bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50">匯出 CSV</button>
+              <button id="loadOrdersBtn" class="rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">載入訂單</button>
+              <button id="exportOrdersBtn" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">匯出 CSV</button>
             </div>
           </div>
         </div>
 
-        <div class="mt-4 overflow-x-auto">
+        <div class="mt-4 overflow-x-auto rounded-xl border border-zenex-border bg-white">
           <table class="w-full min-w-[1200px] text-sm">
             <thead>
-              <tr class="border-b bg-slate-50 text-left">
+              <tr class="border-b bg-slate-50 text-left text-slate-700">
                 <th class="px-3 py-2 font-medium">時間</th>
                 <th class="px-3 py-2 font-medium">訂單編號</th>
                 <th class="px-3 py-2 font-medium">類型</th>
@@ -200,10 +236,10 @@
             <input id="styleRemark" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
           </div>
           <div class="sm:col-span-2">
-            <button id="createStyleBtn" class="mt-6 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">新增款式</button>
+            <button id="createStyleBtn" class="mt-6 w-full rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">新增款式</button>
           </div>
           <div class="sm:col-span-2">
-            <button id="loadStylesBtn" class="mt-6 w-full rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入款式</button>
+            <button id="loadStylesBtn" class="mt-6 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">載入款式</button>
           </div>
         </div>
         <div class="mt-4 overflow-x-auto">
@@ -250,9 +286,9 @@
                 <input id="sizePasteHasHeader" type="checkbox" checked />
                 第一行係表頭
               </label>
-              <button id="previewSizeBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50" type="button">預覽</button>
-              <button id="pasteExampleBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50" type="button">貼入範例</button>
-              <div id="sizePasteMsg" class="text-slate-600"></div>
+            <button id="previewSizeBtn" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2" type="button">預覽</button>
+            <button id="pasteExampleBtn" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2" type="button">貼入範例</button>
+            <div id="sizePasteMsg" class="text-zenex-muted"></div>
             </div>
             <div id="sizePastePreview" class="mt-2 overflow-x-auto rounded-lg border bg-white p-3 text-sm"></div>
           </div>
@@ -262,10 +298,10 @@
             <textarea id="sizeData" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="5"></textarea>
           </div>
           <div class="sm:col-span-2">
-            <button id="createSizeBtn" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">新增尺碼表</button>
+            <button id="createSizeBtn" class="w-full rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">新增尺碼表</button>
           </div>
           <div class="sm:col-span-2">
-            <button id="loadSizesBtn" class="w-full rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入尺碼表</button>
+            <button id="loadSizesBtn" class="w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">載入尺碼表</button>
           </div>
         </div>
         <div class="mt-4 overflow-x-auto">
@@ -305,10 +341,10 @@
             <input id="userName" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
           </div>
           <div class="sm:col-span-2">
-            <button id="createUserBtn" class="mt-6 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">新增帳號</button>
+            <button id="createUserBtn" class="mt-6 w-full rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">新增帳號</button>
           </div>
           <div class="sm:col-span-2">
-            <button id="loadUsersBtn" class="mt-6 w-full rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入帳號</button>
+            <button id="loadUsersBtn" class="mt-6 w-full rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">載入帳號</button>
           </div>
         </div>
         <div class="mt-4 overflow-x-auto">
@@ -328,7 +364,7 @@
 
       <div id="tab-feedback" class="mt-5 hidden">
         <div class="flex items-center gap-2">
-          <button id="loadFeedbackBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入反饋</button>
+          <button id="loadFeedbackBtn" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">載入反饋</button>
         </div>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[900px] text-sm">
@@ -349,7 +385,7 @@
 
       <div id="tab-factory" class="mt-5 hidden">
         <div class="flex items-center gap-2">
-          <button id="loadFactoryOrdersBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">載入工廠訂單</button>
+          <button id="loadFactoryOrdersBtn" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">載入工廠訂單</button>
         </div>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[900px] text-sm">
@@ -373,7 +409,7 @@
     <div class="w-full max-w-lg rounded-2xl bg-white shadow-xl">
       <div class="flex items-center justify-between border-b px-5 py-4">
         <div class="text-base font-semibold">翻單（複製並建立新訂單）</div>
-        <button id="closeCopyModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+        <button id="closeCopyModal" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">關閉</button>
       </div>
       <div class="px-5 py-4 space-y-3">
         <div class="text-sm text-slate-600" id="copyInfo"></div>
@@ -384,7 +420,7 @@
         <div id="copyMsg" class="text-sm font-medium"></div>
       </div>
       <div class="flex items-center justify-end gap-2 border-t px-5 py-4">
-        <button id="confirmCopyBtn" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">確認翻單</button>
+        <button id="confirmCopyBtn" class="rounded-xl bg-zenex-500 px-4 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">確認翻單</button>
       </div>
     </div>
 
@@ -392,7 +428,7 @@
       <div class="w-full max-w-xl rounded-2xl bg-white shadow-xl">
         <div class="flex items-center justify-between border-b px-5 py-4">
           <div class="text-base font-semibold">工廠訂單操作</div>
-          <button id="closeFactoryModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+          <button id="closeFactoryModal" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">關閉</button>
         </div>
         <div class="px-5 py-4 space-y-3">
           <div class="text-sm text-slate-600" id="factoryOrderInfo"></div>
@@ -411,7 +447,7 @@
               </select>
             </div>
             <div class="sm:pt-6">
-              <button id="factoryUpdateStatusBtn" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">更新狀態</button>
+              <button id="factoryUpdateStatusBtn" class="w-full rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">更新狀態</button>
             </div>
           </div>
           <div>
@@ -435,7 +471,7 @@
     <div class="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
       <div class="flex items-center justify-between border-b px-5 py-4">
         <div class="text-base font-semibold">尺碼表預覽</div>
-        <button id="closeSizePreviewModal" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">關閉</button>
+            <button id="closeSizePreviewModal" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">關閉</button>
       </div>
       <div class="px-5 py-4 space-y-2">
         <div class="text-sm text-slate-600" id="sizePreviewInfo"></div>
@@ -843,10 +879,15 @@
       tabIds.forEach((t) => document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab));
       tabButtons.forEach((b) => {
         const active = b.dataset.tab === tab;
-        b.classList.toggle('bg-slate-900', active);
+        b.classList.toggle('bg-zenex-500', active);
         b.classList.toggle('text-white', active);
+        b.classList.toggle('hover:bg-zenex-600', active);
+        b.classList.toggle('border-transparent', active);
         b.classList.toggle('border', !active);
+        b.classList.toggle('border-zenex-border', !active);
         b.classList.toggle('bg-white', !active);
+        b.classList.toggle('text-zenex-text', !active);
+        b.classList.toggle('hover:bg-zenex-50', !active);
       });
       appMsg.textContent = '';
     }
@@ -888,6 +929,26 @@
       return s;
     }
 
+    function statusBadgeTheme(status) {
+      const s = String(status || '');
+      const map = {
+        客戶已提交: 'bg-zenex-50 text-zenex-700 ring-1 ring-zenex-500/20',
+        待確認報價: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+        待確認樣板: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200',
+        生產中: 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200',
+        已出貨: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+        已完成: 'bg-green-50 text-green-700 ring-1 ring-green-200',
+        已取消: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
+      };
+      return map[s] || 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
+    }
+
+    function setStatusBadge(el, status) {
+      if (!el) return;
+      el.textContent = String(status || '');
+      el.className = `statusBadge inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold whitespace-nowrap ${statusBadgeTheme(status)}`;
+    }
+
     async function loadOrders() {
       appMsg.textContent = '';
       const qs = new URLSearchParams();
@@ -911,7 +972,7 @@
       ordersBody.innerHTML = '';
       orders.forEach((o) => {
         const tr = document.createElement('tr');
-        tr.className = 'border-b';
+        tr.className = 'border-b even:bg-slate-50 hover:bg-zenex-50';
         const statusOptions = ['客戶已提交','待確認報價','待確認樣板','生產中','已出貨','已完成','已取消']
           .map((s) => `<option value="${s}">${optionLabelStatus(s)}</option>`).join('');
         const factoryOptions = [
@@ -921,11 +982,14 @@
         const cateText =
           o.cate2 === '球衣' && o.cate3 && o.cate4 ? `${o.cate1} / ${o.cate2} / ${o.cate3} / ${o.cate4}` : `${o.cate1} / ${o.cate2}`;
         tr.innerHTML = `
-          <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
+          <td class="px-3 py-2 text-zenex-muted">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
           <td class="px-3 py-2 font-semibold">${escapeHtml(o.orderSn)}</td>
           <td class="px-3 py-2">${escapeHtml(o.orderType)}</td>
           <td class="px-3 py-2">
-            <select data-id="${o.id}" class="statusSel w-full rounded-lg border px-2 py-1 text-xs">${statusOptions}</select>
+            <div class="flex items-center gap-2">
+              <span class="statusBadge"></span>
+              <select data-id="${o.id}" class="statusSel w-full rounded-xl border border-zenex-border bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">${statusOptions}</select>
+            </div>
           </td>
           <td class="px-3 py-2">${escapeHtml(o.companyName)}</td>
           <td class="px-3 py-2">${escapeHtml(o.phone)}</td>
@@ -933,14 +997,15 @@
           <td class="px-3 py-2">${escapeHtml(o.suggestedDeliveryDate || '')}</td>
           <td class="px-3 py-2">${escapeHtml(o.requestedDeliveryDate || '')}</td>
           <td class="px-3 py-2">
-            <select data-id="${o.id}" class="factorySel w-full rounded-lg border px-2 py-1 text-xs">${factoryOptions}</select>
+            <select data-id="${o.id}" class="factorySel w-full rounded-xl border border-zenex-border bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">${factoryOptions}</select>
           </td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${o.id}" data-sn="${escapeHtml(o.orderSn)}" class="copyBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
+            <button data-id="${o.id}" data-sn="${escapeHtml(o.orderSn)}" class="copyBtn rounded-xl border border-zenex-border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">翻單</button>
           </td>
         `;
         ordersBody.appendChild(tr);
         tr.querySelector('.statusSel').value = o.status;
+        setStatusBadge(tr.querySelector('.statusBadge'), o.status);
         if (tr.querySelector('.factorySel')) tr.querySelector('.factorySel').value = o.factoryUserId || '';
       });
 
@@ -948,6 +1013,7 @@
         sel.addEventListener('change', async () => {
           const orderId = sel.dataset.id;
           const status = sel.value;
+          setStatusBadge(sel.closest('tr')?.querySelector('.statusBadge'), status);
           const res = await apiFetch('/api/admin/orders/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

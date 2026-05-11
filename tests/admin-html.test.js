@@ -48,3 +48,9 @@ test('admin.html contains order filter controls and csv export', async () => {
   assert.match(html, /id="fCate4"/);
   assert.match(html, /id="exportOrdersBtn"/);
 });
+
+test('admin.html shows ZENEX-SPORTS branding', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('admin.html', 'utf8');
+  assert.match(html, /ZENEX-SPORTS/);
+});
