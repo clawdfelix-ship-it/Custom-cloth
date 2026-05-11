@@ -22,3 +22,10 @@ test('admin.html contains size table preview thumbnail UI', async () => {
   assert.match(html, />\s*Preview\s*</);
   assert.match(html, /id="sizePreviewModal"/);
 });
+
+test('admin.html contains style category selects', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('admin.html', 'utf8');
+  assert.match(html, /id="styleCate1Sel"/);
+  assert.match(html, /id="styleCate2Sel"/);
+});

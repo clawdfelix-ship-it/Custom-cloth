@@ -118,11 +118,13 @@
           </div>
           <div>
             <label class="text-sm font-medium">大類</label>
-            <input id="styleCate1" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="現貨款式加工" />
+            <select id="styleCate1Sel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
+            <input id="styleCate1Custom" class="mt-2 hidden w-full rounded-lg border px-3 py-2 text-sm" placeholder="自訂大類" />
           </div>
           <div>
             <label class="text-sm font-medium">子類</label>
-            <input id="styleCate2" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="球衣" />
+            <select id="styleCate2Sel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
+            <input id="styleCate2Custom" class="mt-2 hidden w-full rounded-lg border px-3 py-2 text-sm" placeholder="自訂子類" />
           </div>
           <div>
             <label class="text-sm font-medium">尺碼表</label>
@@ -407,7 +409,12 @@
     const styleSizeTableId = document.getElementById('styleSizeTableId');
     const loadStylesBtn = document.getElementById('loadStylesBtn');
     const createStyleBtn = document.getElementById('createStyleBtn');
+    const styleCate1Sel = document.getElementById('styleCate1Sel');
+    const styleCate1Custom = document.getElementById('styleCate1Custom');
+    const styleCate2Sel = document.getElementById('styleCate2Sel');
+    const styleCate2Custom = document.getElementById('styleCate2Custom');
     const stylesBody = document.getElementById('stylesBody');
+    let categoriesCache = { cate1: [], cate2ByCate1: {} };
 
     const loadSizesBtn = document.getElementById('loadSizesBtn');
     const createSizeBtn = document.getElementById('createSizeBtn');
@@ -1005,6 +1012,68 @@
       return svgToDataUri(svg);
     }
 
+    function setCateOptions(selectEl, placeholder, values, customLabel) {
+      const list = Array.isArray(values) ? values : [];
+      selectEl.innerHTML =
+        `<option value="">${placeholder}</option>` +
+        list.map((x) => `<option value="${x}">${x}</option>`).join('') +
+        `<option value="__custom__">${customLabel}</option>`;
+    }
+
+    function refreshStyleCate2Options() {
+      const c1 = styleCate1Sel.value;
+      if (!c1) {
+        setCateOptions(styleCate2Sel, '請選擇子類', [], '自訂子類');
+        styleCate2Custom.classList.add('hidden');
+        styleCate2Custom.value = '';
+        return;
+      }
+
+      if (c1 === '__custom__') {
+        setCateOptions(styleCate2Sel, '請選擇子類', [], '自訂子類');
+        styleCate2Sel.value = '__custom__';
+        styleCate2Custom.classList.remove('hidden');
+        return;
+      }
+
+      const list = categoriesCache.cate2ByCate1 && categoriesCache.cate2ByCate1[c1] ? categoriesCache.cate2ByCate1[c1] : [];
+      setCateOptions(styleCate2Sel, '請選擇子類', list, '自訂子類');
+      styleCate2Custom.classList.add('hidden');
+      styleCate2Custom.value = '';
+    }
+
+    styleCate1Sel.addEventListener('change', () => {
+      const v = styleCate1Sel.value;
+      if (v === '__custom__') styleCate1Custom.classList.remove('hidden');
+      else {
+        styleCate1Custom.classList.add('hidden');
+        styleCate1Custom.value = '';
+      }
+      refreshStyleCate2Options();
+    });
+
+    styleCate2Sel.addEventListener('change', () => {
+      if (styleCate2Sel.value === '__custom__') styleCate2Custom.classList.remove('hidden');
+      else {
+        styleCate2Custom.classList.add('hidden');
+        styleCate2Custom.value = '';
+      }
+    });
+
+    async function loadCategories() {
+      const res = await fetch('/api/public/categories');
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) return;
+      categoriesCache = {
+        cate1: Array.isArray(data.cate1) ? data.cate1 : [],
+        cate2ByCate1: data.cate2ByCate1 && typeof data.cate2ByCate1 === 'object' ? data.cate2ByCate1 : {}
+      };
+      setCateOptions(styleCate1Sel, '請選擇大類', categoriesCache.cate1, '自訂大類');
+      styleCate1Custom.classList.add('hidden');
+      styleCate1Custom.value = '';
+      refreshStyleCate2Options();
+    }
+
     async function loadSizes() {
       const res = await apiFetch('/api/admin/size-tables', {});
       const data = await res.json().catch(() => null);
@@ -1136,8 +1205,8 @@
       appMsg.textContent = '';
       const code = document.getElementById('styleCode').value.trim();
       const name = document.getElementById('styleName').value.trim();
-      const cate1 = document.getElementById('styleCate1').value.trim();
-      const cate2 = document.getElementById('styleCate2').value.trim();
+      const cate1 = (styleCate1Sel.value === '__custom__' ? styleCate1Custom.value : styleCate1Sel.value).trim();
+      const cate2 = (styleCate2Sel.value === '__custom__' ? styleCate2Custom.value : styleCate2Sel.value).trim();
       const sizeTableId = styleSizeTableId.value;
       const remark = document.getElementById('styleRemark').value.trim();
       const file = document.getElementById('styleImage').files[0];
@@ -1180,6 +1249,7 @@
         appMsg.textContent = '新增款式失敗';
         return;
       }
+      await loadCategories().catch(() => null);
       loadStyles();
     });
 
@@ -1403,6 +1473,7 @@
       if (sessionToken()) await showApp();
       else showLogin();
       if (sessionToken()) {
+        await loadCategories().catch(() => null);
         await loadSizes().catch(() => null);
       }
     }
