@@ -19,6 +19,7 @@ function normalizeItemsQty(items) {
 }
 
 const CATE1 = ['現貨款式加工', '熱昇華訂製', '開板訂製'];
+const DEFAULT_CATE2 = ['球衣', 'POLO', '風衣外套', '其他'];
 
 function computeLeadBusinessDays(mode, cate1) {
   if (mode === 'repeat') return 17;
@@ -71,6 +72,43 @@ async function handleSizeTable(req, res, url) {
     const row = r.rows[0];
     if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
     return sendJson(res, 200, { ok: true, sizeTable: { id: row.id, name: row.name, data: row.data } });
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'server_error' });
+  }
+}
+
+async function handleCategories(req, res) {
+  if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+  try {
+    const r = await sql`
+      select distinct cate1, cate2
+      from styles
+      where cate1 is not null and cate1 <> ''
+        and cate2 is not null and cate2 <> ''
+      limit 500
+    `;
+
+    const cate1Set = new Set(CATE1);
+    const cate2ByCate1 = {};
+
+    function ensureCate1(c1) {
+      if (!c1) return;
+      cate1Set.add(c1);
+      if (!cate2ByCate1[c1]) cate2ByCate1[c1] = [...DEFAULT_CATE2];
+    }
+
+    r.rows.forEach((x) => {
+      const c1 = String(x.cate1 || '').trim();
+      const c2 = String(x.cate2 || '').trim();
+      if (!c1 || !c2) return;
+      ensureCate1(c1);
+      if (!cate2ByCate1[c1].includes(c2)) cate2ByCate1[c1].push(c2);
+    });
+
+    Array.from(cate1Set).forEach((c1) => ensureCate1(c1));
+    const cate1 = Array.from(cate1Set);
+
+    return sendJson(res, 200, { ok: true, cate1, cate2ByCate1 });
   } catch (e) {
     return sendJson(res, 500, { ok: false, error: 'server_error' });
   }
@@ -264,6 +302,7 @@ module.exports = async function handler(req, res) {
   const action = (url.searchParams.get('action') || '').trim();
 
   if (action === 'styles') return handleStyles(req, res, url);
+  if (action === 'categories') return handleCategories(req, res);
   if (action === 'sizeTable') return handleSizeTable(req, res, url);
   if (action === 'createOrder') return handleCreateOrder(req, res);
   if (action === 'history') return handleHistory(req, res, url);

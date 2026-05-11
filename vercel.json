@@ -6,6 +6,7 @@
     { "source": "/api/auth/logout", "destination": "/api/auth?action=logout" },
 
     { "source": "/api/public/styles", "destination": "/api/public?action=styles" },
+    { "source": "/api/public/categories", "destination": "/api/public?action=categories" },
     { "source": "/api/public/size-tables/:id", "destination": "/api/public?action=sizeTable&id=:id" },
     { "source": "/api/public/orders", "destination": "/api/public?action=createOrder" },
     { "source": "/api/public/orders/history", "destination": "/api/public?action=history" },

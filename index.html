@@ -52,21 +52,14 @@
 
       <div class="form-item">
         <label>訂製大分類</label>
-        <select id="cate1" onchange="filterStyle()">
+        <select id="cate1" onchange="onCate1Changed()">
           <option value="">請選擇訂製類型</option>
-          <option value="現貨款式加工">現貨款式加工</option>
-          <option value="熱昇華訂製">熱昇華訂製</option>
-          <option value="開板訂製">開板訂製</option>
         </select>
       </div>
       <div class="form-item">
         <label>產品子分類</label>
-        <select id="cate2" onchange="filterStyle()">
+        <select id="cate2" onchange="onCate2Changed()">
           <option value="">請選擇產品類型</option>
-          <option value="球衣">球衣</option>
-          <option value="POLO">POLO</option>
-          <option value="風衣外套">風衣外套</option>
-          <option value="其他">其他</option>
         </select>
       </div>
 
@@ -161,6 +154,7 @@
     let selectedStyleIds = new Set();
     let selectedSizeTableId = '';
     let repeatSelectedOrder = null;
+    let categoriesCache = { cate1: [], cate2ByCate1: {} };
 
     function switchTab(tab) {
       document.getElementById('tab-new').classList.add('hide');
@@ -211,6 +205,38 @@
       el.min = earliest;
       if (!el.value || el.value < earliest) el.value = earliest;
       document.getElementById('minDateHint').textContent = `最快交貨日：${earliest}`;
+    }
+
+    function setCateOptions(selectEl, placeholder, values) {
+      const v = selectEl.value;
+      selectEl.innerHTML = `<option value="">${placeholder}</option>` + (values || []).map((x) => `<option value="${x}">${x}</option>`).join('');
+      if (v && (values || []).includes(v)) selectEl.value = v;
+      else selectEl.value = '';
+    }
+
+    async function loadCategories() {
+      const res = await fetch('/api/public/categories');
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) return;
+      categoriesCache = {
+        cate1: Array.isArray(data.cate1) ? data.cate1 : [],
+        cate2ByCate1: data.cate2ByCate1 && typeof data.cate2ByCate1 === 'object' ? data.cate2ByCate1 : {}
+      };
+      const cate1El = document.getElementById('cate1');
+      setCateOptions(cate1El, '請選擇訂製類型', categoriesCache.cate1);
+      onCate1Changed();
+    }
+
+    function onCate1Changed() {
+      const cate1 = document.getElementById('cate1').value;
+      const cate2El = document.getElementById('cate2');
+      const list = cate1 && categoriesCache.cate2ByCate1[cate1] ? categoriesCache.cate2ByCate1[cate1] : [];
+      setCateOptions(cate2El, '請選擇產品類型', list);
+      filterStyle();
+    }
+
+    function onCate2Changed() {
+      filterStyle();
     }
 
     async function filterStyle() {
@@ -579,6 +605,7 @@
       const r = await fetch('/data/hk-holidays/2026.json').catch(() => null);
       const list = r ? await r.json().catch(() => []) : [];
       holidays = new Set(Array.isArray(list) ? list.map(String) : []);
+      await loadCategories().catch(() => null);
     }
 
     init();

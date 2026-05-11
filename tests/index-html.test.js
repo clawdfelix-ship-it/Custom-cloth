@@ -9,3 +9,8 @@ test('index.html contains REF customer tabs', async () => {
   assert.match(html, /id="tab-query"/);
 });
 
+test('index.html loads categories dynamically', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /\/api\/public\/categories/);
+});
