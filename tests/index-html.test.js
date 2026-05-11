@@ -66,3 +66,11 @@ test('index.html includes customer auth ui and reset mode', async () => {
   assert.match(html, /customerToken/);
   assert.match(html, /mode=reset/);
 });
+
+test('index.html provides goToOrder helper for auto navigation and scroll', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /function\s+goToOrder\s*\(/);
+  assert.match(html, /switchTab\(['"]new['"]\)/);
+  assert.match(html, /scrollIntoView/);
+});

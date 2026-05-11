@@ -327,6 +327,13 @@
       document.getElementById(`btn-${tab}`).classList.add('active');
     }
 
+    function goToOrder() {
+      switchTab('new');
+      const el = document.getElementById('cate1') || document.getElementById('tab-new');
+      if (!el || typeof el.scrollIntoView !== 'function') return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     function setCustomerAuthMsg(s) {
       const el = document.getElementById('customerAuthMsg');
       if (el) el.textContent = String(s || '');
@@ -431,7 +438,7 @@
 
       setCustomerSession(data.token, data.customer);
       setCustomerAuthMsg('');
-      switchTab('new');
+      goToOrder();
     }
 
     async function customerLogin() {
@@ -456,7 +463,7 @@
 
       setCustomerSession(data.token, data.customer);
       setCustomerAuthMsg('');
-      switchTab('new');
+      goToOrder();
     }
 
     async function customerLogout() {
@@ -1216,6 +1223,7 @@
         if (data && data.ok && data.customer) {
           customerMe = data.customer;
           prefillCustomerFields();
+            goToOrder();
         } else {
           clearCustomerSession();
         }
