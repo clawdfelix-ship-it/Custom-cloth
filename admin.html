@@ -430,38 +430,46 @@
           <div class="text-base font-semibold">工廠訂單操作</div>
           <button id="closeFactoryModal" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">關閉</button>
         </div>
-        <div class="px-5 py-4 space-y-3">
-          <div class="text-sm text-slate-600" id="factoryOrderInfo"></div>
-          <div id="factoryOrderItems" class="rounded-lg border bg-white p-3 text-sm"></div>
+        <div class="px-5 py-4 space-y-4">
+          <div class="rounded-xl border bg-white p-3">
+            <div class="text-xs font-semibold tracking-wide text-zenex-600">訂單資訊</div>
+            <div class="mt-1 text-sm text-slate-700" id="factoryOrderInfo"></div>
+          </div>
+
+          <div class="rounded-xl border bg-white p-3">
+            <div class="text-xs font-semibold tracking-wide text-zenex-600">款式項目</div>
+            <div id="factoryOrderItems" class="mt-2 text-sm"></div>
+          </div>
+
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label class="text-sm font-medium">更新狀態</label>
-              <select id="factoryStatusSel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
-                <option value="客戶已提交">客戶已提交</option>
-                <option value="待確認報價">待確認報價</option>
-                <option value="待確認樣板">待確認樣板</option>
+            <div class="rounded-xl border bg-white p-3">
+              <div class="text-xs font-semibold tracking-wide text-zenex-600">更新狀態</div>
+              <label class="mt-2 block text-sm font-medium text-slate-700">狀態</label>
+              <select id="factoryStatusSel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/30">
+                <option value="客戶已提交" disabled>客戶已提交</option>
+                <option value="待確認報價" disabled>待確認報價</option>
+                <option value="待確認樣板" disabled>待確認樣板</option>
                 <option value="生產中">生產中</option>
                 <option value="已出貨">已出貨</option>
                 <option value="已完成">已完成</option>
-                <option value="已取消">已取消</option>
+                <option value="已取消" disabled>已取消</option>
               </select>
+              <div class="mt-2 text-xs text-slate-500">工廠只可更新：生產中 / 已出貨 / 已完成</div>
+              <button id="factoryUpdateStatusBtn" class="mt-3 w-full rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">更新狀態</button>
             </div>
-            <div class="sm:pt-6">
-              <button id="factoryUpdateStatusBtn" class="w-full rounded-xl bg-zenex-500 px-3 py-2 text-sm font-semibold text-white hover:bg-zenex-600 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">更新狀態</button>
+
+            <div class="rounded-xl border bg-white p-3">
+              <div class="text-xs font-semibold tracking-wide text-zenex-600">異常反饋</div>
+              <label class="mt-2 block text-sm font-medium text-slate-700">內容</label>
+              <textarea id="factoryFeedbackText" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/30" rows="4" placeholder="例如：尺寸/顏色/布料/加工問題..."></textarea>
+              <label class="mt-2 block text-sm font-medium text-slate-700">附件</label>
+              <div class="text-xs text-slate-500">最多 3 張，每張 &lt; 500KB</div>
+              <input id="factoryFiles" type="file" accept="image/*" multiple class="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zenex-500/30" />
+              <button id="factorySendFeedbackBtn" class="mt-3 w-full rounded-xl border border-zenex-500 bg-white px-3 py-2 text-sm font-semibold text-zenex-600 hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">提交反饋</button>
             </div>
           </div>
-          <div>
-            <label class="text-sm font-medium">異常反饋內容</label>
-            <textarea id="factoryFeedbackText" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="4" placeholder="例如：尺寸/顏色/布料/加工問題..."></textarea>
-          </div>
-          <div>
-            <label class="text-sm font-medium">附件（最多 3 張，每張 < 500KB）</label>
-            <input id="factoryFiles" type="file" accept="image/*" multiple class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="factorySendFeedbackBtn" class="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">提交反饋</button>
-            <div id="factoryModalMsg" class="text-sm text-slate-600"></div>
-          </div>
+
+          <div id="factoryModalMsg" class="text-sm text-slate-600" aria-live="polite"></div>
         </div>
       </div>
     </div>
