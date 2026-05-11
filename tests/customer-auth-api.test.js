@@ -35,3 +35,18 @@ test('sendMail returns email_not_configured when SMTP env missing', async () => 
   }
   assert.deepEqual(r, { ok: false, error: 'email_not_configured' });
 });
+
+test('customer api entrypoint exists', () => {
+  const handler = require('../api/customer');
+  assert.equal(typeof handler, 'function');
+});
+
+test('customer api supports expected actions', async () => {
+  const js = await fs.readFile('api/customer.js', 'utf8');
+  assert.match(js, /action\s*===\s*['"]register['"]/);
+  assert.match(js, /action\s*===\s*['"]login['"]/);
+  assert.match(js, /action\s*===\s*['"]logout['"]/);
+  assert.match(js, /action\s*===\s*['"]me['"]/);
+  assert.match(js, /action\s*===\s*['"]requestPasswordReset['"]/);
+  assert.match(js, /action\s*===\s*['"]resetPassword['"]/);
+});
