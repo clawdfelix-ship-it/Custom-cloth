@@ -166,8 +166,37 @@
             <input id="sizeName" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
           </div>
           <div class="sm:col-span-4">
+            <label class="text-sm font-medium">輸入方式</label>
+            <div class="mt-2 flex items-center gap-4 text-sm">
+              <label class="inline-flex items-center gap-2">
+                <input id="sizeModePaste" type="radio" name="sizeInputMode" value="paste" checked />
+                貼表格（推薦）
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input id="sizeModeJson" type="radio" name="sizeInputMode" value="json" />
+                JSON（進階）
+              </label>
+            </div>
+          </div>
+
+          <div id="sizePasteWrap" class="sm:col-span-4">
+            <label class="text-sm font-medium">貼表格內容（支援 Excel/Sheets copy）</label>
+            <textarea id="sizePaste" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="5" placeholder="直接貼入表格內容（通常係 TSV / CSV）"></textarea>
+            <div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
+              <label class="inline-flex items-center gap-2">
+                <input id="sizePasteHasHeader" type="checkbox" checked />
+                第一行係表頭
+              </label>
+              <button id="previewSizeBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50" type="button">預覽</button>
+              <button id="pasteExampleBtn" class="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50" type="button">貼入範例</button>
+              <div id="sizePasteMsg" class="text-slate-600"></div>
+            </div>
+            <div id="sizePastePreview" class="mt-2 overflow-x-auto rounded-lg border bg-white p-3 text-sm"></div>
+          </div>
+
+          <div id="sizeJsonWrap" class="sm:col-span-4 hidden">
             <label class="text-sm font-medium">尺碼表 JSON（array，每行：eu/chest/waist/length/china/height）</label>
-            <textarea id="sizeData" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="3"></textarea>
+            <textarea id="sizeData" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" rows="5"></textarea>
           </div>
           <div class="sm:col-span-2">
             <button id="createSizeBtn" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">新增尺碼表</button>
@@ -366,6 +395,228 @@
 
     const loadSizesBtn = document.getElementById('loadSizesBtn');
     const createSizeBtn = document.getElementById('createSizeBtn');
+    const sizeModePaste = document.getElementById('sizeModePaste');
+    const sizeModeJson = document.getElementById('sizeModeJson');
+    const sizePasteWrap = document.getElementById('sizePasteWrap');
+    const sizeJsonWrap = document.getElementById('sizeJsonWrap');
+    const sizePaste = document.getElementById('sizePaste');
+    const sizePasteHasHeader = document.getElementById('sizePasteHasHeader');
+    const previewSizeBtn = document.getElementById('previewSizeBtn');
+    const pasteExampleBtn = document.getElementById('pasteExampleBtn');
+    const sizePasteMsg = document.getElementById('sizePasteMsg');
+    const sizePastePreview = document.getElementById('sizePastePreview');
+    let parsedSizeRows = null;
+
+    function normalizeHeader(s) {
+      return String(s || '').trim().toUpperCase();
+    }
+
+    function detectDelimiter(text) {
+      if (text.includes('\t')) return '\t';
+      if (text.includes(',')) return ',';
+      return '';
+    }
+
+    function splitLines(text) {
+      return String(text || '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .split('\n')
+        .map((x) => x.trim())
+        .filter((x) => x);
+    }
+
+    function parseCsvLine(line) {
+      const out = [];
+      let cur = '';
+      let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQ && line[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQ = !inQ;
+          }
+          continue;
+        }
+        if (!inQ && ch === ',') {
+          out.push(cur.trim());
+          cur = '';
+          continue;
+        }
+        cur += ch;
+      }
+      out.push(cur.trim());
+      return out;
+    }
+
+    function splitRow(line, delim) {
+      if (delim === ',') return parseCsvLine(line);
+      return line.split(delim).map((x) => String(x || '').trim());
+    }
+
+    function mapHeaderToKey(h) {
+      const x = normalizeHeader(h);
+      const map = {
+        EU: 'eu',
+        'EU SIZE': 'eu',
+        SIZE: 'eu',
+        '國際尺碼': 'eu',
+        '國際尺碼(EU)': 'eu',
+        '尺碼': 'eu',
+
+        CHEST: 'chest',
+        '胸圍': 'chest',
+        '胸圍(CM)': 'chest',
+        '胸圍CM': 'chest',
+
+        WAIST: 'waist',
+        '腰圍': 'waist',
+        '腰圍(CM)': 'waist',
+        '腰圍CM': 'waist',
+
+        LENGTH: 'length',
+        '衣長': 'length',
+        '衣長(CM)': 'length',
+        '衣長CM': 'length',
+
+        CHINA: 'china',
+        'CHINA SIZE': 'china',
+        '中國尺碼': 'china',
+        '中國尺碼(HEIGHT/CHEST)': 'china',
+
+        HEIGHT: 'height',
+        'SUGGESTED HEIGHT': 'height',
+        '適用身高範圍': 'height'
+      };
+      return map[x] || '';
+    }
+
+    function parseSizeTableText(text, opts) {
+      const header = !!(opts && opts.header);
+      const lines = splitLines(text);
+      if (!lines.length) return { ok: false, error: 'empty', rows: [], mapping: null };
+
+      const delim = detectDelimiter(lines[0]);
+      if (!delim) return { ok: false, error: 'delimiter', rows: [], mapping: null };
+
+      const matrix = lines.map((ln) => splitRow(ln, delim));
+      const mapping = { eu: -1, chest: -1, waist: -1, length: -1, china: -1, height: -1 };
+
+      let start = 0;
+      if (header) {
+        const heads = matrix[0];
+        heads.forEach((h, idx) => {
+          const k = mapHeaderToKey(h);
+          if (k && mapping[k] === -1) mapping[k] = idx;
+        });
+        start = 1;
+      } else {
+        mapping.eu = 0;
+        mapping.chest = 1;
+        mapping.waist = 2;
+        mapping.length = 3;
+        mapping.china = 4;
+        mapping.height = 5;
+      }
+
+      const need = Object.entries(mapping)
+        .filter(([, idx]) => idx < 0)
+        .map(([k]) => k);
+      if (need.length) return { ok: false, error: 'missing_columns', rows: [], mapping };
+
+      const rows = [];
+      for (let i = start; i < matrix.length; i++) {
+        const r = matrix[i];
+        const get = (k) => String(r[mapping[k]] || '').trim();
+        const eu = get('eu');
+        if (!eu) continue;
+        rows.push({ eu, chest: get('chest'), waist: get('waist'), length: get('length'), china: get('china'), height: get('height') });
+      }
+
+      if (!rows.length) return { ok: false, error: 'no_rows', rows: [], mapping };
+      return { ok: true, error: '', rows, mapping };
+    }
+
+    function renderSizePreview(rows) {
+      const html = `
+        <table class="min-w-[760px] w-full text-sm">
+          <thead>
+            <tr class="border-b bg-slate-50 text-left">
+              <th class="px-3 py-2 font-medium">EU</th>
+              <th class="px-3 py-2 font-medium">胸圍</th>
+              <th class="px-3 py-2 font-medium">腰圍</th>
+              <th class="px-3 py-2 font-medium">衣長</th>
+              <th class="px-3 py-2 font-medium">中國碼</th>
+              <th class="px-3 py-2 font-medium">身高</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(rows || []).map((r) => `
+              <tr class="border-b">
+                <td class="px-3 py-2">${r.eu || ''}</td>
+                <td class="px-3 py-2">${r.chest || ''}</td>
+                <td class="px-3 py-2">${r.waist || ''}</td>
+                <td class="px-3 py-2">${r.length || ''}</td>
+                <td class="px-3 py-2">${r.china || ''}</td>
+                <td class="px-3 py-2">${r.height || ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      sizePastePreview.innerHTML = html;
+    }
+
+    function toggleSizeMode() {
+      const isPaste = !!sizeModePaste.checked;
+      sizePasteWrap.classList.toggle('hidden', !isPaste);
+      sizeJsonWrap.classList.toggle('hidden', isPaste);
+      sizePasteMsg.textContent = '';
+      if (isPaste) {
+        sizePastePreview.innerHTML = '';
+        parsedSizeRows = null;
+      }
+    }
+
+    sizeModePaste.addEventListener('change', toggleSizeMode);
+    sizeModeJson.addEventListener('change', toggleSizeMode);
+
+    pasteExampleBtn.addEventListener('click', () => {
+      sizePaste.value = [
+        'EU\tCHEST\tWAIST\tLENGTH\tCHINA SIZE\tSUGGESTED HEIGHT',
+        'S\t88-91\t74-77\t66\t170/88A\t168-173cm',
+        'M\t92-95\t78-81\t69\t175/92A\t173-178cm',
+        'L\t96-103\t82-89\t72\t180/96A\t178-183cm',
+        'XL\t104-113\t90-101\t75\t185/104B\t183-188cm',
+        '2XL\t114-123\t102-113\t78\t190/114B\t188-193cm',
+        '3XL\t124-135\t124-135\t81\t195/124C\t193-198cm'
+      ].join('\n');
+      sizePasteHasHeader.checked = true;
+      sizePasteMsg.textContent = '';
+      sizePastePreview.innerHTML = '';
+      parsedSizeRows = null;
+    });
+
+    previewSizeBtn.addEventListener('click', () => {
+      sizePasteMsg.textContent = '';
+      sizePastePreview.innerHTML = '';
+      parsedSizeRows = null;
+      const r = parseSizeTableText(sizePaste.value, { header: !!sizePasteHasHeader.checked });
+      if (!r.ok) {
+        if (r.error === 'empty') sizePasteMsg.textContent = '請貼入表格內容';
+        else if (r.error === 'delimiter') sizePasteMsg.textContent = '格式唔似 TSV/CSV，請確認係由 Excel/Sheets copy'
+        else if (r.error === 'missing_columns') sizePasteMsg.textContent = '表頭唔完整（需要 EU/CHEST/WAIST/LENGTH/CHINA/HEIGHT）'
+        else if (r.error === 'no_rows') sizePasteMsg.textContent = '搵唔到資料行'
+        else sizePasteMsg.textContent = '解析失敗';
+        return;
+      }
+      parsedSizeRows = r.rows;
+      sizePasteMsg.textContent = `已解析 ${r.rows.length} 行`;
+      renderSizePreview(r.rows);
+    });
     const sizesBody = document.getElementById('sizesBody');
 
     const loadUsersBtn = document.getElementById('loadUsersBtn');
@@ -671,13 +922,28 @@
     createSizeBtn.addEventListener('click', async () => {
       appMsg.textContent = '';
       const name = document.getElementById('sizeName').value.trim();
-      const dataText = document.getElementById('sizeData').value.trim();
-      if (!name || !dataText) {
-        appMsg.textContent = '請輸入尺碼表名稱與 JSON';
+      if (!name) {
+        appMsg.textContent = '請輸入尺碼表名稱';
         return;
       }
+
       let data;
-      try { data = JSON.parse(dataText); } catch (e) { appMsg.textContent = 'JSON 格式錯誤'; return; }
+      if (sizeModeJson.checked) {
+        const dataText = document.getElementById('sizeData').value.trim();
+        if (!dataText) {
+          appMsg.textContent = '請輸入 JSON';
+          return;
+        }
+        try { data = JSON.parse(dataText); } catch (e) { appMsg.textContent = 'JSON 格式錯誤'; return; }
+      } else {
+        const r = parseSizeTableText(sizePaste.value, { header: !!sizePasteHasHeader.checked });
+        if (!r.ok) {
+          appMsg.textContent = '貼表格未解析成功，請先按「預覽」';
+          return;
+        }
+        data = r.rows;
+        parsedSizeRows = r.rows;
+      }
       const res = await apiFetch('/api/admin/size-tables', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
