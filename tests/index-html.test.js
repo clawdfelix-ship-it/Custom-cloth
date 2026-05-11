@@ -50,3 +50,10 @@ test('repeat mode can prefill category and delivery date', async () => {
   assert.match(html, /cate3/);
   assert.match(html, /cate4/);
 });
+
+test('index.html includes zenex brand css and header', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /\/assets\/zenex\.css/);
+  assert.match(html, /ZENEX-SPORTS/);
+});

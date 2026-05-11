@@ -3,42 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>客戶訂單下單系統</title>
+  <title>ZENEX-SPORTS｜客戶訂單下單系統</title>
+  <link rel="stylesheet" href="/assets/zenex.css">
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft JhengHei",sans-serif;}
-    body{background:#f3f4f6;color:#333;max-width:880px;margin:0 auto;padding:20px;}
-    .card{background:#fff;padding:25px;border-radius:12px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
-    .card-title{font-size:20px;font-weight:bold;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #eee;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{margin:0;}
+    .zenex-shell{max-width:980px;margin:0 auto;padding:18px 16px 40px;}
+    .zenex-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;}
+    .zenex-brand{font-weight:900;letter-spacing:.3px;}
+    .zenex-subtitle{color:var(--zenex-muted);font-size:13px;margin-top:2px;}
+
+    .card{padding:24px;margin-top:16px;}
+    .card-title{font-size:20px;font-weight:900;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--zenex-border);}
     .form-item{margin-bottom:15px;}
-    .form-item label{display:block;margin-bottom:6px;font-weight:500;}
-    .form-item input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:15px;}
-    .btn{width:100%;padding:14px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-size:16px;cursor:pointer;font-weight:bold;}
-    .btn:hover{background:#2563eb;}
+    .form-item label{display:block;margin-bottom:6px;font-weight:700;}
+    .form-item input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    .form-item select,
+    .form-item textarea{width:100%;padding:12px 14px;border:1px solid var(--zenex-border);border-radius:var(--zenex-radius-control);font-size:15px;background:#fff;color:var(--zenex-text);}
+    .form-item input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+    .form-item select:focus,
+    .form-item textarea:focus{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 16px;border:1px solid transparent;border-radius:var(--zenex-radius-control);background:var(--zenex-brand-500);color:#fff;font-size:16px;cursor:pointer;font-weight:800;text-decoration:none;}
+    .btn:hover{background:var(--zenex-brand-600);}
+    .btn:focus{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
     .btn-sm{padding:8px 12px;width:auto;font-size:14px;}
-    .btn-success{background:#10b981;}
-    .btn-warning{background:#f59e0b;}
-    .btn-secondary{background:#6b7280;}
+    .btn-success{background:var(--zenex-success);}
+    .btn-success:hover{filter:brightness(.95);}
+    .btn-warning{background:var(--zenex-warning);color:#111827;}
+    .btn-warning:hover{filter:brightness(.95);}
+    .btn-secondary{background:#fff;border-color:var(--zenex-border);color:var(--zenex-text);}
+    .btn-secondary:hover{background:var(--zenex-brand-50);}
+
     .tab-group{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
-    .tab-btn{flex:1;min-width:160px;padding:12px;border:none;border-radius:8px;background:#e5e7eb;cursor:pointer;font-size:15px;}
-    .tab-btn.active{background:#3b82f6;color:#fff;}
+    .tab-btn{flex:1;min-width:160px;padding:10px 12px;border:1px solid var(--zenex-border);border-radius:var(--zenex-radius-control);background:#fff;cursor:pointer;font-size:15px;font-weight:800;color:var(--zenex-text);}
+    .tab-btn:hover{background:var(--zenex-brand-50);}
+    .tab-btn.active{background:var(--zenex-brand-500);border-color:var(--zenex-brand-500);color:#fff;}
+    .tab-btn:focus{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
     .hide{display:none !important;}
-    .style-item{border:1px solid #eee;padding:12px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
-    .style-item img{width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ddd;background:#fff;}
+    .style-item{border:1px solid var(--zenex-border);background:#fff;padding:12px;border-radius:var(--zenex-radius-control);margin-bottom:10px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
+    .style-item img{width:80px;height:80px;object-fit:cover;border-radius:var(--zenex-radius-control);border:1px solid var(--zenex-border);background:#fff;}
     .style-info{flex:1;min-width:220px;}
-    .size-qty-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:15px;}
+    .size-qty-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;margin-top:15px;}
     .size-qty-row input{text-align:center;}
-    .size-table-preview{background:#f8f9fa;padding:10px;border-radius:8px;margin-top:10px;overflow-x:auto;}
+    .size-table-preview{background:var(--zenex-brand-50);padding:10px;border-radius:var(--zenex-radius-control);margin-top:10px;overflow-x:auto;border:1px solid var(--zenex-border);}
     table{width:100%;border-collapse:collapse;}
-    th,td{padding:8px;border:1px solid #ddd;text-align:center;font-size:13px;}
-    th{background:#f9fafb;}
+    th,td{padding:8px;border:1px solid var(--zenex-border);text-align:center;font-size:13px;background:#fff;}
+    th{background:var(--zenex-brand-50);font-weight:800;}
     .note-red{color:#dc2626;font-weight:bold;margin:8px 0;}
     .note-green{color:#059669;font-weight:bold;margin:8px 0;}
-    .muted{color:#6b7280;font-size:13px;}
-    .result-box{background:#f9fafb;border:1px solid #e5e7eb;padding:12px;border-radius:10px;margin-top:10px;}
+    .muted{color:var(--zenex-muted);font-size:13px;}
+    .result-box{background:#fff;border:1px solid var(--zenex-border);padding:12px;border-radius:var(--zenex-radius-control);margin-top:10px;}
   </style>
 </head>
-<body>
-  <div class="card">
+<body class="zenex-page">
+  <div class="zenex-shell">
+    <header class="zenex-topbar zenex-header zenex-card">
+      <div>
+        <div class="zenex-brand">ZENEX-SPORTS</div>
+        <div class="zenex-subtitle">客戶訂單下單系統</div>
+      </div>
+      <a class="btn btn-sm btn-secondary" href="/admin">後台</a>
+    </header>
+
+  <div class="card zenex-card">
     <div class="card-title">客戶訂單下單系統</div>
     <div class="tab-group">
       <button id="btn-new" class="tab-btn active" type="button" onclick="switchTab('new')">全新款式下單</button>
@@ -853,5 +881,6 @@
 
     init();
   </script>
+  </div>
 </body>
 </html>
