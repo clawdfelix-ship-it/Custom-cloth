@@ -363,7 +363,7 @@ async function orderCopyHandler(req, res) {
     const src = srcOrderR.rows[0];
     if (!src) return sendJson(res, 404, { ok: false, error: 'not_found' });
 
-    const itemsR = await sql`select style_id, qty from order_items where order_id = ${sourceOrderId}::uuid`;
+    const itemsR = await sql`select style_id, qty, custom_text, custom_attachments from order_items where order_id = ${sourceOrderId}::uuid`;
     const items = itemsR.rows;
     if (!items.length) return sendJson(res, 400, { ok: false, error: 'source_items_missing' });
 
@@ -389,8 +389,8 @@ async function orderCopyHandler(req, res) {
     for (const it of items) {
       const qty = normalizeQtyToSizeRatio(it.qty);
       await sql`
-        insert into order_items (order_id, style_id, qty)
-        values (${newOrderId}::uuid, ${it.style_id}::uuid, ${JSON.stringify(qty)}::jsonb)
+        insert into order_items (order_id, style_id, qty, custom_text, custom_attachments)
+        values (${newOrderId}::uuid, ${it.style_id}::uuid, ${JSON.stringify(qty)}::jsonb, ${it.custom_text}, ${it.custom_attachments}::jsonb)
       `;
     }
 

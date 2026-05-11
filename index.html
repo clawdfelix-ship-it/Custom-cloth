@@ -155,6 +155,7 @@
     let selectedSizeTableId = '';
     let repeatSelectedOrder = null;
     let categoriesCache = { cate1: [], cate2ByCate1: {} };
+    let customerProvided = { enabled: false, text: '', images: [] };
 
     function escapeHtml(s) {
       return String(s == null ? '' : s)
@@ -306,6 +307,84 @@
         });
         wrap.appendChild(div);
       });
+
+      const customer = styles.find((x) => x && x.code === 'CUSTOMER_PROVIDED');
+      if (customer) renderCustomerProvidedBlock(customer);
+    }
+
+    function renderCustomerProvidedBlock(style) {
+      const wrap = document.getElementById('styleList');
+      const div = document.createElement('div');
+      div.className = 'style-item';
+      div.innerHTML = `
+        <div class="style-info" style="width:100%;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="font-weight:bold;">${escapeHtml(style.name)}</div>
+            <label style="display:flex;gap:8px;align-items:center;">
+              <input type="checkbox" id="customerProvidedChk">
+              選擇
+            </label>
+          </div>
+          <div class="muted">客戶自行提供款式參考圖及描述</div>
+          <div id="customerProvidedForm" class="hide" style="margin-top:10px;">
+            <div class="form-item" style="margin:0 0 10px 0;">
+              <label>描述</label>
+              <textarea id="customerProvidedText" rows="3" placeholder="例如：自備球衣款式／想做成類似某款..." style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:10px;"></textarea>
+            </div>
+            <div class="form-item" style="margin:0;">
+              <label>參考圖（最多 3 張）</label>
+              <input id="customerProvidedImages" type="file" accept="image/*" multiple>
+              <div id="customerProvidedPreview" class="muted" style="margin-top:6px;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      wrap.appendChild(div);
+
+      const chk = div.querySelector('#customerProvidedChk');
+      chk.addEventListener('change', async () => {
+        customerProvided.enabled = !!chk.checked;
+        const form = div.querySelector('#customerProvidedForm');
+        if (chk.checked) {
+          selectedStyleIds.add(style.id);
+          form.classList.remove('hide');
+        } else {
+          selectedStyleIds.delete(style.id);
+          form.classList.add('hide');
+          customerProvided.text = '';
+          customerProvided.images = [];
+          div.querySelector('#customerProvidedText').value = '';
+          div.querySelector('#customerProvidedImages').value = '';
+          div.querySelector('#customerProvidedPreview').textContent = '';
+        }
+        await onStyleSelectionChanged();
+      });
+
+      div.querySelector('#customerProvidedText').addEventListener('input', (e) => {
+        customerProvided.text = String(e.target.value || '').trim();
+      });
+
+      div.querySelector('#customerProvidedImages').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []).slice(0, 3);
+        const urls = [];
+        for (const f of files) {
+          if (!f || !f.type || !/^image\//.test(f.type)) continue;
+          if (f.size > 500 * 1024) continue;
+          const b64 = await new Promise((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(String(r.result || ''));
+            r.onerror = () => resolve('');
+            r.readAsDataURL(f);
+          });
+          if (b64) urls.push(b64);
+        }
+        customerProvided.images = urls;
+        div.querySelector('#customerProvidedPreview').textContent = urls.length ? `已選擇 ${urls.length} 張` : '';
+      });
+    }
+
+    function getCustomerProvidedStyle() {
+      return stylesCache.find((s) => s && s.code === 'CUSTOMER_PROVIDED') || null;
     }
 
     async function onStyleSelectionChanged() {
@@ -318,6 +397,14 @@
       const firstId = Array.from(selectedStyleIds)[0];
       const style = stylesCache.find((x) => x.id === firstId);
       if (!style) return;
+      const customer = getCustomerProvidedStyle();
+      if (customer && selectedStyleIds.size === 1 && String(customer.id) === String(firstId)) {
+        selectedSizeTableId = customer.sizeTableId;
+        await loadSizeTable(selectedSizeTableId);
+        document.getElementById('sizeWrap').classList.remove('hide');
+        updateMinDelivery('new');
+        return;
+      }
       if (selectedSizeTableId !== style.sizeTableId) {
         selectedSizeTableId = style.sizeTableId;
         await loadSizeTable(selectedSizeTableId);
@@ -461,6 +548,13 @@
 
       const styleIds = mode === 'repeat' ? new Set(repeatSelectedOrder.items.map((it) => String(it.styleId))) : selectedStyleIds;
       const items = Array.from(styleIds).map((styleId) => ({ styleId, qty }));
+      if (mode !== 'repeat' && customerProvided.enabled) {
+        const customerStyle = getCustomerProvidedStyle();
+        const idx = items.findIndex((x) => customerStyle && String(x.styleId) === String(customerStyle.id));
+        const payload = { customText: customerProvided.text, customImages: customerProvided.images };
+        if (idx >= 0) items[idx] = { ...items[idx], ...payload };
+        else if (customerStyle) items.push({ styleId: customerStyle.id, qty, ...payload });
+      }
 
       const payload = {
         mode,

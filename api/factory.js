@@ -87,7 +87,9 @@ async function orderDetailHandler(req, res, session, url) {
               'styleId', oi.style_id,
               'styleCode', s.code,
               'styleName', s.name,
-              'qty', oi.qty
+              'qty', oi.qty,
+              'customText', oi.custom_text,
+              'customAttachments', oi.custom_attachments
             )
           ) filter (where oi.id is not null),
           '[]'::jsonb

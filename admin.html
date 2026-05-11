@@ -335,6 +335,7 @@
         </div>
         <div class="px-5 py-4 space-y-3">
           <div class="text-sm text-slate-600" id="factoryOrderInfo"></div>
+          <div id="factoryOrderItems" class="rounded-lg border bg-white p-3 text-sm"></div>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label class="text-sm font-medium">更新狀態</label>
@@ -690,6 +691,7 @@
     const factoryModal = document.getElementById('factoryModal');
     const closeFactoryModal = document.getElementById('closeFactoryModal');
     const factoryOrderInfo = document.getElementById('factoryOrderInfo');
+    const factoryOrderItems = document.getElementById('factoryOrderItems');
     const factoryStatusSel = document.getElementById('factoryStatusSel');
     const factoryFeedbackText = document.getElementById('factoryFeedbackText');
     const factoryFiles = document.getElementById('factoryFiles');
@@ -916,6 +918,7 @@
       factoryModalMsg.textContent = '';
       factoryFeedbackText.value = '';
       factoryFiles.value = '';
+      factoryOrderItems.innerHTML = '';
     });
 
     closeSizePreviewModal.addEventListener('click', () => {
@@ -1390,6 +1393,29 @@
           appMsg.textContent = `訂單 ${o.orderSn}：${o.status}`;
           factoryActiveOrderId = o.id;
           factoryOrderInfo.textContent = `訂單：${o.orderSn}｜公司：${o.companyName}｜狀態：${o.status}`;
+          const items = Array.isArray(o.items) ? o.items : [];
+          if (!items.length) {
+            factoryOrderItems.innerHTML = '<div class="text-slate-500">無款式項目</div>';
+          } else {
+            factoryOrderItems.innerHTML = items
+              .map((it) => {
+                const qty = Array.isArray(it.qty) ? it.qty : [];
+                const total = qty.reduce((a, b) => a + Number(b && b.qty ? b.qty : 0), 0);
+                const customText = it.customText ? `<div class="mt-1 text-xs text-slate-600">${escapeHtml(it.customText)}</div>` : '';
+                const att = Array.isArray(it.customAttachments) ? it.customAttachments : [];
+                const imgs = att.length
+                  ? `<div class="mt-1 flex flex-wrap gap-2">${att
+                      .map((a) => `<a class="text-xs underline" href="${escapeHtml(a.url)}" target="_blank" rel="noreferrer">圖片</a>`)
+                      .join('')}</div>`
+                  : '';
+                return `<div class="border-b last:border-b-0 py-2">
+                  <div class="font-medium">${escapeHtml(it.styleCode || '')} ${escapeHtml(it.styleName || '')}（${total} 件）</div>
+                  ${customText}
+                  ${imgs}
+                </div>`;
+              })
+              .join('');
+          }
           factoryStatusSel.value = o.status;
           factoryFeedbackText.value = '';
           factoryFiles.value = '';

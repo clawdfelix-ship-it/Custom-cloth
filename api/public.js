@@ -6,6 +6,7 @@ const { generateOrderSn } = require('../src/lib/order-sn');
 const { ensureMigrations } = require('../src/lib/migrate');
 const { generateLookupCode } = require('../src/lib/lookup-code');
 const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
+const { uploadDataUrl } = require('../src/lib/blob');
 
 function normalizeItemsQty(items) {
   return (Array.isArray(items) ? items : []).map((it) => {
@@ -20,6 +21,7 @@ function normalizeItemsQty(items) {
 
 const CATE1 = ['現貨款式加工', '熱昇華訂製', '開板訂製'];
 const DEFAULT_CATE2 = ['球衣', 'POLO', '風衣外套', '其他'];
+const CUSTOMER_STYLE_CODE = 'CUSTOMER_PROVIDED';
 
 function computeLeadBusinessDays(mode, cate1) {
   if (mode === 'repeat') return 17;
@@ -57,6 +59,33 @@ async function handleStyles(req, res, url) {
       imgBase64: x.img_base64 || '',
       remark: x.remark || ''
     }));
+
+    const hasCustomerProvided = styles.some((s) => s && s.code === CUSTOMER_STYLE_CODE);
+    if (!hasCustomerProvided) {
+      const cr = await sql`
+        select s.id, s.code, s.name, s.cate1, s.cate2, s.size_table_id, s.img_url, s.img_base64, s.remark, st.name as size_table_name
+        from styles s
+        join size_tables st on st.id = s.size_table_id
+        where s.code = ${CUSTOMER_STYLE_CODE}
+        order by s.created_at asc
+        limit 1
+      `;
+      const x = cr.rows[0];
+      if (x) {
+        styles.push({
+          id: x.id,
+          code: x.code,
+          name: x.name,
+          cate1: x.cate1,
+          cate2: x.cate2,
+          sizeTableId: x.size_table_id,
+          sizeTableName: x.size_table_name,
+          imgUrl: x.img_url || '',
+          imgBase64: x.img_base64 || '',
+          remark: x.remark || ''
+        });
+      }
+    }
     return sendJson(res, 200, { ok: true, styles });
   } catch (e) {
     return sendJson(res, 500, { ok: false, error: 'server_error' });
@@ -137,8 +166,21 @@ async function handleCreateOrder(req, res) {
     const items = itemsRaw.map((it) => {
       const styleId = requiredString(it && it.styleId, 'styleId');
       const qty = normalizeQtyToSizeRatio(it && it.qty);
-      return { styleId, qty };
+      const customText = typeof (it && it.customText) === 'string' ? it.customText.trim() : '';
+      const customImages = Array.isArray(it && it.customImages) ? it.customImages : [];
+      const customAttachments = Array.isArray(it && it.customAttachments) ? it.customAttachments : [];
+      return { styleId, qty, customText, customImages, customAttachments };
     });
+
+    const customerStyleR = await sql`select id from styles where code = ${CUSTOMER_STYLE_CODE} limit 1`;
+    const customerStyleId = customerStyleR.rows[0] ? String(customerStyleR.rows[0].id) : '';
+    const hasCustomerPayload = items.some(
+      (it) =>
+        (it.customText && it.customText.trim()) ||
+        (Array.isArray(it.customImages) && it.customImages.length) ||
+        (Array.isArray(it.customAttachments) && it.customAttachments.length)
+    );
+    if (hasCustomerPayload && !customerStyleId) return sendJson(res, 400, { ok: false, error: 'customer_style_missing' });
 
     const lead = computeLeadBusinessDays(mode, cate1);
     const suggestedDeliveryDate = addBusinessDays(hkTodayYmd(new Date()), lead);
@@ -170,9 +212,37 @@ async function handleCreateOrder(req, res) {
     const orderId = inserted.rows[0].id;
 
     for (const it of items) {
+      const isCustomer = customerStyleId && String(it.styleId) === customerStyleId;
+      let customAttachments = null;
+      let customText = null;
+      if (isCustomer) {
+        customText = it.customText || '';
+        const imgs = (Array.isArray(it.customImages) ? it.customImages : []).slice(0, 3);
+        const uploaded = [];
+        for (let i = 0; i < imgs.length; i++) {
+          const dataUrl = typeof imgs[i] === 'string' ? imgs[i] : '';
+          const m = dataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,(.*)$/);
+          if (!m) continue;
+          const buf = Buffer.from(m[2], 'base64');
+          if (buf.length > 500 * 1024) continue;
+          const ext = m[1] === 'image/png' ? '.png' : m[1] === 'image/webp' ? '.webp' : '.jpg';
+          const up = await uploadDataUrl(`orders/${orderSn}/customer_provided`, `img_${i + 1}${ext}`, dataUrl);
+          if (up && up.url) uploaded.push({ url: up.url, name: `img_${i + 1}${ext}`, contentType: up.contentType || m[1], size: buf.length });
+        }
+        const existing = (Array.isArray(it.customAttachments) ? it.customAttachments : []).slice(0, 3);
+        const cleanExisting = existing
+          .map((a) => ({
+            url: a && typeof a.url === 'string' ? a.url : '',
+            name: a && typeof a.name === 'string' ? a.name : '',
+            contentType: a && typeof a.contentType === 'string' ? a.contentType : '',
+            size: Number(a && a.size) || 0
+          }))
+          .filter((a) => a.url);
+        customAttachments = uploaded.length || cleanExisting.length ? [...cleanExisting, ...uploaded].slice(0, 3) : [];
+      }
       await sql`
-        insert into order_items (order_id, style_id, qty)
-        values (${orderId}::uuid, ${it.styleId}::uuid, ${JSON.stringify(it.qty)}::jsonb)
+        insert into order_items (order_id, style_id, qty, custom_text, custom_attachments)
+        values (${orderId}::uuid, ${it.styleId}::uuid, ${JSON.stringify(it.qty)}::jsonb, ${customText}, ${customAttachments ? JSON.stringify(customAttachments) : null}::jsonb)
       `;
     }
 
@@ -215,7 +285,9 @@ async function handleHistory(req, res, url) {
               'styleId', oi.style_id,
               'styleCode', s.code,
               'styleName', s.name,
-              'qty', oi.qty
+              'qty', oi.qty,
+              'customText', oi.custom_text,
+              'customAttachments', oi.custom_attachments
             )
           ) filter (where oi.id is not null),
           '[]'::jsonb
