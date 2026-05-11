@@ -11,6 +11,7 @@ const { ensureMigrations } = require('../src/lib/migrate');
 const { audit } = require('../src/lib/audit');
 const { uploadDataUrl } = require('../src/lib/blob');
 const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
+const { toCsv } = require('../src/lib/csv');
 
 const JERSEY_CATE2 = '球衣';
 const JERSEY_CATE3 = ['足球', '籃球', '排球', '其他'];
@@ -228,7 +229,18 @@ async function ordersHandler(req, res, url) {
   const status = (url.searchParams.get('status') || '').trim();
   const cate1 = (url.searchParams.get('cate1') || '').trim();
   const cate2 = (url.searchParams.get('cate2') || '').trim();
+  const cate3 = (url.searchParams.get('cate3') || '').trim();
+  const cate4 = (url.searchParams.get('cate4') || '').trim();
+  const createdFrom = (url.searchParams.get('createdFrom') || '').trim();
+  const createdTo = (url.searchParams.get('createdTo') || '').trim();
   const factoryName = (url.searchParams.get('factoryName') || '').trim();
+
+  try {
+    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo) requiredYmd(createdTo, 'createdTo');
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
 
   try {
     const r = await sql`
@@ -241,6 +253,8 @@ async function ordersHandler(req, res, url) {
         o.cust_phone,
         o.cate1,
         o.cate2,
+        o.cate3,
+        o.cate4,
         o.factory_user_id,
         o.factory_name,
         o.order_type,
@@ -256,7 +270,9 @@ async function ordersHandler(req, res, url) {
               'styleId', oi.style_id,
               'styleCode', s.code,
               'styleName', s.name,
-              'qty', oi.qty
+              'qty', oi.qty,
+              'customText', oi.custom_text,
+              'customAttachments', oi.custom_attachments
             )
           ) filter (where oi.id is not null),
           '[]'::jsonb
@@ -271,6 +287,10 @@ async function ordersHandler(req, res, url) {
         and (${status} = '' or o.status = ${status})
         and (${cate1} = '' or o.cate1 = ${cate1})
         and (${cate2} = '' or o.cate2 = ${cate2})
+        and (${cate3} = '' or o.cate3 = ${cate3})
+        and (${cate4} = '' or o.cate4 = ${cate4})
+        and (${createdFrom} = '' or o.create_time >= (${createdFrom}::date))
+        and (${createdTo} = '' or o.create_time < (${createdTo}::date + interval '1 day'))
         and (${factoryName} = '' or o.factory_name = ${factoryName})
       group by o.id
       order by o.create_time desc
@@ -286,6 +306,8 @@ async function ordersHandler(req, res, url) {
       phone: x.cust_phone,
       cate1: x.cate1,
       cate2: x.cate2,
+      cate3: x.cate3 || '',
+      cate4: x.cate4 || '',
       factoryUserId: x.factory_user_id,
       factoryName: x.factory_name || '',
       orderType: x.order_type,
@@ -298,6 +320,135 @@ async function ordersHandler(req, res, url) {
       items: x.items || []
     }));
     return sendJson(res, 200, { ok: true, orders });
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'server_error' });
+  }
+}
+
+async function ordersCsvHandler(req, res, url) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  const orderSn = (url.searchParams.get('orderSn') || '').trim();
+  const companyName = (url.searchParams.get('companyName') || '').trim();
+  const phone = (url.searchParams.get('phone') || '').trim();
+  const status = (url.searchParams.get('status') || '').trim();
+  const cate1 = (url.searchParams.get('cate1') || '').trim();
+  const cate2 = (url.searchParams.get('cate2') || '').trim();
+  const cate3 = (url.searchParams.get('cate3') || '').trim();
+  const cate4 = (url.searchParams.get('cate4') || '').trim();
+  const createdFrom = (url.searchParams.get('createdFrom') || '').trim();
+  const createdTo = (url.searchParams.get('createdTo') || '').trim();
+
+  try {
+    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo) requiredYmd(createdTo, 'createdTo');
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
+
+  try {
+    const r = await sql`
+      select
+        o.id,
+        o.order_sn,
+        o.create_time,
+        o.cust_name,
+        o.cust_phone,
+        o.cate1,
+        o.cate2,
+        o.cate3,
+        o.cate4,
+        o.factory_name,
+        o.order_type,
+        o.status,
+        o.remark,
+        o.requested_delivery_date,
+        o.suggested_delivery_date,
+        oi.style_id,
+        s.code as style_code,
+        s.name as style_name,
+        oi.qty,
+        oi.custom_text,
+        oi.custom_attachments
+      from orders o
+      left join order_items oi on oi.order_id = o.id
+      left join styles s on s.id = oi.style_id
+      where
+        (${orderSn} = '' or o.order_sn = ${orderSn})
+        and (${companyName} = '' or o.cust_name ilike ${'%' + companyName + '%'})
+        and (${phone} = '' or o.cust_phone = ${phone})
+        and (${status} = '' or o.status = ${status})
+        and (${cate1} = '' or o.cate1 = ${cate1})
+        and (${cate2} = '' or o.cate2 = ${cate2})
+        and (${cate3} = '' or o.cate3 = ${cate3})
+        and (${cate4} = '' or o.cate4 = ${cate4})
+        and (${createdFrom} = '' or o.create_time >= (${createdFrom}::date))
+        and (${createdTo} = '' or o.create_time < (${createdTo}::date + interval '1 day'))
+      order by o.create_time desc, oi.create_time asc
+      limit 2000
+    `;
+
+    const rows = r.rows.map((x) => {
+      let qtyList = [];
+      try {
+        qtyList = normalizeQtyToSizeRatio(x.qty);
+      } catch (e) {
+        qtyList = [];
+      }
+      const qtyTotal = Array.isArray(qtyList) ? qtyList.reduce((a, b) => a + Number(b && b.qty ? b.qty : 0), 0) : 0;
+      const att = Array.isArray(x.custom_attachments) ? x.custom_attachments : [];
+      const attUrls = att.map((a) => (a && typeof a.url === 'string' ? a.url : '')).filter(Boolean).join(' ');
+      return {
+        createdAt: x.create_time ? new Date(x.create_time).toISOString() : '',
+        orderSn: x.order_sn || '',
+        status: x.status || '',
+        orderType: x.order_type || '',
+        cate1: x.cate1 || '',
+        cate2: x.cate2 || '',
+        cate3: x.cate3 || '',
+        cate4: x.cate4 || '',
+        companyName: x.cust_name || '',
+        phone: x.cust_phone || '',
+        factoryName: x.factory_name || '',
+        requestedDeliveryDate: x.requested_delivery_date ? String(x.requested_delivery_date) : '',
+        suggestedDeliveryDate: x.suggested_delivery_date ? String(x.suggested_delivery_date) : '',
+        addressRemark: x.remark || '',
+        styleCode: x.style_code || '',
+        styleName: x.style_name || '',
+        qtyTotal: qtyTotal ? String(qtyTotal) : '',
+        customText: x.custom_text || '',
+        customImageUrls: attUrls
+      };
+    });
+
+    const csv = toCsv(rows, [
+      { key: 'createdAt', header: 'createdAt' },
+      { key: 'orderSn', header: 'orderSn' },
+      { key: 'status', header: 'status' },
+      { key: 'orderType', header: 'orderType' },
+      { key: 'cate1', header: 'cate1' },
+      { key: 'cate2', header: 'cate2' },
+      { key: 'cate3', header: 'cate3' },
+      { key: 'cate4', header: 'cate4' },
+      { key: 'companyName', header: 'companyName' },
+      { key: 'phone', header: 'phone' },
+      { key: 'factoryName', header: 'factoryName' },
+      { key: 'requestedDeliveryDate', header: 'requestedDeliveryDate' },
+      { key: 'suggestedDeliveryDate', header: 'suggestedDeliveryDate' },
+      { key: 'addressRemark', header: 'addressRemark' },
+      { key: 'styleCode', header: 'styleCode' },
+      { key: 'styleName', header: 'styleName' },
+      { key: 'qtyTotal', header: 'qtyTotal' },
+      { key: 'customText', header: 'customText' },
+      { key: 'customImageUrls', header: 'customImageUrls' }
+    ]);
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="orders_${Date.now()}.csv"`);
+    res.end(csv);
   } catch (e) {
     return sendJson(res, 500, { ok: false, error: 'server_error' });
   }
@@ -528,6 +679,7 @@ module.exports = async function handler(req, res) {
   if (action === 'sizeTables') return sizeTablesHandler(req, res, url);
   if (action === 'styles') return stylesHandler(req, res, url);
   if (action === 'orders') return ordersHandler(req, res, url);
+  if (action === 'ordersCsv') return ordersCsvHandler(req, res, url);
   if (action === 'assignFactory') return assignFactoryHandler(req, res);
   if (action === 'orderStatus') return orderStatusHandler(req, res);
   if (action === 'orderCopy') return orderCopyHandler(req, res);

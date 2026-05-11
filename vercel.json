@@ -16,6 +16,7 @@
     { "source": "/api/admin/size-tables", "destination": "/api/admin?action=sizeTables" },
     { "source": "/api/admin/styles", "destination": "/api/admin?action=styles" },
     { "source": "/api/admin/orders", "destination": "/api/admin?action=orders" },
+    { "source": "/api/admin/orders/csv", "destination": "/api/admin?action=ordersCsv" },
     { "source": "/api/admin/orders/status", "destination": "/api/admin?action=orderStatus" },
     { "source": "/api/admin/orders/copy", "destination": "/api/admin?action=orderCopy" },
     { "source": "/api/admin/orders/assign-factory", "destination": "/api/admin?action=assignFactory" },

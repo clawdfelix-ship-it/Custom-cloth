@@ -10,3 +10,11 @@ test('vercel rewrites include public categories endpoint', async () => {
   assert.equal(has, true);
 });
 
+test('vercel rewrites include admin orders csv endpoint', async () => {
+  const fs = require('node:fs/promises');
+  const raw = await fs.readFile('vercel.json', 'utf8');
+  const cfg = JSON.parse(raw);
+  const rewrites = cfg.rewrites || [];
+  const has = rewrites.some((r) => r.source === '/api/admin/orders/csv');
+  assert.equal(has, true);
+});

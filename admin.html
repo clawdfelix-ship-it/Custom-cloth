@@ -79,8 +79,50 @@
               <option value="已取消">已取消</option>
             </select>
           </div>
+          <div>
+            <label class="text-sm font-medium">建立日（從）</label>
+            <input id="fCreatedFrom" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">建立日（至）</label>
+            <input id="fCreatedTo" type="date" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">大類</label>
+            <select id="fCate1" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="">全部</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium">子類</label>
+            <select id="fCate2" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="">全部</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium">球衣子類</label>
+            <select id="fCate3" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="">全部</option>
+              <option value="足球">足球</option>
+              <option value="籃球">籃球</option>
+              <option value="排球">排球</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium">再子類</label>
+            <select id="fCate4" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="">全部</option>
+              <option value="上衣">上衣</option>
+              <option value="褲子">褲子</option>
+              <option value="整套">整套</option>
+            </select>
+          </div>
           <div class="sm:col-span-2">
-            <button id="loadOrdersBtn" class="mt-6 w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">載入訂單</button>
+            <div class="mt-6 flex flex-wrap gap-2">
+              <button id="loadOrdersBtn" class="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">載入訂單</button>
+              <button id="exportOrdersBtn" class="rounded-lg border bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50">匯出 CSV</button>
+            </div>
           </div>
         </div>
 
@@ -432,7 +474,14 @@
     const fCompany = document.getElementById('fCompany');
     const fPhone = document.getElementById('fPhone');
     const fStatus = document.getElementById('fStatus');
+    const fCreatedFrom = document.getElementById('fCreatedFrom');
+    const fCreatedTo = document.getElementById('fCreatedTo');
+    const fCate1 = document.getElementById('fCate1');
+    const fCate2 = document.getElementById('fCate2');
+    const fCate3 = document.getElementById('fCate3');
+    const fCate4 = document.getElementById('fCate4');
     const loadOrdersBtn = document.getElementById('loadOrdersBtn');
+    const exportOrdersBtn = document.getElementById('exportOrdersBtn');
     const ordersBody = document.getElementById('ordersBody');
 
     const styleSizeTableId = document.getElementById('styleSizeTableId');
@@ -846,6 +895,12 @@
       if (fCompany.value.trim()) qs.set('companyName', fCompany.value.trim());
       if (fPhone.value.trim()) qs.set('phone', fPhone.value.trim());
       if (fStatus.value) qs.set('status', fStatus.value);
+      if (fCreatedFrom.value) qs.set('createdFrom', fCreatedFrom.value);
+      if (fCreatedTo.value) qs.set('createdTo', fCreatedTo.value);
+      if (fCate1.value) qs.set('cate1', fCate1.value);
+      if (fCate2.value) qs.set('cate2', fCate2.value);
+      if (fCate3.value) qs.set('cate3', fCate3.value);
+      if (fCate4.value) qs.set('cate4', fCate4.value);
       const res = await apiFetch(`/api/admin/orders?${qs.toString()}`, {});
       const data = await res.json().catch(() => null);
       if (!data || !data.ok) {
@@ -863,6 +918,8 @@
           `<option value="">未指派</option>`,
           ...factoryUsers.map((u) => `<option value="${u.id}">${u.name}</option>`)
         ].join('');
+        const cateText =
+          o.cate2 === '球衣' && o.cate3 && o.cate4 ? `${o.cate1} / ${o.cate2} / ${o.cate3} / ${o.cate4}` : `${o.cate1} / ${o.cate2}`;
         tr.innerHTML = `
           <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
           <td class="px-3 py-2 font-semibold">${escapeHtml(o.orderSn)}</td>
@@ -872,7 +929,7 @@
           </td>
           <td class="px-3 py-2">${escapeHtml(o.companyName)}</td>
           <td class="px-3 py-2">${escapeHtml(o.phone)}</td>
-          <td class="px-3 py-2">${escapeHtml(o.cate1)} / ${escapeHtml(o.cate2)}</td>
+          <td class="px-3 py-2">${escapeHtml(cateText)}</td>
           <td class="px-3 py-2">${escapeHtml(o.suggestedDeliveryDate || '')}</td>
           <td class="px-3 py-2">${escapeHtml(o.requestedDeliveryDate || '')}</td>
           <td class="px-3 py-2">
@@ -928,6 +985,41 @@
     }
 
     loadOrdersBtn.addEventListener('click', loadOrders);
+
+    exportOrdersBtn.addEventListener('click', () => {
+      appMsg.textContent = '';
+      const qs = new URLSearchParams();
+      if (fOrderSn.value.trim()) qs.set('orderSn', fOrderSn.value.trim());
+      if (fCompany.value.trim()) qs.set('companyName', fCompany.value.trim());
+      if (fPhone.value.trim()) qs.set('phone', fPhone.value.trim());
+      if (fStatus.value) qs.set('status', fStatus.value);
+      if (fCreatedFrom.value) qs.set('createdFrom', fCreatedFrom.value);
+      if (fCreatedTo.value) qs.set('createdTo', fCreatedTo.value);
+      if (fCate1.value) qs.set('cate1', fCate1.value);
+      if (fCate2.value) qs.set('cate2', fCate2.value);
+      if (fCate3.value) qs.set('cate3', fCate3.value);
+      if (fCate4.value) qs.set('cate4', fCate4.value);
+      const token = sessionToken();
+      if (!token) {
+        appMsg.textContent = '未登入';
+        return;
+      }
+      const url = `/api/admin/orders/csv?${qs.toString()}`;
+      fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => (r.ok ? r.blob() : Promise.reject(new Error('bad'))))
+        .then((blob) => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'orders.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        })
+        .catch(() => {
+          appMsg.textContent = '匯出失敗';
+        });
+    });
 
     closeCopyModal.addEventListener('click', () => {
       copyModal.classList.add('hidden');
@@ -1087,6 +1179,13 @@
       refreshStyleCate2Options();
     });
 
+    fCate1.addEventListener('change', () => {
+      const c1 = fCate1.value;
+      const list = c1 && categoriesCache.cate2ByCate1 && categoriesCache.cate2ByCate1[c1] ? categoriesCache.cate2ByCate1[c1] : [];
+      fCate2.innerHTML = `<option value="">全部</option>` + list.map((x) => `<option value="${x}">${x}</option>`).join('');
+      fCate2.value = '';
+    });
+
     styleCate2Sel.addEventListener('change', () => {
       if (styleCate2Sel.value === '__custom__') styleCate2Custom.classList.remove('hidden');
       else {
@@ -1117,6 +1216,9 @@
       styleCate1Custom.classList.add('hidden');
       styleCate1Custom.value = '';
       refreshStyleCate2Options();
+
+      fCate1.innerHTML = `<option value="">全部</option>` + categoriesCache.cate1.map((x) => `<option value="${x}">${x}</option>`).join('');
+      fCate2.innerHTML = `<option value="">全部</option>`;
     }
 
     async function loadSizes() {

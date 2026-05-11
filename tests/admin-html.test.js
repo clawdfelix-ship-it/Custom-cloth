@@ -36,3 +36,15 @@ test('admin.html contains jersey cate3/cate4 selects', async () => {
   assert.match(html, /id="styleCate3Sel"/);
   assert.match(html, /id="styleCate4Sel"/);
 });
+
+test('admin.html contains order filter controls and csv export', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('admin.html', 'utf8');
+  assert.match(html, /id="fCreatedFrom"/);
+  assert.match(html, /id="fCreatedTo"/);
+  assert.match(html, /id="fCate1"/);
+  assert.match(html, /id="fCate2"/);
+  assert.match(html, /id="fCate3"/);
+  assert.match(html, /id="fCate4"/);
+  assert.match(html, /id="exportOrdersBtn"/);
+});
