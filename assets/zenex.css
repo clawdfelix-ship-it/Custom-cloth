@@ -41,7 +41,7 @@
   font-weight:700;
   cursor:pointer;
 }
-.zenex-btn:focus{ outline:3px solid rgba(0,102,255,.25); outline-offset:2px; }
+.zenex-btn:focus-visible{ outline:3px solid rgba(0,102,255,.25); outline-offset:2px; }
 .zenex-btn-primary{ background:var(--zenex-brand-500); color:#fff; }
 .zenex-btn-primary:hover{ background:var(--zenex-brand-600); }
 .zenex-btn-secondary{ background:#fff; border-color:var(--zenex-border); color:var(--zenex-text); }
@@ -55,6 +55,6 @@
   background:#fff;
   font-size:15px;
 }
-.zenex-input:focus{ outline:3px solid rgba(0,102,255,.25); outline-offset:2px; }
+.zenex-input:focus-visible{ outline:3px solid rgba(0,102,255,.25); outline-offset:2px; }
 
 .zenex-muted{ color:var(--zenex-muted); }

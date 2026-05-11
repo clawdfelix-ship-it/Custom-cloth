@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f6f8fb">
   <title>ZENEX-SPORTS｜客戶訂單下單系統</title>
   <link rel="stylesheet" href="/assets/zenex.css">
   <style>
@@ -20,13 +21,13 @@
     .form-item input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
     .form-item select,
     .form-item textarea{width:100%;padding:12px 14px;border:1px solid var(--zenex-border);border-radius:var(--zenex-radius-control);font-size:15px;background:#fff;color:var(--zenex-text);}
-    .form-item input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
-    .form-item select:focus,
-    .form-item textarea:focus{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
+    .form-item input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus-visible,
+    .form-item select:focus-visible,
+    .form-item textarea:focus-visible{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
 
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 16px;border:1px solid transparent;border-radius:var(--zenex-radius-control);background:var(--zenex-brand-500);color:#fff;font-size:16px;cursor:pointer;font-weight:800;text-decoration:none;}
     .btn:hover{background:var(--zenex-brand-600);}
-    .btn:focus{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
+    .btn:focus-visible{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
     .btn-sm{padding:8px 12px;width:auto;font-size:14px;}
     .btn-success{background:var(--zenex-success);}
     .btn-success:hover{filter:brightness(.95);}
@@ -39,7 +40,7 @@
     .tab-btn{flex:1;min-width:160px;padding:10px 12px;border:1px solid var(--zenex-border);border-radius:var(--zenex-radius-control);background:#fff;cursor:pointer;font-size:15px;font-weight:800;color:var(--zenex-text);}
     .tab-btn:hover{background:var(--zenex-brand-50);}
     .tab-btn.active{background:var(--zenex-brand-500);border-color:var(--zenex-brand-500);color:#fff;}
-    .tab-btn:focus{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
+    .tab-btn:focus-visible{outline:3px solid rgba(0,102,255,.25);outline-offset:2px;}
     .hide{display:none !important;}
     .style-item{border:1px solid var(--zenex-border);background:#fff;padding:12px;border-radius:var(--zenex-radius-control);margin-bottom:10px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
     .style-item img{width:80px;height:80px;object-fit:cover;border-radius:var(--zenex-radius-control);border:1px solid var(--zenex-border);background:#fff;}
@@ -54,9 +55,12 @@
     .note-green{color:#059669;font-weight:bold;margin:8px 0;}
     .muted{color:var(--zenex-muted);font-size:13px;}
     .result-box{background:#fff;border:1px solid var(--zenex-border);padding:12px;border-radius:var(--zenex-radius-control);margin-top:10px;}
+    .zenex-skip{position:absolute;left:-9999px;top:10px;background:#fff;border:1px solid var(--zenex-border);padding:10px 12px;border-radius:12px;z-index:50;box-shadow:var(--zenex-shadow);}
+    .zenex-skip:focus-visible{left:16px;}
   </style>
 </head>
 <body class="zenex-page">
+  <a class="zenex-skip" href="#main">跳至主要內容</a>
   <div class="zenex-shell">
     <header class="zenex-topbar zenex-header zenex-card">
       <div>
@@ -66,6 +70,7 @@
       <a class="btn btn-sm btn-secondary" href="/admin">後台</a>
     </header>
 
+  <main id="main">
   <div class="card zenex-card">
     <div class="card-title">客戶訂單下單系統</div>
     <div class="tab-group">
@@ -79,21 +84,21 @@
       <div class="note-green">現貨加工/熱昇華訂製、任何翻單：最低工期：17 工作日</div>
 
       <div class="form-item">
-        <label>訂製大分類</label>
-        <select id="cate1" onchange="onCate1Changed()">
+        <label for="cate1">訂製大分類</label>
+        <select id="cate1" name="cate1" autocomplete="off" onchange="onCate1Changed()">
           <option value="">請選擇訂製類型</option>
         </select>
       </div>
       <div class="form-item">
-        <label>產品子分類</label>
-        <select id="cate2" onchange="onCate2Changed()">
+        <label for="cate2">產品子分類</label>
+        <select id="cate2" name="cate2" autocomplete="off" onchange="onCate2Changed()">
           <option value="">請選擇產品類型</option>
         </select>
       </div>
 
       <div id="jerseyWrap" class="form-item hide">
-        <label>球衣子類</label>
-        <select id="cate3" onchange="onCate3Changed()">
+        <label for="cate3">球衣子類</label>
+        <select id="cate3" name="cate3" autocomplete="off" onchange="onCate3Changed()">
           <option value="">請選擇</option>
           <option value="足球">足球</option>
           <option value="籃球">籃球</option>
@@ -102,8 +107,8 @@
         </select>
       </div>
       <div id="jerseyPartWrap" class="form-item hide">
-        <label>再子類</label>
-        <select id="cate4" onchange="onCate4Changed()">
+        <label for="cate4">再子類</label>
+        <select id="cate4" name="cate4" autocomplete="off" onchange="onCate4Changed()">
           <option value="">請選擇</option>
           <option value="上衣">上衣</option>
           <option value="褲子">褲子</option>
@@ -129,26 +134,26 @@
         </div>
 
         <div class="form-item">
-          <label>要求交貨日期</label>
-          <input type="date" id="deliveryDate">
+          <label for="deliveryDate">要求交貨日期</label>
+          <input type="date" id="deliveryDate" name="requestedDeliveryDate" autocomplete="off">
           <div id="minDateHint" class="muted"></div>
         </div>
 
         <div class="form-item">
-          <label>公司名</label>
-          <input type="text" id="companyName" placeholder="請輸入公司名">
+          <label for="companyName">公司名</label>
+          <input type="text" id="companyName" name="companyName" autocomplete="organization" placeholder="請輸入公司名">
         </div>
         <div class="form-item">
-          <label>聯絡人</label>
-          <input type="text" id="contactName" placeholder="請輸入聯絡人">
+          <label for="contactName">聯絡人</label>
+          <input type="text" id="contactName" name="contactName" autocomplete="name" placeholder="請輸入聯絡人">
         </div>
         <div class="form-item">
-          <label>電話</label>
-          <input type="text" id="phone" placeholder="請輸入電話">
+          <label for="phone">電話</label>
+          <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel" placeholder="請輸入電話" spellcheck="false">
         </div>
         <div class="form-item">
-          <label>送貨地址</label>
-          <input type="text" id="address" placeholder="請輸入送貨地址">
+          <label for="address">送貨地址</label>
+          <input type="text" id="address" name="address" autocomplete="street-address" placeholder="請輸入送貨地址">
         </div>
 
         <button class="btn btn-success" type="button" onclick="submitOrder('new')">提交訂單</button>
@@ -159,12 +164,12 @@
 
     <div id="tab-repeat" class="tab-content hide">
       <div class="form-item">
-        <label>公司名</label>
-        <input type="text" id="repeatCompanyName" placeholder="請輸入之前落單公司名">
+        <label for="repeatCompanyName">公司名</label>
+        <input type="text" id="repeatCompanyName" name="repeatCompanyName" autocomplete="organization" placeholder="請輸入之前落單公司名">
       </div>
       <div class="form-item">
-        <label>電話</label>
-        <input type="text" id="repeatPhone" placeholder="請輸入之前落單電話">
+        <label for="repeatPhone">電話</label>
+        <input type="tel" id="repeatPhone" name="repeatPhone" inputmode="tel" autocomplete="tel" placeholder="請輸入之前落單電話" spellcheck="false">
       </div>
       <button class="btn btn-warning" type="button" onclick="searchMyOrder()">查找歷史訂單</button>
       <div id="repeatMsg" class="muted"></div>
@@ -179,22 +184,23 @@
 
     <div id="tab-query" class="tab-content hide">
       <div class="form-item">
-        <label>訂單編號</label>
-        <input type="text" id="queryOrderSn" placeholder="例如：ORD20260509123456-abcdef">
+        <label for="queryOrderSn">訂單編號</label>
+        <input type="text" id="queryOrderSn" name="queryOrderSn" autocomplete="off" placeholder="例如：ORD20260509123456-abcdef" spellcheck="false">
       </div>
       <div class="form-item">
-        <label>查單碼（推薦）</label>
-        <input type="text" id="queryLookupCode" placeholder="請輸入提交成功後顯示嘅查單碼">
+        <label for="queryLookupCode">查單碼（推薦）</label>
+        <input type="text" id="queryLookupCode" name="queryLookupCode" autocomplete="off" placeholder="請輸入提交成功後顯示嘅查單碼" spellcheck="false">
       </div>
       <div class="form-item">
-        <label>電話（兼容舊單）</label>
-        <input type="text" id="queryPhone" placeholder="如冇查單碼，先輸入落單電話">
+        <label for="queryPhone">電話（兼容舊單）</label>
+        <input type="tel" id="queryPhone" name="queryPhone" inputmode="tel" autocomplete="tel" placeholder="如冇查單碼，先輸入落單電話" spellcheck="false">
       </div>
       <button class="btn btn-secondary" type="button" onclick="queryOrder()">查詢訂單狀態</button>
       <div id="queryMsg" class="muted"></div>
       <div id="queryResult" class="result-box hide"></div>
     </div>
   </div>
+  </main>
 
   <script>
     let holidays = new Set();
@@ -368,7 +374,7 @@
         const div = document.createElement('div');
         div.className = 'style-item';
         const imgSrc = s.imgUrl || s.imgBase64 || 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
-        const img = `<img src="${imgSrc}" alt="${escapeHtml(s.name)}">`;
+        const img = `<img width="80" height="80" loading="lazy" decoding="async" src="${imgSrc}" alt="${escapeHtml(s.name)}">`;
         div.innerHTML = `
           ${img}
           <div class="style-info">
