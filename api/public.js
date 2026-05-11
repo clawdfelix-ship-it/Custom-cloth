@@ -7,6 +7,7 @@ const { ensureMigrations } = require('../src/lib/migrate');
 const { generateLookupCode } = require('../src/lib/lookup-code');
 const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
 const { uploadDataUrl } = require('../src/lib/blob');
+const { requireCustomerSession } = require('../src/lib/customer-auth');
 
 function normalizeItemsQty(items) {
   return (Array.isArray(items) ? items : []).map((it) => {
@@ -165,6 +166,8 @@ async function handleCategories(req, res) {
 
 async function handleCreateOrder(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+  const session = await requireCustomerSession(req);
+  if (!session) return sendJson(res, 401, { ok: false, error: 'not_authenticated' });
   try {
     const raw = await readBody(req);
     const body = raw ? JSON.parse(raw) : {};
@@ -222,15 +225,7 @@ async function handleCreateOrder(req, res) {
     const lookupCode = generateLookupCode();
     const status = '客戶已提交';
     const orderType = computeOrderType(mode, cate1);
-
-    const customerUpsert = await sql`
-      insert into customers (company_name, contact_name, phone)
-      values (${companyName}, ${contactName || null}, ${phone})
-      on conflict (company_name, phone)
-      do update set contact_name = excluded.contact_name
-      returning id
-    `;
-    const customerId = customerUpsert.rows[0].id;
+    const customerId = session.customerId;
 
     const inserted = await sql`
       insert into orders
@@ -292,9 +287,8 @@ async function handleCreateOrder(req, res) {
 
 async function handleHistory(req, res, url) {
   if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
-  const companyName = (url.searchParams.get('companyName') || '').trim();
-  const phone = (url.searchParams.get('phone') || '').trim();
-  if (!companyName || !phone) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  const session = await requireCustomerSession(req);
+  if (!session) return sendJson(res, 401, { ok: false, error: 'not_authenticated' });
 
   try {
     const r = await sql`
@@ -327,7 +321,7 @@ async function handleHistory(req, res, url) {
       from orders o
       left join order_items oi on oi.order_id = o.id
       left join styles s on s.id = oi.style_id
-      where o.cust_name = ${companyName} and o.cust_phone = ${phone}
+      where o.customer_id = ${session.customerId}::uuid
       group by o.id
       order by o.create_time desc
       limit 50
