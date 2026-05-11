@@ -1,0 +1,60 @@
+:root{
+  --zenex-brand-50:#eaf2ff;
+  --zenex-brand-500:#0066ff;
+  --zenex-brand-600:#0052cc;
+  --zenex-bg:#f6f8fb;
+  --zenex-surface:#ffffff;
+  --zenex-text:#0f172a;
+  --zenex-muted:#64748b;
+  --zenex-border:#e2e8f0;
+  --zenex-success:#16a34a;
+  --zenex-warning:#f59e0b;
+  --zenex-danger:#dc2626;
+  --zenex-shadow:0 8px 30px rgba(15,23,42,.06);
+  --zenex-radius-card:16px;
+  --zenex-radius-control:12px;
+}
+
+.zenex-page{
+  background:var(--zenex-bg);
+  color:var(--zenex-text);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Microsoft JhengHei","PingFang HK","Noto Sans CJK TC",sans-serif;
+}
+
+.zenex-header{
+  background:var(--zenex-surface);
+  border-bottom:1px solid var(--zenex-border);
+}
+
+.zenex-card{
+  background:var(--zenex-surface);
+  border:1px solid var(--zenex-border);
+  border-radius:var(--zenex-radius-card);
+  box-shadow:var(--zenex-shadow);
+}
+
+.zenex-btn{
+  appearance:none;
+  border:1px solid transparent;
+  border-radius:var(--zenex-radius-control);
+  padding:12px 16px;
+  font-weight:700;
+  cursor:pointer;
+}
+.zenex-btn:focus{ outline:3px solid rgba(0,102,255,.25); outline-offset:2px; }
+.zenex-btn-primary{ background:var(--zenex-brand-500); color:#fff; }
+.zenex-btn-primary:hover{ background:var(--zenex-brand-600); }
+.zenex-btn-secondary{ background:#fff; border-color:var(--zenex-border); color:var(--zenex-text); }
+.zenex-btn-secondary:hover{ background:var(--zenex-brand-50); }
+
+.zenex-input{
+  width:100%;
+  padding:12px 14px;
+  border:1px solid var(--zenex-border);
+  border-radius:var(--zenex-radius-control);
+  background:#fff;
+  font-size:15px;
+}
+.zenex-input:focus{ outline:3px solid rgba(0,102,255,.25); outline-offset:2px; }
+
+.zenex-muted{ color:var(--zenex-muted); }
