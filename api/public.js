@@ -22,6 +22,16 @@ function normalizeItemsQty(items) {
 const CATE1 = ['現貨款式加工', '熱昇華訂製', '開板訂製'];
 const DEFAULT_CATE2 = ['球衣', 'POLO', '風衣外套', '其他'];
 const CUSTOMER_STYLE_CODE = 'CUSTOMER_PROVIDED';
+const JERSEY_CATE2 = '球衣';
+const JERSEY_CATE3 = ['足球', '籃球', '排球', '其他'];
+const JERSEY_CATE4 = ['上衣', '褲子', '整套'];
+
+function requiredJerseyEnum(v, allowed, field) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  if (!s) throw new Error(`${field}_required`);
+  if (!allowed.includes(s)) throw new Error(`${field}_invalid`);
+  return s;
+}
 
 function computeLeadBusinessDays(mode, cate1) {
   if (mode === 'repeat') return 17;
@@ -37,13 +47,21 @@ async function handleStyles(req, res, url) {
   if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
   const cate1 = (url.searchParams.get('cate1') || '').trim();
   const cate2 = (url.searchParams.get('cate2') || '').trim();
+  let cate3 = '';
+  let cate4 = '';
+  if (cate2 === JERSEY_CATE2) {
+    cate3 = requiredJerseyEnum(url.searchParams.get('cate3'), JERSEY_CATE3, 'cate3');
+    cate4 = requiredJerseyEnum(url.searchParams.get('cate4'), JERSEY_CATE4, 'cate4');
+  }
   try {
     const r = await sql`
-      select s.id, s.code, s.name, s.cate1, s.cate2, s.size_table_id, s.img_url, s.img_base64, s.remark, st.name as size_table_name
+      select s.id, s.code, s.name, s.cate1, s.cate2, s.cate3, s.cate4, s.size_table_id, s.img_url, s.img_base64, s.remark, st.name as size_table_name
       from styles s
       join size_tables st on st.id = s.size_table_id
       where (${cate1} = '' or s.cate1 = ${cate1})
         and (${cate2} = '' or s.cate2 = ${cate2})
+        and (${cate3} = '' or s.cate3 = ${cate3})
+        and (${cate4} = '' or s.cate4 = ${cate4})
       order by s.created_at desc
       limit 200
     `;
@@ -53,6 +71,8 @@ async function handleStyles(req, res, url) {
       name: x.name,
       cate1: x.cate1,
       cate2: x.cate2,
+      cate3: x.cate3 || '',
+      cate4: x.cate4 || '',
       sizeTableId: x.size_table_id,
       sizeTableName: x.size_table_name,
       imgUrl: x.img_url || '',
@@ -152,6 +172,16 @@ async function handleCreateOrder(req, res) {
     const mode = requiredEnum(body.mode, ['new', 'repeat'], 'mode');
     const cate1 = requiredEnum(body.cate1, CATE1, 'cate1');
     const cate2 = requiredString(body.cate2, 'cate2');
+    let cate3 = typeof body.cate3 === 'string' ? body.cate3.trim() : '';
+    let cate4 = typeof body.cate4 === 'string' ? body.cate4.trim() : '';
+    if (cate2 === JERSEY_CATE2) {
+      cate3 = requiredJerseyEnum(cate3, JERSEY_CATE3, 'cate3');
+      cate4 = requiredJerseyEnum(cate4, JERSEY_CATE4, 'cate4');
+    } else {
+      if (cate3 || cate4) throw new Error('cate3_cate4_not_allowed');
+      cate3 = '';
+      cate4 = '';
+    }
 
     const companyName = requiredString(body.companyName, 'companyName');
     const contactName = typeof body.contactName === 'string' ? body.contactName.trim() : '';
@@ -204,9 +234,9 @@ async function handleCreateOrder(req, res) {
 
     const inserted = await sql`
       insert into orders
-        (order_sn, lookup_code, customer_id, cust_name, cust_contact, cust_phone, cate1, cate2, factory_name, order_type, status, amount, remark, requested_delivery_date, suggested_delivery_date, source_order_id)
+        (order_sn, lookup_code, customer_id, cust_name, cust_contact, cust_phone, cate1, cate2, cate3, cate4, factory_name, order_type, status, amount, remark, requested_delivery_date, suggested_delivery_date, source_order_id)
       values
-        (${orderSn}, ${lookupCode}, ${customerId}::uuid, ${companyName}, ${contactName || null}, ${phone}, ${cate1}, ${cate2}, ${null}, ${orderType}, ${status}, ${null}, ${address}, ${requestedDeliveryDate}, ${suggestedDeliveryDate}, ${sourceOrderId}::uuid)
+        (${orderSn}, ${lookupCode}, ${customerId}::uuid, ${companyName}, ${contactName || null}, ${phone}, ${cate1}, ${cate2}, ${cate3 || null}, ${cate4 || null}, ${null}, ${orderType}, ${status}, ${null}, ${address}, ${requestedDeliveryDate}, ${suggestedDeliveryDate}, ${sourceOrderId}::uuid)
       returning id, create_time
     `;
     const orderId = inserted.rows[0].id;
@@ -274,6 +304,8 @@ async function handleHistory(req, res, url) {
         o.create_time,
         o.cate1,
         o.cate2,
+            o.cate3,
+            o.cate4,
         o.order_type,
         o.status,
         o.requested_delivery_date,
@@ -307,6 +339,8 @@ async function handleHistory(req, res, url) {
       createdAt: x.create_time,
       cate1: x.cate1,
       cate2: x.cate2,
+          cate3: x.cate3 || '',
+          cate4: x.cate4 || '',
       orderType: x.order_type,
       status: x.status,
       requestedDeliveryDate: x.requested_delivery_date ? String(x.requested_delivery_date) : '',
@@ -331,14 +365,14 @@ async function handleStatus(req, res, url) {
   try {
     const r = lookupCode
       ? await sql`
-          select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, order_type, status,
+              select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, cate3, cate4, order_type, status,
             requested_delivery_date, suggested_delivery_date, factory_name
           from orders
           where order_sn = ${orderSn} and lookup_code = ${lookupCode}
           limit 1
         `
       : await sql`
-          select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, order_type, status,
+              select id, order_sn, create_time, cust_name, cust_phone, cate1, cate2, cate3, cate4, order_type, status,
             requested_delivery_date, suggested_delivery_date, factory_name
           from orders
           where order_sn = ${orderSn} and cust_phone = ${phone}
@@ -356,6 +390,8 @@ async function handleStatus(req, res, url) {
         phone: o.cust_phone,
         cate1: o.cate1,
         cate2: o.cate2,
+            cate3: o.cate3 || '',
+            cate4: o.cate4 || '',
         orderType: o.order_type,
         status: o.status,
         requestedDeliveryDate: o.requested_delivery_date ? String(o.requested_delivery_date) : '',

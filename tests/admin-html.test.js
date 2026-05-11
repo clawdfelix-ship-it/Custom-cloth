@@ -29,3 +29,10 @@ test('admin.html contains style category selects', async () => {
   assert.match(html, /id="styleCate1Sel"/);
   assert.match(html, /id="styleCate2Sel"/);
 });
+
+test('admin.html contains jersey cate3/cate4 selects', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('admin.html', 'utf8');
+  assert.match(html, /id="styleCate3Sel"/);
+  assert.match(html, /id="styleCate4Sel"/);
+});

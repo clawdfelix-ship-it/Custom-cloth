@@ -63,6 +63,26 @@
         </select>
       </div>
 
+      <div id="jerseyWrap" class="form-item hide">
+        <label>球衣子類</label>
+        <select id="cate3" onchange="onCate3Changed()">
+          <option value="">請選擇</option>
+          <option value="足球">足球</option>
+          <option value="籃球">籃球</option>
+          <option value="排球">排球</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div id="jerseyPartWrap" class="form-item hide">
+        <label>再子類</label>
+        <select id="cate4" onchange="onCate4Changed()">
+          <option value="">請選擇</option>
+          <option value="上衣">上衣</option>
+          <option value="褲子">褲子</option>
+          <option value="整套">整套</option>
+        </select>
+      </div>
+
       <div class="form-item">
         <label>選擇款式</label>
         <div id="styleList"></div>
@@ -242,16 +262,40 @@
       const cate2El = document.getElementById('cate2');
       const list = cate1 && categoriesCache.cate2ByCate1[cate1] ? categoriesCache.cate2ByCate1[cate1] : [];
       setCateOptions(cate2El, '請選擇產品類型', list);
+      document.getElementById('cate3').value = '';
+      document.getElementById('cate4').value = '';
+      document.getElementById('jerseyWrap').classList.add('hide');
+      document.getElementById('jerseyPartWrap').classList.add('hide');
       filterStyle();
     }
 
     function onCate2Changed() {
+      const cate2 = document.getElementById('cate2').value;
+      if (cate2 === '球衣') {
+        document.getElementById('jerseyWrap').classList.remove('hide');
+        document.getElementById('jerseyPartWrap').classList.remove('hide');
+      } else {
+        document.getElementById('cate3').value = '';
+        document.getElementById('cate4').value = '';
+        document.getElementById('jerseyWrap').classList.add('hide');
+        document.getElementById('jerseyPartWrap').classList.add('hide');
+      }
+      filterStyle();
+    }
+
+    function onCate3Changed() {
+      filterStyle();
+    }
+
+    function onCate4Changed() {
       filterStyle();
     }
 
     async function filterStyle() {
       const cate1 = document.getElementById('cate1').value;
       const cate2 = document.getElementById('cate2').value;
+      const cate3 = document.getElementById('cate3').value;
+      const cate4 = document.getElementById('cate4').value;
       selectedStyleIds = new Set();
       selectedSizeTableId = '';
       document.getElementById('sizeWrap').classList.add('hide');
@@ -259,8 +303,19 @@
       document.getElementById('styleHint').classList.remove('hide');
 
       if (!cate1 || !cate2) return;
+      if (cate2 === '球衣' && (!cate3 || !cate4)) {
+        document.getElementById('styleHint').textContent = '請先選擇：球衣子類及再子類';
+        return;
+      }
 
-      const res = await fetch(`/api/public/styles?cate1=${encodeURIComponent(cate1)}&cate2=${encodeURIComponent(cate2)}`);
+      const qs = new URLSearchParams();
+      qs.set('cate1', cate1);
+      qs.set('cate2', cate2);
+      if (cate2 === '球衣') {
+        qs.set('cate3', cate3);
+        qs.set('cate4', cate4);
+      }
+      const res = await fetch(`/api/public/styles?${qs.toString()}`);
       const data = await res.json().catch(() => null);
       if (!data || !data.ok) {
         document.getElementById('styleHint').textContent = '載入款式失敗';
@@ -563,6 +618,8 @@
         mode,
         cate1,
         cate2,
+        cate3: cate2 === '球衣' ? document.getElementById('cate3').value : '',
+        cate4: cate2 === '球衣' ? document.getElementById('cate4').value : '',
         companyName,
         contactName,
         phone,

@@ -28,3 +28,10 @@ test('index.html shows delivery date cutoff hint', async () => {
   const html = await fs.readFile('index.html', 'utf8');
   assert.match(html, /今天16:00前確認訂單細節後計算出的最快交貨日/);
 });
+
+test('index.html includes jersey cate3/cate4 selectors', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /id="cate3"/);
+  assert.match(html, /id="cate4"/);
+});

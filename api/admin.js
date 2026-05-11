@@ -12,6 +12,17 @@ const { audit } = require('../src/lib/audit');
 const { uploadDataUrl } = require('../src/lib/blob');
 const { normalizeQtyToSizeRatio } = require('../src/lib/qty');
 
+const JERSEY_CATE2 = '球衣';
+const JERSEY_CATE3 = ['足球', '籃球', '排球', '其他'];
+const JERSEY_CATE4 = ['上衣', '褲子', '整套'];
+
+function requiredJerseyEnum(v, allowed, field) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  if (!s) throw new Error(`${field}_required`);
+  if (!allowed.includes(s)) throw new Error(`${field}_invalid`);
+  return s;
+}
+
 async function requireAdmin(req, res) {
   const session = await requireSession(req);
   if (!session || session.role !== 'admin') {
@@ -116,7 +127,7 @@ async function stylesHandler(req, res, url) {
     const cate1 = (url.searchParams.get('cate1') || '').trim();
     const cate2 = (url.searchParams.get('cate2') || '').trim();
     const r = await sql`
-      select id, code, name, cate1, cate2, size_table_id, img_url, img_base64, remark, created_at
+      select id, code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark, created_at
       from styles
       where (${cate1} = '' or cate1 = ${cate1})
         and (${cate2} = '' or cate2 = ${cate2})
@@ -129,6 +140,8 @@ async function stylesHandler(req, res, url) {
       name: x.name,
       cate1: x.cate1,
       cate2: x.cate2,
+      cate3: x.cate3 || '',
+      cate4: x.cate4 || '',
       sizeTableId: x.size_table_id,
       imgUrl: x.img_url || '',
       imgBase64: x.img_base64 || '',
@@ -146,6 +159,8 @@ async function stylesHandler(req, res, url) {
       const name = typeof body.name === 'string' ? body.name.trim() : '';
       const cate1 = typeof body.cate1 === 'string' ? body.cate1.trim() : '';
       const cate2 = typeof body.cate2 === 'string' ? body.cate2.trim() : '';
+      let cate3 = typeof body.cate3 === 'string' ? body.cate3.trim() : '';
+      let cate4 = typeof body.cate4 === 'string' ? body.cate4.trim() : '';
       const sizeTableId = typeof body.sizeTableId === 'string' ? body.sizeTableId.trim() : '';
       const remark = typeof body.remark === 'string' ? body.remark.trim() : '';
       const imgUrl = typeof body.imgUrl === 'string' ? body.imgUrl.trim() : '';
@@ -153,10 +168,19 @@ async function stylesHandler(req, res, url) {
       if (!code || !name || !cate1 || !cate2 || !sizeTableId) return sendJson(res, 400, { ok: false, error: 'bad_request' });
       if (imgBase64 && imgBase64.length > 700000) return sendJson(res, 400, { ok: false, error: 'image_too_large' });
 
+      if (cate2 === JERSEY_CATE2) {
+        cate3 = requiredJerseyEnum(cate3, JERSEY_CATE3, 'cate3');
+        cate4 = requiredJerseyEnum(cate4, JERSEY_CATE4, 'cate4');
+      } else {
+        if (cate3 || cate4) throw new Error('cate3_cate4_not_allowed');
+        cate3 = '';
+        cate4 = '';
+      }
+
       const inserted = await sql`
-        insert into styles (code, name, cate1, cate2, size_table_id, img_url, img_base64, remark)
-        values (${code}, ${name}, ${cate1}, ${cate2}, ${sizeTableId}::uuid, ${imgUrl || null}, ${imgBase64 || null}, ${remark || null})
-        returning id, code, name, cate1, cate2, size_table_id, img_url, img_base64, remark, created_at
+        insert into styles (code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark)
+        values (${code}, ${name}, ${cate1}, ${cate2}, ${cate3 || null}, ${cate4 || null}, ${sizeTableId}::uuid, ${imgUrl || null}, ${imgBase64 || null}, ${remark || null})
+        returning id, code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark, created_at
       `;
       const x = inserted.rows[0];
       await audit(session.userId, 'admin_create_style', 'style', String(x.id), { code: x.code, name: x.name });
@@ -168,6 +192,8 @@ async function stylesHandler(req, res, url) {
           name: x.name,
           cate1: x.cate1,
           cate2: x.cate2,
+          cate3: x.cate3 || '',
+          cate4: x.cate4 || '',
           sizeTableId: x.size_table_id,
           imgUrl: x.img_url || '',
           imgBase64: x.img_base64 || '',

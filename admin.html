@@ -126,6 +126,25 @@
             <select id="styleCate2Sel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
             <input id="styleCate2Custom" class="mt-2 hidden w-full rounded-lg border px-3 py-2 text-sm" placeholder="自訂子類" />
           </div>
+          <div id="styleJerseyCateWrap" class="hidden">
+            <label class="text-sm font-medium">球衣子類</label>
+            <select id="styleCate3Sel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="">請選擇</option>
+              <option value="足球">足球</option>
+              <option value="籃球">籃球</option>
+              <option value="排球">排球</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div id="styleJerseyPartWrap" class="hidden">
+            <label class="text-sm font-medium">再子類</label>
+            <select id="styleCate4Sel" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+              <option value="">請選擇</option>
+              <option value="上衣">上衣</option>
+              <option value="褲子">褲子</option>
+              <option value="整套">整套</option>
+            </select>
+          </div>
           <div>
             <label class="text-sm font-medium">尺碼表</label>
             <select id="styleSizeTableId" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
@@ -423,6 +442,10 @@
     const styleCate1Custom = document.getElementById('styleCate1Custom');
     const styleCate2Sel = document.getElementById('styleCate2Sel');
     const styleCate2Custom = document.getElementById('styleCate2Custom');
+    const styleJerseyCateWrap = document.getElementById('styleJerseyCateWrap');
+    const styleJerseyPartWrap = document.getElementById('styleJerseyPartWrap');
+    const styleCate3Sel = document.getElementById('styleCate3Sel');
+    const styleCate4Sel = document.getElementById('styleCate4Sel');
     const stylesBody = document.getElementById('stylesBody');
     let categoriesCache = { cate1: [], cate2ByCate1: {} };
 
@@ -1070,6 +1093,16 @@
         styleCate2Custom.classList.add('hidden');
         styleCate2Custom.value = '';
       }
+      const cate2 = (styleCate2Sel.value === '__custom__' ? styleCate2Custom.value : styleCate2Sel.value).trim();
+      if (cate2 === '球衣') {
+        styleJerseyCateWrap.classList.remove('hidden');
+        styleJerseyPartWrap.classList.remove('hidden');
+      } else {
+        styleJerseyCateWrap.classList.add('hidden');
+        styleJerseyPartWrap.classList.add('hidden');
+        styleCate3Sel.value = '';
+        styleCate4Sel.value = '';
+      }
     });
 
     async function loadCategories() {
@@ -1188,10 +1221,11 @@
       list.forEach((s) => {
         const tr = document.createElement('tr');
         tr.className = 'border-b';
+            const cateText = s.cate2 === '球衣' && s.cate3 && s.cate4 ? `${s.cate1} / ${s.cate2} / ${s.cate3} / ${s.cate4}` : `${s.cate1} / ${s.cate2}`;
         tr.innerHTML = `
           <td class="px-3 py-2 font-medium">${escapeHtml(s.code)}</td>
           <td class="px-3 py-2">${escapeHtml(s.name)}</td>
-          <td class="px-3 py-2">${escapeHtml(s.cate1)} / ${escapeHtml(s.cate2)}</td>
+              <td class="px-3 py-2">${escapeHtml(cateText)}</td>
           <td class="px-3 py-2 text-xs text-slate-600">${escapeHtml(s.sizeTableId)}</td>
           <td class="px-3 py-2 text-right">
             <button data-id="${escapeHtml(s.id)}" class="delStyle rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
@@ -1219,6 +1253,8 @@
       const name = document.getElementById('styleName').value.trim();
       const cate1 = (styleCate1Sel.value === '__custom__' ? styleCate1Custom.value : styleCate1Sel.value).trim();
       const cate2 = (styleCate2Sel.value === '__custom__' ? styleCate2Custom.value : styleCate2Sel.value).trim();
+      const cate3 = styleCate3Sel.value.trim();
+      const cate4 = styleCate4Sel.value.trim();
       const sizeTableId = styleSizeTableId.value;
       const remark = document.getElementById('styleRemark').value.trim();
       const file = document.getElementById('styleImage').files[0];
@@ -1226,6 +1262,10 @@
       let imgUrl = '';
       if (!code || !name || !cate1 || !cate2 || !sizeTableId) {
         appMsg.textContent = '請填齊款式資料';
+        return;
+      }
+      if (cate2 === '球衣' && (!cate3 || !cate4)) {
+        appMsg.textContent = '球衣需選擇：球衣子類/再子類';
         return;
       }
       if (file) {
@@ -1254,7 +1294,7 @@
       const res = await apiFetch('/api/admin/styles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, name, cate1, cate2, sizeTableId, imgUrl, imgBase64, remark })
+        body: JSON.stringify({ code, name, cate1, cate2, cate3, cate4, sizeTableId, imgUrl, imgBase64, remark })
       });
       const out = await res.json().catch(() => null);
       if (!out || !out.ok) {
