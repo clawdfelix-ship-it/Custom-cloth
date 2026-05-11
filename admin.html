@@ -396,6 +396,15 @@
     const pwdInput = document.getElementById('pwdInput');
     const loginBtn = document.getElementById('loginBtn');
 
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     const tabButtons = Array.from(document.querySelectorAll('.tabBtn'));
     const tabIds = ['orders', 'styles', 'sizes', 'users', 'feedback', 'factory'];
 
@@ -831,21 +840,21 @@
         ].join('');
         tr.innerHTML = `
           <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
-          <td class="px-3 py-2 font-semibold">${o.orderSn}</td>
-          <td class="px-3 py-2">${o.orderType}</td>
+          <td class="px-3 py-2 font-semibold">${escapeHtml(o.orderSn)}</td>
+          <td class="px-3 py-2">${escapeHtml(o.orderType)}</td>
           <td class="px-3 py-2">
             <select data-id="${o.id}" class="statusSel w-full rounded-lg border px-2 py-1 text-xs">${statusOptions}</select>
           </td>
-          <td class="px-3 py-2">${o.companyName}</td>
-          <td class="px-3 py-2">${o.phone}</td>
-          <td class="px-3 py-2">${o.cate1} / ${o.cate2}</td>
-          <td class="px-3 py-2">${o.suggestedDeliveryDate || ''}</td>
-          <td class="px-3 py-2">${o.requestedDeliveryDate || ''}</td>
+          <td class="px-3 py-2">${escapeHtml(o.companyName)}</td>
+          <td class="px-3 py-2">${escapeHtml(o.phone)}</td>
+          <td class="px-3 py-2">${escapeHtml(o.cate1)} / ${escapeHtml(o.cate2)}</td>
+          <td class="px-3 py-2">${escapeHtml(o.suggestedDeliveryDate || '')}</td>
+          <td class="px-3 py-2">${escapeHtml(o.requestedDeliveryDate || '')}</td>
           <td class="px-3 py-2">
             <select data-id="${o.id}" class="factorySel w-full rounded-lg border px-2 py-1 text-xs">${factoryOptions}</select>
           </td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${o.id}" data-sn="${o.orderSn}" class="copyBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
+            <button data-id="${o.id}" data-sn="${escapeHtml(o.orderSn)}" class="copyBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">翻單</button>
           </td>
         `;
         ordersBody.appendChild(tr);
@@ -1088,13 +1097,13 @@
         const tr = document.createElement('tr');
         tr.className = 'border-b';
         tr.innerHTML = `
-          <td class="px-3 py-2 font-medium">${st.name}</td>
-          <td class="px-3 py-2 text-xs text-slate-600">${st.id}</td>
+          <td class="px-3 py-2 font-medium">${escapeHtml(st.name)}</td>
+          <td class="px-3 py-2 text-xs text-slate-600">${escapeHtml(st.id)}</td>
           <td class="px-3 py-2">
-            ${thumbSrc ? `<img data-id="${st.id}" data-name="${st.name}" class="sizePreviewThumb cursor-pointer rounded border" style="width:240px;max-width:240px;height:auto;" src="${thumbSrc}" />` : `<span class="text-xs text-slate-500">無資料</span>`}
+            ${thumbSrc ? `<img data-id="${escapeHtml(st.id)}" data-name="${escapeHtml(st.name)}" class="sizePreviewThumb cursor-pointer rounded border" style="width:240px;max-width:240px;height:auto;" src="${thumbSrc}" />` : `<span class="text-xs text-slate-500">無資料</span>`}
           </td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${st.id}" class="delSize rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
+            <button data-id="${escapeHtml(st.id)}" class="delSize rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
           </td>
         `;
         sizesBody.appendChild(tr);
@@ -1177,12 +1186,12 @@
         const tr = document.createElement('tr');
         tr.className = 'border-b';
         tr.innerHTML = `
-          <td class="px-3 py-2 font-medium">${s.code}</td>
-          <td class="px-3 py-2">${s.name}</td>
-          <td class="px-3 py-2">${s.cate1} / ${s.cate2}</td>
-          <td class="px-3 py-2 text-xs text-slate-600">${s.sizeTableId}</td>
+          <td class="px-3 py-2 font-medium">${escapeHtml(s.code)}</td>
+          <td class="px-3 py-2">${escapeHtml(s.name)}</td>
+          <td class="px-3 py-2">${escapeHtml(s.cate1)} / ${escapeHtml(s.cate2)}</td>
+          <td class="px-3 py-2 text-xs text-slate-600">${escapeHtml(s.sizeTableId)}</td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${s.id}" class="delStyle rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
+            <button data-id="${escapeHtml(s.id)}" class="delStyle rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
           </td>
         `;
         stylesBody.appendChild(tr);
@@ -1263,11 +1272,11 @@
         const tr = document.createElement('tr');
         tr.className = 'border-b';
         tr.innerHTML = `
-          <td class="px-3 py-2 font-medium">${u.acc}</td>
-          <td class="px-3 py-2">${u.role}</td>
-          <td class="px-3 py-2">${u.name}</td>
+          <td class="px-3 py-2 font-medium">${escapeHtml(u.acc)}</td>
+          <td class="px-3 py-2">${escapeHtml(u.role)}</td>
+          <td class="px-3 py-2">${escapeHtml(u.name)}</td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${u.id}" class="delUser rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
+            <button data-id="${escapeHtml(u.id)}" class="delUser rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
           </td>
         `;
         usersBody.appendChild(tr);
@@ -1314,18 +1323,18 @@
       list.forEach((f) => {
         const attachments = Array.isArray(f.attachments) ? f.attachments : [];
         const attachHtml = attachments.length
-          ? `<div class="mt-1 text-xs">${attachments.map((a) => `<a class="underline" href="${a.url}" target="_blank" rel="noreferrer">附件</a>`).join(' ')}</div>`
+          ? `<div class="mt-1 text-xs">${attachments.map((a) => `<a class="underline" href="${escapeHtml(a.url)}" target="_blank" rel="noreferrer">附件</a>`).join(' ')}</div>`
           : '';
         const tr = document.createElement('tr');
         tr.className = 'border-b';
         tr.innerHTML = `
           <td class="px-3 py-2 text-slate-700">${new Date(f.createdAt).toLocaleString('zh-HK')}</td>
-          <td class="px-3 py-2 font-semibold">${f.orderSn}</td>
-          <td class="px-3 py-2">${f.factoryName}</td>
-          <td class="px-3 py-2">${f.content}${attachHtml}</td>
-          <td class="px-3 py-2">${f.status}</td>
+        <td class="px-3 py-2 font-semibold">${escapeHtml(f.orderSn)}</td>
+        <td class="px-3 py-2">${escapeHtml(f.factoryName)}</td>
+        <td class="px-3 py-2">${escapeHtml(f.content)}${attachHtml}</td>
+        <td class="px-3 py-2">${escapeHtml(f.status)}</td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${f.id}" data-status="已處理" class="markDone rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">標記已處理</button>
+          <button data-id="${escapeHtml(f.id)}" data-status="已處理" class="markDone rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">標記已處理</button>
           </td>
         `;
         feedbackBody.appendChild(tr);
@@ -1359,11 +1368,11 @@
         tr.className = 'border-b';
         tr.innerHTML = `
           <td class="px-3 py-2 text-slate-700">${new Date(o.createdAt).toLocaleString('zh-HK')}</td>
-          <td class="px-3 py-2 font-semibold">${o.orderSn}</td>
-          <td class="px-3 py-2">${o.companyName}</td>
-          <td class="px-3 py-2">${o.status}</td>
+          <td class="px-3 py-2 font-semibold">${escapeHtml(o.orderSn)}</td>
+          <td class="px-3 py-2">${escapeHtml(o.companyName)}</td>
+          <td class="px-3 py-2">${escapeHtml(o.status)}</td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${o.id}" class="detailBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">詳情</button>
+            <button data-id="${escapeHtml(o.id)}" class="detailBtn rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">詳情</button>
           </td>
         `;
         factoryBody.appendChild(tr);

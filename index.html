@@ -156,6 +156,15 @@
     let repeatSelectedOrder = null;
     let categoriesCache = { cate1: [], cate2ByCate1: {} };
 
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function switchTab(tab) {
       document.getElementById('tab-new').classList.add('hide');
       document.getElementById('tab-repeat').classList.add('hide');
@@ -275,13 +284,13 @@
         const div = document.createElement('div');
         div.className = 'style-item';
         const imgSrc = s.imgUrl || s.imgBase64 || 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
-        const img = `<img src="${imgSrc}" alt="${s.name}">`;
+        const img = `<img src="${imgSrc}" alt="${escapeHtml(s.name)}">`;
         div.innerHTML = `
           ${img}
           <div class="style-info">
-            <div style="font-weight:bold;">${s.code} - ${s.name}</div>
-            <div class="muted">${s.cate1} / ${s.cate2}</div>
-            <div class="muted">尺碼表：${s.sizeTableName}</div>
+            <div style="font-weight:bold;">${escapeHtml(s.code)} - ${escapeHtml(s.name)}</div>
+            <div class="muted">${escapeHtml(s.cate1)} / ${escapeHtml(s.cate2)}</div>
+            <div class="muted">尺碼表：${escapeHtml(s.sizeTableName)}</div>
           </div>
           <div>
             <label style="display:flex;gap:8px;align-items:center;">
@@ -485,10 +494,10 @@
       const box = document.getElementById(boxId);
       box.classList.remove('hide');
       box.innerHTML = `<div style="font-weight:bold;">提交成功</div>
-        <div>訂單編號：<b>${data.orderSn}</b></div>
-        <div>查單碼：<b>${data.lookupCode || ''}</b></div>
-        <div>狀態：${data.status}</div>
-        <div>建議交貨日：${data.suggestedDeliveryDate}</div>`;
+        <div>訂單編號：<b>${escapeHtml(data.orderSn)}</b></div>
+        <div>查單碼：<b>${escapeHtml(data.lookupCode || '')}</b></div>
+        <div>狀態：${escapeHtml(data.status)}</div>
+        <div>建議交貨日：${escapeHtml(data.suggestedDeliveryDate)}</div>`;
 
       if (mode !== 'repeat') {
         msgEl.textContent = '';
@@ -529,10 +538,10 @@
       listBox.innerHTML = orders.map((o) => {
         const styles = (o.items || []).map((it) => it.styleName || it.styleCode || '').filter(Boolean).join('、');
         return `<div style="padding:10px;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px;">
-          <div><b>${o.orderSn}</b> <span class="muted">(${new Date(o.createdAt).toLocaleString('zh-HK')})</span></div>
-          <div class="muted">${o.orderType} / ${o.status}</div>
-          <div class="muted">款式：${styles || '—'}</div>
-          <button class="btn btn-sm" type="button" onclick="selectHistoryOrder('${o.id}')">選擇此訂單翻單</button>
+          <div><b>${escapeHtml(o.orderSn)}</b> <span class="muted">(${new Date(o.createdAt).toLocaleString('zh-HK')})</span></div>
+          <div class="muted">${escapeHtml(o.orderType)} / ${escapeHtml(o.status)}</div>
+          <div class="muted">款式：${escapeHtml(styles || '—')}</div>
+          <button class="btn btn-sm" type="button" onclick="selectHistoryOrder('${escapeHtml(o.id)}')">選擇此訂單翻單</button>
         </div>`;
       }).join('');
 
@@ -555,8 +564,8 @@
 
       document.getElementById('repeatSelected').classList.remove('hide');
       document.getElementById('repeatSelected').innerHTML = `<div style="font-weight:bold;">已選擇翻單</div>
-        <div>原訂單：<b>${o.orderSn}</b></div>
-        <div class="muted">${o.orderType} / ${o.status}</div>`;
+        <div>原訂單：<b>${escapeHtml(o.orderSn)}</b></div>
+        <div class="muted">${escapeHtml(o.orderType)} / ${escapeHtml(o.status)}</div>`;
 
       document.getElementById('repeatAction').classList.remove('hide');
       updateMinDelivery('repeat');
@@ -593,12 +602,12 @@
       const o = data.order;
       box.classList.remove('hide');
       box.innerHTML = `<div style="font-weight:bold;">訂單狀態</div>
-        <div>訂單編號：<b>${o.orderSn}</b></div>
-        <div>公司：${o.companyName}</div>
-        <div>狀態：<b>${o.status}</b></div>
-        <div>建議交貨日：${o.suggestedDeliveryDate || '—'}</div>
-        <div>客戶交貨日：${o.requestedDeliveryDate || '—'}</div>
-        <div class="muted">分類：${o.cate1} / ${o.cate2}</div>`;
+        <div>訂單編號：<b>${escapeHtml(o.orderSn)}</b></div>
+        <div>公司：${escapeHtml(o.companyName)}</div>
+        <div>狀態：<b>${escapeHtml(o.status)}</b></div>
+        <div>建議交貨日：${escapeHtml(o.suggestedDeliveryDate || '—')}</div>
+        <div>客戶交貨日：${escapeHtml(o.requestedDeliveryDate || '—')}</div>
+        <div class="muted">分類：${escapeHtml(o.cate1)} / ${escapeHtml(o.cate2)}</div>`;
     }
 
     async function init() {
