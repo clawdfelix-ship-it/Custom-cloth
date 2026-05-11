@@ -214,7 +214,7 @@
       const el = document.getElementById('deliveryDate');
       el.min = earliest;
       if (!el.value || el.value < earliest) el.value = earliest;
-      document.getElementById('minDateHint').textContent = `最快交貨日：${earliest}`;
+      document.getElementById('minDateHint').textContent = `最快交貨日：${earliest}（今天16:00前確認訂單細節後計算出的最快交貨日）`;
     }
 
     function setCateOptions(selectEl, placeholder, values) {
@@ -422,15 +422,18 @@
       }
       const st = data.sizeTable;
       const rows = Array.isArray(st.data) ? st.data : [];
+      const hasLength = rows.some((r) => r && r.length != null && String(r.length).trim() !== '');
+      const hasChest = rows.some((r) => r && r.chest != null && String(r.chest).trim() !== '');
+      const hasWaist = rows.some((r) => r && r.waist != null && String(r.waist).trim() !== '');
       const hasSeat = rows.some((r) => r && r.seat != null && String(r.seat).trim() !== '');
       const hasChina = rows.some((r) => r && r.china != null && String(r.china).trim() !== '');
       const hasHeight = rows.some((r) => r && r.height != null && String(r.height).trim() !== '');
 
       const cols = [
         { key: 'eu', label: 'EU' },
-        { key: 'length', label: '衣長' },
-        { key: 'chest', label: '胸圍' },
-        { key: 'waist', label: '腰圍' },
+        ...(hasLength ? [{ key: 'length', label: '衣長' }] : []),
+        ...(hasChest ? [{ key: 'chest', label: '胸圍' }] : []),
+        ...(hasWaist ? [{ key: 'waist', label: '腰圍' }] : []),
         ...(hasSeat ? [{ key: 'seat', label: '臀圍' }] : []),
         ...(hasChina ? [{ key: 'china', label: '中國碼' }] : []),
         ...(hasHeight ? [{ key: 'height', label: '身高' }] : [])
@@ -440,7 +443,7 @@
         <table>
           <thead><tr>${cols.map((c) => `<th>${c.label}</th>`).join('')}</tr></thead>
           <tbody>
-            ${rows.map((r) => `<tr>${cols.map((c) => `<td>${(r && r[c.key]) != null ? String(r[c.key]) : ''}</td>`).join('')}</tr>`).join('')}
+            ${rows.map((r) => `<tr>${cols.map((c) => `<td>${(r && r[c.key]) != null ? escapeHtml(String(r[c.key])) : ''}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
       `;
