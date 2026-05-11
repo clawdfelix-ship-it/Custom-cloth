@@ -753,6 +753,22 @@
       if (!o) return;
       repeatSelectedOrder = o;
 
+      const cate1El = document.getElementById('cate1');
+      const cate2El = document.getElementById('cate2');
+      const cate3El = document.getElementById('cate3');
+      const cate4El = document.getElementById('cate4');
+
+      cate1El.value = o.cate1 || '';
+      onCate1Changed();
+      cate2El.value = o.cate2 || '';
+      onCate2Changed();
+      if (String(o.cate2 || '') === '球衣') {
+        cate3El.value = o.cate3 || '';
+        cate4El.value = o.cate4 || '';
+        onCate3Changed();
+        onCate4Changed();
+      }
+
       const items = Array.isArray(o.items) ? o.items : [];
       const firstQty = items[0] && items[0].qty ? items[0].qty : null;
       if (Array.isArray(firstQty) && firstQty.length) {
@@ -767,6 +783,7 @@
 
       document.getElementById('repeatAction').classList.remove('hide');
       updateMinDelivery('repeat');
+      document.getElementById('deliveryDate').value = document.getElementById('deliveryDate').min;
       switchTab('repeat');
     }
 

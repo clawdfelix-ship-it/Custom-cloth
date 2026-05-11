@@ -42,3 +42,11 @@ test('index.html supports copying lookup code and link', async () => {
   assert.match(html, /copyLookupCode/);
   assert.match(html, /copyLookupLink/);
 });
+
+test('repeat mode can prefill category and delivery date', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /function selectHistoryOrder/);
+  assert.match(html, /cate3/);
+  assert.match(html, /cate4/);
+});
