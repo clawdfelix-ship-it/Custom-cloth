@@ -489,7 +489,12 @@
 
         HEIGHT: 'height',
         'SUGGESTED HEIGHT': 'height',
-        '適用身高範圍': 'height'
+        '適用身高範圍': 'height',
+
+        SEAT: 'seat',
+        '臀圍': 'seat',
+        '臀圍(CM)': 'seat',
+        '臀圍CM': 'seat'
       };
       return map[x] || '';
     }
@@ -503,7 +508,7 @@
       if (!delim) return { ok: false, error: 'delimiter', rows: [], mapping: null };
 
       const matrix = lines.map((ln) => splitRow(ln, delim));
-      const mapping = { eu: -1, chest: -1, waist: -1, length: -1, china: -1, height: -1 };
+      const mapping = { eu: -1, chest: -1, waist: -1, length: -1, china: -1, height: -1, seat: -1 };
 
       let start = 0;
       if (header) {
@@ -522,18 +527,27 @@
         mapping.height = 5;
       }
 
-      const need = Object.entries(mapping)
-        .filter(([, idx]) => idx < 0)
-        .map(([k]) => k);
-      if (need.length) return { ok: false, error: 'missing_columns', rows: [], mapping };
+      if (header) {
+        if (mapping.eu < 0) return { ok: false, error: 'missing_columns', rows: [], mapping };
+      } else {
+        const need = ['eu', 'chest', 'waist', 'length', 'china', 'height'].filter((k) => mapping[k] < 0);
+        if (need.length) return { ok: false, error: 'missing_columns', rows: [], mapping };
+      }
 
       const rows = [];
       for (let i = start; i < matrix.length; i++) {
         const r = matrix[i];
-        const get = (k) => String(r[mapping[k]] || '').trim();
+        const get = (k) => (mapping[k] >= 0 ? String(r[mapping[k]] || '').trim() : '');
         const eu = get('eu');
         if (!eu) continue;
-        rows.push({ eu, chest: get('chest'), waist: get('waist'), length: get('length'), china: get('china'), height: get('height') });
+        const row = { eu };
+        if (mapping.length >= 0) row.length = get('length');
+        if (mapping.chest >= 0) row.chest = get('chest');
+        if (mapping.waist >= 0) row.waist = get('waist');
+        if (mapping.seat >= 0) row.seat = get('seat');
+        if (mapping.china >= 0) row.china = get('china');
+        if (mapping.height >= 0) row.height = get('height');
+        rows.push(row);
       }
 
       if (!rows.length) return { ok: false, error: 'no_rows', rows: [], mapping };
@@ -541,27 +555,30 @@
     }
 
     function renderSizePreview(rows) {
+      const hasSeat = (rows || []).some((r) => r && r.seat != null && String(r.seat).trim() !== '');
+      const hasChina = (rows || []).some((r) => r && r.china != null && String(r.china).trim() !== '');
+      const hasHeight = (rows || []).some((r) => r && r.height != null && String(r.height).trim() !== '');
+
+      const cols = [
+        { key: 'eu', label: 'EU' },
+        { key: 'length', label: '衣長' },
+        { key: 'chest', label: '胸圍' },
+        { key: 'waist', label: '腰圍' },
+        ...(hasSeat ? [{ key: 'seat', label: '臀圍' }] : []),
+        ...(hasChina ? [{ key: 'china', label: '中國碼' }] : []),
+        ...(hasHeight ? [{ key: 'height', label: '身高' }] : [])
+      ];
       const html = `
         <table class="min-w-[760px] w-full text-sm">
           <thead>
             <tr class="border-b bg-slate-50 text-left">
-              <th class="px-3 py-2 font-medium">EU</th>
-              <th class="px-3 py-2 font-medium">胸圍</th>
-              <th class="px-3 py-2 font-medium">腰圍</th>
-              <th class="px-3 py-2 font-medium">衣長</th>
-              <th class="px-3 py-2 font-medium">中國碼</th>
-              <th class="px-3 py-2 font-medium">身高</th>
+              ${cols.map((c) => `<th class="px-3 py-2 font-medium">${c.label}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
             ${(rows || []).map((r) => `
               <tr class="border-b">
-                <td class="px-3 py-2">${r.eu || ''}</td>
-                <td class="px-3 py-2">${r.chest || ''}</td>
-                <td class="px-3 py-2">${r.waist || ''}</td>
-                <td class="px-3 py-2">${r.length || ''}</td>
-                <td class="px-3 py-2">${r.china || ''}</td>
-                <td class="px-3 py-2">${r.height || ''}</td>
+                ${cols.map((c) => `<td class="px-3 py-2">${(r && r[c.key]) != null ? String(r[c.key]) : ''}</td>`).join('')}
               </tr>
             `).join('')}
           </tbody>
@@ -608,7 +625,7 @@
       if (!r.ok) {
         if (r.error === 'empty') sizePasteMsg.textContent = '請貼入表格內容';
         else if (r.error === 'delimiter') sizePasteMsg.textContent = '格式唔似 TSV/CSV，請確認係由 Excel/Sheets copy'
-        else if (r.error === 'missing_columns') sizePasteMsg.textContent = '表頭唔完整（需要 EU/CHEST/WAIST/LENGTH/CHINA/HEIGHT）'
+        else if (r.error === 'missing_columns') sizePasteMsg.textContent = '表頭唔完整（最少需要 EU/尺碼 欄）'
         else if (r.error === 'no_rows') sizePasteMsg.textContent = '搵唔到資料行'
         else sizePasteMsg.textContent = '解析失敗';
         return;

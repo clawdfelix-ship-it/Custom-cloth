@@ -80,7 +80,12 @@ function mapHeaderToKey(h) {
 
     HEIGHT: 'height',
     'SUGGESTED HEIGHT': 'height',
-    '適用身高範圍': 'height'
+    '適用身高範圍': 'height',
+
+    SEAT: 'seat',
+    '臀圍': 'seat',
+    '臀圍(CM)': 'seat',
+    '臀圍CM': 'seat'
   };
   return map[x] || '';
 }
@@ -94,7 +99,7 @@ function parseSizeTableText(text, opts) {
   if (!delim) return { ok: false, error: 'delimiter', rows: [], mapping: null };
 
   const matrix = lines.map((ln) => splitRow(ln, delim));
-  const mapping = { eu: -1, chest: -1, waist: -1, length: -1, china: -1, height: -1 };
+  const mapping = { eu: -1, chest: -1, waist: -1, length: -1, china: -1, height: -1, seat: -1 };
 
   let start = 0;
   if (header) {
@@ -113,18 +118,27 @@ function parseSizeTableText(text, opts) {
     mapping.height = 5;
   }
 
-  const need = Object.entries(mapping)
-    .filter(([, idx]) => idx < 0)
-    .map(([k]) => k);
-  if (need.length) return { ok: false, error: 'missing_columns', rows: [], mapping };
+  if (header) {
+    if (mapping.eu < 0) return { ok: false, error: 'missing_columns', rows: [], mapping };
+  } else {
+    const need = ['eu', 'chest', 'waist', 'length', 'china', 'height'].filter((k) => mapping[k] < 0);
+    if (need.length) return { ok: false, error: 'missing_columns', rows: [], mapping };
+  }
 
   const rows = [];
   for (let i = start; i < matrix.length; i++) {
     const r = matrix[i];
-    const get = (k) => String(r[mapping[k]] || '').trim();
+    const get = (k) => (mapping[k] >= 0 ? String(r[mapping[k]] || '').trim() : '');
     const eu = get('eu');
     if (!eu) continue;
-    rows.push({ eu, chest: get('chest'), waist: get('waist'), length: get('length'), china: get('china'), height: get('height') });
+    const row = { eu };
+    if (mapping.length >= 0) row.length = get('length');
+    if (mapping.chest >= 0) row.chest = get('chest');
+    if (mapping.waist >= 0) row.waist = get('waist');
+    if (mapping.seat >= 0) row.seat = get('seat');
+    if (mapping.china >= 0) row.china = get('china');
+    if (mapping.height >= 0) row.height = get('height');
+    rows.push(row);
   }
 
   if (!rows.length) return { ok: false, error: 'no_rows', rows: [], mapping };
@@ -132,4 +146,3 @@ function parseSizeTableText(text, opts) {
 }
 
 module.exports = { parseSizeTableText };
-

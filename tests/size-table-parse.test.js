@@ -37,3 +37,13 @@ test('parse CSV with header', () => {
   assert.equal(r.rows[0].eu, 'S');
 });
 
+test('parse header includes seat when present', () => {
+  const tsv = [
+    'EU\tLENGTH\tCHEST\tWAIST\tSEAT',
+    'S\t66\t98\t94\t96'
+  ].join('\n');
+  const r = parseSizeTableText(tsv, { header: true });
+  assert.equal(r.ok, true);
+  assert.equal(r.rows.length, 1);
+  assert.equal(r.rows[0].seat, '96');
+});
