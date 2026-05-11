@@ -14,6 +14,21 @@
 確認 Project Settings → Environment Variables 有：
 
 - `POSTGRES_URL`（由 integration 提供）
+- `PUBLIC_BASE_URL`（例如：`https://xxx.vercel.app`；用於組裝「重設密碼」link）
+
+另外「客戶註冊/登入 + 忘記密碼（Email reset link）」需要 SMTP（Zoho Mail）環境變數：
+
+- `SMTP_HOST`（建議：`smtp.zoho.com`）
+- `SMTP_PORT`（建議：`465`）
+- `SMTP_SECURE`（建議：`true`；如果用 `587`（STARTTLS）就設 `false`）
+- `SMTP_USER`（Zoho 寄件帳號，例如：`no-reply@yourdomain.com`）
+- `SMTP_PASS`（Zoho App Password；唔好用登入主密碼）
+- `SMTP_FROM`（寄件人顯示，例如：`ZENEX-SPORTS <no-reply@yourdomain.com>`）
+
+Zoho Mail 注意：
+
+- 建議開啟 2FA，然後用「App Password」作 SMTP 密碼（Zoho Admin / Mail 介面入面可建立）
+- 如果未設齊 SMTP 環境變數，忘記密碼會回 `email_not_configured`（唔會發到重設信）
 
 ## 3) 初始化資料表
 
