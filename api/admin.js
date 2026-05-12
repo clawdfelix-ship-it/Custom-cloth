@@ -386,7 +386,7 @@ async function ordersCsvHandler(req, res, url) {
         and (${cate4} = '' or o.cate4 = ${cate4})
         and (${createdFrom} = '' or o.create_time >= (coalesce(nullif(${createdFrom},''), '1900-01-01')::date))
         and (${createdTo} = '' or o.create_time < (coalesce(nullif(${createdTo},''), '2099-12-31')::date + interval '1 day'))
-      order by o.create_time desc, oi.create_time asc
+      order by o.create_time desc
       limit 2000
     `;
 
