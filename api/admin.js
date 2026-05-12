@@ -243,27 +243,39 @@ async function ordersHandler(req, res, url) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
 
-  // Build WHERE conditions safely without template literals for date params
   const conditions = [];
-  const params = [];
-  if (orderSn) { conditions.push('o.order_sn = $' + (params.length + 1)); params.push(orderSn); }
-  if (companyName) { conditions.push('o.cust_name ilike $' + (params.length + 1)); params.push('%' + companyName + '%'); }
-  if (phone) { conditions.push('o.cust_phone = $' + (params.length + 1)); params.push(phone); }
-  if (status) { conditions.push('o.status = $' + (params.length + 1)); params.push(status); }
-  if (cate1) { conditions.push('o.cate1 = $' + (params.length + 1)); params.push(cate1); }
-  if (cate2) { conditions.push('o.cate2 = $' + (params.length + 1)); params.push(cate2); }
-  if (cate3) { conditions.push('o.cate3 = $' + (params.length + 1)); params.push(cate3); }
-  if (cate4) { conditions.push('o.cate4 = $' + (params.length + 1)); params.push(cate4); }
-  if (factoryName) { conditions.push('o.factory_name = $' + (params.length + 1)); params.push(factoryName); }
-  if (createdFrom) { conditions.push('o.create_time >= $' + (params.length + 1)); params.push(createdFrom); }
-  if (createdTo) { conditions.push('o.create_time < $' + (params.length + 1) + '::date + interval '1 day''); params.push(createdTo); }
+  const vals = [];
+  function add(name, val) { conditions.push(name); vals.push(val); }
+  if (orderSn) add('o.order_sn', orderSn);
+  if (companyName) add('o.cust_name ilike $' + (conditions.length + 1), '%' + companyName + '%');
+  if (phone) add('o.cust_phone', phone);
+  if (status) add('o.status', status);
+  if (cate1) add('o.cate1', cate1);
+  if (cate2) add('o.cate2', cate2);
+  if (cate3) add('o.cate3', cate3);
+  if (cate4) add('o.cate4', cate4);
+  if (factoryName) add('o.factory_name', factoryName);
+  if (createdFrom) add('o.create_time >= $' + (conditions.length + 1) + '::date', createdFrom);
+  if (createdTo) add('o.create_time < $' + (conditions.length + 1) + '::date + interval \'1 day\'', createdTo);
 
-  const whereClause = conditions.length ? 'where ' + conditions.join(' and ') : '';
-  const orderByClause = 'order by o.create_time desc';
-  const limitClause = 'limit 300';
-  const query = `select o.id, o.order_sn, o.create_time, o.cust_name, o.cust_contact, o.cust_phone, o.cate1, o.cate2, o.cate3, o.cate4, o.factory_user_id, o.factory_name, o.order_type, o.status, o.amount, o.remark, o.requested_delivery_date, o.suggested_delivery_date, o.source_order_id, coalesce(jsonb_agg(jsonb_build_object('styleId', oi.style_id, 'styleCode', s.code, 'styleName', s.name, 'qty', oi.qty, 'customText', oi.custom_text, 'customAttachments', oi.custom_attachments) filter (where oi.id is not null), '[]'::jsonb) as items from orders o left join order_items oi on oi.order_id = o.id left join styles s on s.id = oi.style_id ${whereClause} group by o.id ${orderByClause} ${limitClause}`;
-
-  const r = await sql.query(query, params);
+  const where = conditions.length ? 'where ' + conditions.join(' and ') : 'where 1=1';
+  const r = await sql`
+    select o.id, o.order_sn, o.create_time, o.cust_name, o.cust_contact, o.cust_phone,
+           o.cate1, o.cate2, o.cate3, o.cate4, o.factory_user_id, o.factory_name,
+           o.order_type, o.status, o.amount, o.remark, o.requested_delivery_date,
+           o.suggested_delivery_date, o.source_order_id,
+           coalesce(jsonb_agg(jsonb_build_object(
+             'styleId', oi.style_id, 'styleCode', s.code, 'styleName', s.name,
+             'qty', oi.qty, 'customText', oi.custom_text, 'customAttachments', oi.custom_attachments
+           ) filter (where oi.id is not null), '[]'::jsonb) as items
+    from orders o
+    left join order_items oi on oi.order_id = o.id
+    left join styles s on s.id = oi.style_id
+    ${where}
+    group by o.id
+    order by o.create_time desc
+    limit 300
+  `;
 
     const orders = r.rows.map((x) => ({
       id: x.id,
