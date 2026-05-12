@@ -236,13 +236,14 @@ async function ordersHandler(req, res, url) {
   const factoryName = (url.searchParams.get('factoryName') || '').trim();
 
   try {
-    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
-    if (createdTo) requiredYmd(createdTo, 'createdTo');
-    const df = createdFrom === '' ? null : createdFrom;
-    const dt = createdTo === '' ? null : createdTo;
+    if (createdFrom !== '') requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo !== '') requiredYmd(createdTo, 'createdTo');
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
+
+  const df = createdFrom === '' ? null : createdFrom;
+  const dt = createdTo === '' ? null : createdTo;
 
   try {
     const r = await sql`
@@ -291,7 +292,7 @@ async function ordersHandler(req, res, url) {
         and (${cate2} = '' or o.cate2 = ${cate2})
         and (${cate3} = '' or o.cate3 = ${cate3})
         and (${cate4} = '' or o.cate4 = ${cate4})
-        and (df is null or o.create_time >= df::date)
+        and (df is null or o.create_time >= (df::date))
         and (dt is null or o.create_time < (dt::date + interval '1 day'))
         and (${factoryName} = '' or o.factory_name = ${factoryName})
       group by o.id
@@ -344,13 +345,14 @@ async function ordersCsvHandler(req, res, url) {
   const createdTo = (url.searchParams.get('createdTo') || '').trim();
 
   try {
-    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
-    if (createdTo) requiredYmd(createdTo, 'createdTo');
-    const df = createdFrom === '' ? null : createdFrom;
-    const dt = createdTo === '' ? null : createdTo;
+    if (createdFrom !== '') requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo !== '') requiredYmd(createdTo, 'createdTo');
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
+
+  const df = createdFrom === '' ? null : createdFrom;
+  const dt = createdTo === '' ? null : createdTo;
 
   try {
     const r = await sql`
@@ -388,7 +390,7 @@ async function ordersCsvHandler(req, res, url) {
         and (${cate2} = '' or o.cate2 = ${cate2})
         and (${cate3} = '' or o.cate3 = ${cate3})
         and (${cate4} = '' or o.cate4 = ${cate4})
-        and (df is null or o.create_time >= df::date)
+        and (df is null or o.create_time >= (df::date))
         and (dt is null or o.create_time < (dt::date + interval '1 day'))
       order by o.create_time desc, oi.create_time asc
       limit 2000
