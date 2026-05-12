@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/test-admin",
+      "destination": "/api/test-admin"
+    },
+    {
       "source": "/api/test-fix",
       "destination": "/api/test-fix"
     },
