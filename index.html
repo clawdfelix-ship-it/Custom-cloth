@@ -474,6 +474,7 @@
         return;
       }
       styles.forEach((s) => {
+        if (s && s.code === 'CUSTOMER_PROVIDED') return;
         const div = document.createElement('div');
         div.className = 'style-item';
         const imgSrc = s.imgUrl || s.imgBase64 || 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
