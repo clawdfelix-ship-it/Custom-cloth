@@ -385,7 +385,7 @@ async function handleStatus(req, res, url) {
       from order_items oi
       left join styles s on s.id = oi.style_id
       where oi.order_id = ${o.id}::uuid
-      order by oi.create_time asc
+      order by oi.id asc
       limit 50
     `;
     return sendJson(res, 200, {
