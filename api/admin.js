@@ -351,9 +351,6 @@ async function ordersCsvHandler(req, res, url) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
 
-  const df = createdFrom === '' ? null : createdFrom;
-  const dt = createdTo === '' ? null : createdTo;
-
   try {
     const r = await sql`
       select
@@ -392,7 +389,7 @@ async function ordersCsvHandler(req, res, url) {
         and (${cate4} = '' or o.cate4 = ${cate4})
         and (df is null or o.create_time >= (df::date))
         and (dt is null or o.create_time < (dt::date + interval '1 day'))
-      order by o.create_time desc, oi.create_time asc
+      order by o.create_time desc
       limit 2000
     `;
 
