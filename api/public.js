@@ -417,7 +417,7 @@ async function handleStatus(req, res, url) {
       }
     });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 

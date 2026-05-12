@@ -56,7 +56,7 @@ async function ordersHandler(req, res, session) {
     }));
     return sendJson(res, 200, { ok: true, orders });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 
@@ -127,7 +127,7 @@ async function orderDetailHandler(req, res, session, url) {
       }
     });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 
