@@ -1,18 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/test-requireadmin",
-      "destination": "/api/test-requireadmin"
-    },
-    {
-      "source": "/api/test-admin",
-      "destination": "/api/test-admin"
-    },
-    {
-      "source": "/api/test-fix",
-      "destination": "/api/test-fix"
-    },
-    {
       "source": "/admin",
       "destination": "/admin.html"
     },
@@ -67,14 +55,6 @@
     {
       "source": "/api/admin/styles",
       "destination": "/api/admin?action=styles"
-    },
-    {
-      "source": "/api/admin/orders/new",
-      "destination": "/api/admin-orders-fix"
-    },
-    {
-      "source": "/api/admin/orders/simple",
-      "destination": "/api/orders-simple"
     },
     {
       "source": "/api/admin/orders",
