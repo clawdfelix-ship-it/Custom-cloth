@@ -109,7 +109,7 @@ async function handleStyles(req, res, url) {
     }
     return sendJson(res, 200, { ok: true, styles });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 
@@ -123,7 +123,7 @@ async function handleSizeTable(req, res, url) {
     if (!row) return sendJson(res, 404, { ok: false, error: 'not_found' });
     return sendJson(res, 200, { ok: true, sizeTable: { id: row.id, name: row.name, data: row.data } });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 

@@ -321,7 +321,7 @@ async function ordersHandler(req, res, url) {
     }));
     return sendJson(res, 200, { ok: true, orders });
   } catch (e) {
-    return sendJson(res, 500, { ok: false, error: 'server_error' });
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
   }
 }
 
