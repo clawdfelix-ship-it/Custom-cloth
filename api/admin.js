@@ -237,8 +237,8 @@ async function ordersHandler(req, res, url) {
   const factoryName = (url.searchParams.get('factoryName') || '').trim();
 
   try {
-    if (createdFrom !== '') requiredYmd(createdFrom, 'createdFrom');
-    if (createdTo !== '') requiredYmd(createdTo, 'createdTo');
+    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo) requiredYmd(createdTo, 'createdTo');
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
@@ -343,8 +343,8 @@ async function ordersCsvHandler(req, res, url) {
   const createdTo = (url.searchParams.get('createdTo') || '').trim();
 
   try {
-    if (createdFrom !== '') requiredYmd(createdFrom, 'createdFrom');
-    if (createdTo !== '') requiredYmd(createdTo, 'createdTo');
+    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo) requiredYmd(createdTo, 'createdTo');
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }

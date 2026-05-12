@@ -10,7 +10,8 @@ function requiredEnum(v, allowed, name) {
 }
 
 function requiredYmd(v, name) {
-  const s = requiredString(v, name);
+  if (!v || typeof v !== 'string' || !v.trim()) return '';
+  const s = v.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error(`${name} invalid`);
   return s;
 }
