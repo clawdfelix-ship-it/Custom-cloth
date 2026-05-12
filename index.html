@@ -206,10 +206,6 @@
         <label for="queryLookupCode">查單碼（推薦）</label>
         <input type="text" id="queryLookupCode" name="queryLookupCode" autocomplete="off" placeholder="請輸入提交成功後顯示嘅查單碼" spellcheck="false">
       </div>
-      <div class="form-item">
-        <label for="queryPhone">電話（兼容舊單）</label>
-        <input type="tel" id="queryPhone" name="queryPhone" inputmode="tel" autocomplete="tel" placeholder="如冇查單碼，先輸入落單電話" spellcheck="false">
-      </div>
       <button class="btn btn-secondary" type="button" onclick="queryOrder()">查詢訂單狀態</button>
       <div id="queryMsg" class="muted"></div>
       <div id="queryResult" class="result-box hide"></div>
@@ -943,26 +939,28 @@
     async function queryOrder() {
       const orderSn = document.getElementById('queryOrderSn').value.trim();
       const lookupCode = document.getElementById('queryLookupCode').value.trim();
-      const phone = document.getElementById('queryPhone').value.trim();
       const msg = document.getElementById('queryMsg');
       const box = document.getElementById('queryResult');
       msg.textContent = '';
       box.classList.add('hide');
       box.innerHTML = '';
 
-      if (!orderSn || (!lookupCode && !phone)) {
-        msg.textContent = '請輸入訂單編號 + 查單碼（或電話）';
+      if (!orderSn) {
+        msg.textContent = '請輸入訂單編號';
         return;
       }
 
       const qs = new URLSearchParams();
       qs.set('orderSn', orderSn);
       if (lookupCode) qs.set('lookupCode', lookupCode);
-      else qs.set('phone', phone);
 
-      const res = await fetch(`/api/public/orders/status?${qs.toString()}`);
+      const res = await fetch(`/api/public/orders/status?${qs.toString()}`, { headers: { ...authHeaders() } });
       const data = await res.json().catch(() => null);
       if (!data || !data.ok) {
+        if (res && res.status === 401) {
+          location.href = '/login';
+          return;
+        }
         msg.textContent = '找不到訂單或資料不匹配';
         return;
       }

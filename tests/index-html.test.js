@@ -43,6 +43,13 @@ test('index.html supports copying lookup code and link', async () => {
   assert.match(html, /copyLookupLink/);
 });
 
+test('index.html queries order status with auth header', async () => {
+  const fs = require('node:fs/promises');
+  const html = await fs.readFile('index.html', 'utf8');
+  assert.match(html, /\/api\/public\/orders\/status\?/);
+  assert.match(html, /fetch\(`\/api\/public\/orders\/status\?\$\{qs\.toString\(\)\}`,[\s\S]*authHeaders\(\)/);
+});
+
 test('repeat mode can prefill category and delivery date', async () => {
   const fs = require('node:fs/promises');
   const html = await fs.readFile('index.html', 'utf8');
