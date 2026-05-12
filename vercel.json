@@ -69,6 +69,10 @@
       "destination": "/api/admin-orders-fix"
     },
     {
+      "source": "/api/admin/orders/simple",
+      "destination": "/api/orders-simple"
+    },
+    {
       "source": "/api/admin/orders",
       "destination": "/api/admin?action=orders"
     },
