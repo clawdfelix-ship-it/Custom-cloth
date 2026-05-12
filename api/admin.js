@@ -218,7 +218,6 @@ async function stylesHandler(req, res, url) {
   return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
 }
 
-// trigger redeploy
 async function ordersHandler(req, res, url) {
   const session = await requireAdmin(req, res);
   if (!session) return;
@@ -237,45 +236,66 @@ async function ordersHandler(req, res, url) {
   const factoryName = (url.searchParams.get('factoryName') || '').trim();
 
   try {
-    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
-    if (createdTo) requiredYmd(createdTo, 'createdTo');
+    if (createdFrom !== '') requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo !== '') requiredYmd(createdTo, 'createdTo');
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
 
-  const conditions = [];
-  const vals = [];
-  function add(name, val) { conditions.push(name); vals.push(val); }
-  if (orderSn) add('o.order_sn', orderSn);
-  if (companyName) add('o.cust_name ilike $' + (conditions.length + 1), '%' + companyName + '%');
-  if (phone) add('o.cust_phone', phone);
-  if (status) add('o.status', status);
-  if (cate1) add('o.cate1', cate1);
-  if (cate2) add('o.cate2', cate2);
-  if (cate3) add('o.cate3', cate3);
-  if (cate4) add('o.cate4', cate4);
-  if (factoryName) add('o.factory_name', factoryName);
-  if (createdFrom) add('o.create_time >= $' + (conditions.length + 1) + '::date', createdFrom);
-  if (createdTo) add('o.create_time < $' + (conditions.length + 1) + '::date + interval \'1 day\'', createdTo);
-
-  const where = conditions.length ? 'where ' + conditions.join(' and ') : 'where 1=1';
-  const r = await sql`
-    select o.id, o.order_sn, o.create_time, o.cust_name, o.cust_contact, o.cust_phone,
-           o.cate1, o.cate2, o.cate3, o.cate4, o.factory_user_id, o.factory_name,
-           o.order_type, o.status, o.amount, o.remark, o.requested_delivery_date,
-           o.suggested_delivery_date, o.source_order_id,
-           coalesce(jsonb_agg(jsonb_build_object(
-             'styleId', oi.style_id, 'styleCode', s.code, 'styleName', s.name,
-             'qty', oi.qty, 'customText', oi.custom_text, 'customAttachments', oi.custom_attachments
-           ) filter (where oi.id is not null), '[]'::jsonb) as items
-    from orders o
-    left join order_items oi on oi.order_id = o.id
-    left join styles s on s.id = oi.style_id
-    ${where}
-    group by o.id
-    order by o.create_time desc
-    limit 300
-  `;
+  try {
+    const r = await sql`
+      select
+        o.id,
+        o.order_sn,
+        o.create_time,
+        o.cust_name,
+        o.cust_contact,
+        o.cust_phone,
+        o.cate1,
+        o.cate2,
+        o.cate3,
+        o.cate4,
+        o.factory_user_id,
+        o.factory_name,
+        o.order_type,
+        o.status,
+        o.amount,
+        o.remark,
+        o.requested_delivery_date,
+        o.suggested_delivery_date,
+        o.source_order_id,
+        coalesce(
+          jsonb_agg(
+            jsonb_build_object(
+              'styleId', oi.style_id,
+              'styleCode', s.code,
+              'styleName', s.name,
+              'qty', oi.qty,
+              'customText', oi.custom_text,
+              'customAttachments', oi.custom_attachments
+            )
+          ) filter (where oi.id is not null),
+          '[]'::jsonb
+        ) as items
+      from orders o
+      left join order_items oi on oi.order_id = o.id
+      left join styles s on s.id = oi.style_id
+      where
+        (${orderSn} = '' or o.order_sn = ${orderSn})
+        and (${companyName} = '' or o.cust_name ilike ${'%' + companyName + '%'})
+        and (${phone} = '' or o.cust_phone = ${phone})
+        and (${status} = '' or o.status = ${status})
+        and (${cate1} = '' or o.cate1 = ${cate1})
+        and (${cate2} = '' or o.cate2 = ${cate2})
+        and (${cate3} = '' or o.cate3 = ${cate3})
+        and (${cate4} = '' or o.cate4 = ${cate4})
+        and (char_length(${createdFrom}) = 0 or o.create_time >= (${createdFrom}::date))
+        and (char_length(${createdTo}) = 0 or o.create_time < (${createdTo}::date + interval '1 day'))
+        and (${factoryName} = '' or o.factory_name = ${factoryName})
+      group by o.id
+      order by o.create_time desc
+      limit 300
+    `;
 
     const orders = r.rows.map((x) => ({
       id: x.id,
@@ -322,32 +342,53 @@ async function ordersCsvHandler(req, res, url) {
   const createdTo = (url.searchParams.get('createdTo') || '').trim();
 
   try {
-    if (createdFrom) requiredYmd(createdFrom, 'createdFrom');
-    if (createdTo) requiredYmd(createdTo, 'createdTo');
+    if (createdFrom !== '') requiredYmd(createdFrom, 'createdFrom');
+    if (createdTo !== '') requiredYmd(createdTo, 'createdTo');
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: 'bad_request' });
   }
 
-  // Build WHERE conditions safely without template literals for date params
-  const conditions2 = [];
-  const params2 = [];
-  if (orderSn) { conditions2.push('o.order_sn = $' + (params2.length + 1)); params2.push(orderSn); }
-  if (companyName) { conditions2.push('o.cust_name ilike $' + (params2.length + 1)); params2.push('%' + companyName + '%'); }
-  if (phone) { conditions2.push('o.cust_phone = $' + (params2.length + 1)); params2.push(phone); }
-  if (status) { conditions2.push('o.status = $' + (params2.length + 1)); params2.push(status); }
-  if (cate1) { conditions2.push('o.cate1 = $' + (params2.length + 1)); params2.push(cate1); }
-  if (cate2) { conditions2.push('o.cate2 = $' + (params2.length + 1)); params2.push(cate2); }
-  if (cate3) { conditions2.push('o.cate3 = $' + (params2.length + 1)); params2.push(cate3); }
-  if (cate4) { conditions2.push('o.cate4 = $' + (params2.length + 1)); params2.push(cate4); }
-  if (createdFrom) { conditions2.push('o.create_time >= $' + (params2.length + 1)); params2.push(createdFrom); }
-  if (createdTo) { conditions2.push('o.create_time < $' + (params2.length + 1) + '::date + interval '1 day''); params2.push(createdTo); }
-
-  const whereClause2 = conditions2.length ? 'where ' + conditions2.join(' and ') : '';
-  const orderByClause2 = 'order by o.create_time desc';
-  const limitClause2 = 'limit 2000';
-  const query2 = `select o.id, o.order_sn, o.create_time, o.cust_name, o.cust_phone, o.cate1, o.cate2, o.cate3, o.cate4, o.factory_name, o.order_type, o.status, o.remark, o.requested_delivery_date, o.suggested_delivery_date, oi.style_id, s.code as style_code, s.name as style_name, oi.qty, oi.custom_text, oi.custom_attachments from orders o left join order_items oi on oi.order_id = o.id left join styles s on s.id = oi.style_id ${whereClause2} ${orderByClause2} ${limitClause2}`;
-
-  const r = await sql.query(query2, params2);
+  try {
+    const r = await sql`
+      select
+        o.id,
+        o.order_sn,
+        o.create_time,
+        o.cust_name,
+        o.cust_phone,
+        o.cate1,
+        o.cate2,
+        o.cate3,
+        o.cate4,
+        o.factory_name,
+        o.order_type,
+        o.status,
+        o.remark,
+        o.requested_delivery_date,
+        o.suggested_delivery_date,
+        oi.style_id,
+        s.code as style_code,
+        s.name as style_name,
+        oi.qty,
+        oi.custom_text,
+        oi.custom_attachments
+      from orders o
+      left join order_items oi on oi.order_id = o.id
+      left join styles s on s.id = oi.style_id
+      where
+        (${orderSn} = '' or o.order_sn = ${orderSn})
+        and (${companyName} = '' or o.cust_name ilike ${'%' + companyName + '%'})
+        and (${phone} = '' or o.cust_phone = ${phone})
+        and (${status} = '' or o.status = ${status})
+        and (${cate1} = '' or o.cate1 = ${cate1})
+        and (${cate2} = '' or o.cate2 = ${cate2})
+        and (${cate3} = '' or o.cate3 = ${cate3})
+        and (${cate4} = '' or o.cate4 = ${cate4})
+        and (char_length(${createdFrom}) = 0 or o.create_time >= (${createdFrom}::date))
+        and (char_length(${createdTo}) = 0 or o.create_time < (${createdTo}::date + interval '1 day'))
+      order by o.create_time desc, oi.create_time asc
+      limit 2000
+    `;
 
     const rows = r.rows.map((x) => {
       let qtyList = [];
