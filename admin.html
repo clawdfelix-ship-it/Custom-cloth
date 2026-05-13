@@ -917,24 +917,30 @@
 
     loginBtn.addEventListener('click', async () => {
       loginMsg.textContent = '';
+      loginMsg.classList.remove('hidden');
       const acc = accInput.value.trim();
       const pwd = pwdInput.value;
       if (!acc || !pwd) {
         loginMsg.textContent = '請輸入帳號及密碼';
         return;
       }
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acc, pwd })
-      });
-      const data = await res.json().catch(() => null);
-      if (!data || !data.ok) {
-        loginMsg.textContent = '登入失敗';
-        return;
+      loginMsg.textContent = '登入中...';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acc, pwd })
+        });
+        const data = await res.json().catch(() => null);
+        if (!data || !data.ok) {
+          loginMsg.textContent = '登入失敗：' + (data && data.message ? data.message : '帳號或密碼錯誤');
+          return;
+        }
+        setSession(data.token, data.role, data.name);
+        await showApp();
+      } catch (e) {
+        loginMsg.textContent = '網絡錯誤：' + e.message;
       }
-      setSession(data.token, data.role, data.name);
-      await showApp();
     });
 
     logoutBtn.addEventListener('click', async () => {
