@@ -510,7 +510,7 @@ async function becomePromoterHandler(req, res) {
   if (!session) return;
 
   try {
-    const { becomePromoter } = require('../src/services/brokerage');
+    const { becomePromoter } = require('../src/services/member');
     const result = await becomePromoter(session.customerId);
     return sendJson(res, 200, result);
   } catch (e) {
