@@ -9,7 +9,7 @@
  * - 等級權益查詢
  */
 const { sql } = require('../lib/db');
-const { bcAdd, bcMul, bcCmp } = require('../src/lib/math');
+const { bcAdd, bcMul, bcCmp } = require('../lib/math');
 
 /**
  * 獲取所有啟用的會員等級

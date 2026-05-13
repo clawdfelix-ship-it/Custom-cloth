@@ -132,7 +132,7 @@ async function signIn(customerId) {
   // 檢查今日是否已簽到（避免重複）
   // 這裡預留介面，未來可在 ledger 中增加 type='sign' 且日期校驗
 
-  const { addPoints } = require('../src/services/points');
+  // addPoints is defined in this module, call directly
   return await addPoints(
     customerId,
     POINTS_CONFIGS.SIGN_POINTS,
