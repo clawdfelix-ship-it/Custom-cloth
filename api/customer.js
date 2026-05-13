@@ -345,7 +345,7 @@ async function pointsHistoryHandler(req, res) {
 
     const countR = await sql`
       SELECT COUNT(*) as total FROM ledger
-      WHERE account_id = ${session.customerId}::uuid
+      WHERE account_id = ${session.customerId}
         AND account_type = 'customer'
         AND type LIKE 'integral_%'
     `;
@@ -354,7 +354,7 @@ async function pointsHistoryHandler(req, res) {
     const entries = await sql`
       SELECT id, type, pm, amount, balance_after, title, order_id, created_at
       FROM ledger
-      WHERE account_id = ${session.customerId}::uuid
+      WHERE account_id = ${session.customerId}
         AND account_type = 'customer'
         AND type LIKE 'integral_%'
       ORDER BY created_at DESC
