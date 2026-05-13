@@ -1471,6 +1471,7 @@
       const data = await res.json().catch(() => null);
       if (!data || !data.ok) return;
       const list = data.styles || [];
+      window.loadedStyles = list; // cache for edit
       stylesBody.innerHTML = '';
       list.forEach((s) => {
         const tr = document.createElement('tr');
@@ -1484,6 +1485,7 @@
           <td class="px-3 py-2 text-right">${s.priceHkd != null ? 'HK$' + s.priceHkd.toFixed(2) : '-'}</td>
           <td class="px-3 py-2 text-xs text-slate-600">${escapeHtml(s.sizeTableId)}</td>
           <td class="px-3 py-2 text-right">
+            <button data-id="${escapeHtml(s.id)}" class="editStyle rounded-lg border bg-blue-50 text-blue-600 px-3 py-1.5 text-xs font-semibold hover:bg-blue-100 mr-1">編輯</button>
             <button data-id="${escapeHtml(s.id)}" class="delStyle rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
           </td>
         `;
@@ -1501,6 +1503,125 @@
     loadStylesBtn.addEventListener('click', async () => {
       await loadSizes();
       await loadStyles();
+    });
+
+    // ── Edit Style Modal ──────────────────────────────────
+    const editStyleModal = _q('editStyleModal');
+    const editStyleContent = _q('editStyleContent');
+    const editStyleCode = _q('editStyleCode');
+    const editStyleName = _q('editStyleName');
+    const editStyleCate1 = _q('editStyleCate1');
+    const editStyleCate2 = _q('editStyleCate2');
+    const editStyleCate3 = _q('editStyleCate3');
+    const editStyleCate4 = _q('editStyleCate4');
+    const editStyleJerseyWrap = _q('editStyleJerseyWrap');
+    const editStyleCostRmb = _q('editStyleCostRmb');
+    const editStylePriceHkd = _q('editStylePriceHkd');
+    const editStyleRemark = _q('editStyleRemark');
+    const editStyleMsg = _q('editStyleMsg');
+    const saveEditStyleBtn = _q('saveEditStyleBtn');
+    const closeEditStyleModal = _q('closeEditStyleModal');
+
+    _on(closeEditStyleModal, 'click', () => {
+      if (editStyleModal) { editStyleModal.classList.add('hidden'); editStyleModal.classList.remove('flex'); }
+    });
+    _on(editStyleModal, 'click', (e) => {
+      if (editStyleModal && e.target === editStyleModal) { editStyleModal.classList.add('hidden'); editStyleModal.classList.remove('flex'); }
+    });
+
+    let editingStyleId = null;
+
+    function showEditStyleModal(style) {
+      editingStyleId = style.id;
+      editStyleCode.textContent = style.code || '';
+      editStyleName.value = style.name || '';
+      editStyleCostRmb.value = style.costRmb != null ? style.costRmb : '';
+      editStylePriceHkd.value = style.priceHkd != null ? style.priceHkd : '';
+      editStyleRemark.value = style.remark || '';
+
+      // Populate category dropdowns
+      const allCate1 = Array.from(styleCate1Sel.options).map(o => o.value).filter(v => v && v !== '__custom__');
+      editStyleCate1.innerHTML = '<option value="">請選擇</option>' + allCate1.map(c => `<option value="${c}">${c}</option>`).join('');
+      editStyleCate1.value = style.cate1 || '';
+
+      // Load subcategories for cate2
+      const subOptions = categories[style.cate1] || [];
+      editStyleCate2.innerHTML = '<option value="">請選擇</option>' + subOptions.map(c => `<option value="${c}">${c}</option>`).join('');
+      editStyleCate2.value = style.cate2 || '';
+
+      if (style.cate2 === '球衣') {
+        editStyleJerseyWrap.classList.remove('hidden');
+        editStyleCate3.value = style.cate3 || '';
+        editStyleCate4.value = style.cate4 || '';
+      } else {
+        editStyleJerseyWrap.classList.add('hidden');
+      }
+
+      editStyleMsg.classList.add('hidden');
+      editStyleModal.classList.remove('hidden');
+      editStyleModal.classList.add('flex');
+      editStyleName.focus();
+    }
+
+    // Listen for edit clicks (event delegation)
+    stylesBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.editStyle');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const style = loadedStyles.find(s => s.id === id);
+      if (style) showEditStyleModal(style);
+    });
+
+    saveEditStyleBtn.addEventListener('click', async () => {
+      editStyleMsg.classList.add('hidden');
+      const name = editStyleName.value.trim();
+      const cate1 = editStyleCate1.value.trim();
+      const cate2 = editStyleCate2.value.trim();
+      const cate3 = editStyleCate3.value.trim();
+      const cate4 = editStyleCate4.value.trim();
+      const costRmb = parseFloat(editStyleCostRmb.value) || null;
+      const priceHkd = parseFloat(editStylePriceHkd.value) || null;
+      const remark = editStyleRemark.value.trim();
+      if (!name || !cate1 || !cate2) {
+        editStyleMsg.textContent = '請填寫名稱及分類';
+        editStyleMsg.classList.remove('hidden');
+        return;
+      }
+      if (cate2 === '球衣' && (!cate3 || !cate4)) {
+        editStyleMsg.textContent = '球衣需選擇球衣子類及再子類';
+        editStyleMsg.classList.remove('hidden');
+        return;
+      }
+      saveEditStyleBtn.disabled = true;
+      saveEditStyleBtn.textContent = '儲存中...';
+      try {
+        const res = await apiFetch(`/api/admin/styles?id=${encodeURIComponent(editingStyleId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, cate1, cate2, cate3, cate4, costRmb, priceHkd, remark })
+        });
+        const out = await res.json().catch(() => null);
+        if (out && out.ok) {
+          editStyleModal.classList.add('hidden');
+          editStyleModal.classList.remove('flex');
+          loadStyles();
+        } else {
+          editStyleMsg.textContent = out && out.error ? '更新失敗：' + out.error : '更新失敗';
+          editStyleMsg.classList.remove('hidden');
+        }
+      } finally {
+        saveEditStyleBtn.disabled = false;
+        saveEditStyleBtn.textContent = '儲存';
+      }
+    });
+
+    // ── Cate2 change in edit modal shows jersey fields ──────────────────
+    _on(editStyleCate2, 'change', () => {
+      if (editStyleCate2.value === '球衣') {
+        editStyleJerseyWrap.classList.remove('hidden');
+      } else {
+        editStyleJerseyWrap.classList.add('hidden');
+      }
     });
 
     createStyleBtn.addEventListener('click', async () => {
@@ -1824,6 +1945,70 @@
     <div id="viewOrderContent" class="px-5 py-4 overflow-y-auto flex-1 text-sm space-y-4"></div>
     <div class="flex items-center justify-end gap-2 border-t px-5 py-4 shrink-0">
       <button id="printOrderBtn" class="rounded-xl border border-zenex-border bg-white px-4 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2" onclick="window.print()">列印</button>
+    </div>
+  </div>
+</div>
+
+<!-- 款式編輯 Modal -->
+<div id="editStyleModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4 z-50">
+  <div class="w-full max-w-lg rounded-2xl bg-white shadow-xl max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between border-b px-5 py-4 shrink-0">
+      <div class="text-base font-semibold">編輯款式</div>
+      <button id="closeEditStyleModal" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">×</button>
+    </div>
+    <div id="editStyleContent" class="px-5 py-4 overflow-y-auto flex-1 text-sm space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-600">款式編號</label>
+          <div id="editStyleCode" class="mt-1 text-sm font-medium text-slate-400"></div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-600">款式名稱</label>
+          <input id="editStyleName" type="text" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-600">大類</label>
+          <select id="editStyleCate1" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-600">子類</label>
+          <select id="editStyleCate2" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
+        </div>
+      </div>
+      <div id="editStyleJerseyWrap" class="hidden grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-600">球衣子類</label>
+          <select id="editStyleCate3" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+            <option value="">請選擇</option><option value="足球">足球</option><option value="籃球">籃球</option><option value="排球">排球</option><option value="其他">其他</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-600">再子類</label>
+          <select id="editStyleCate4" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm">
+            <option value="">請選擇</option><option value="上衣">上衣</option><option value="褲子">褲子</option><option value="整套">整套</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-medium text-slate-600">成本價（人民幣）</label>
+          <input id="editStyleCostRmb" type="number" step="0.01" min="0" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="0.00" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-slate-600">售價（HKD）</label>
+          <input id="editStylePriceHkd" type="number" step="0.01" min="0" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="0.00" />
+        </div>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-600">備註</label>
+        <input id="editStyleRemark" type="text" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
+      </div>
+      <div id="editStyleMsg" class="text-sm font-medium text-red-500 hidden"></div>
+    </div>
+    <div class="flex items-center justify-end gap-2 border-t px-5 py-4 shrink-0">
+      <button id="saveEditStyleBtn" class="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">儲存</button>
     </div>
   </div>
 </div>

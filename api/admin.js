@@ -213,6 +213,49 @@ async function stylesHandler(req, res, url) {
     }
   }
 
+  if (req.method === 'PUT') {
+    try {
+      const id = (url.searchParams.get('id') || '').trim();
+      if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
+      const raw = await readBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      const cate1 = typeof body.cate1 === 'string' ? body.cate1.trim() : '';
+      const cate2 = typeof body.cate2 === 'string' ? body.cate2.trim() : '';
+      const cate3 = typeof body.cate3 === 'string' ? body.cate3.trim() : '';
+      const cate4 = typeof body.cate4 === 'string' ? body.cate4.trim() : '';
+      const costRmb = typeof body.costRmb === 'number' ? body.costRmb : null;
+      const priceHkd = typeof body.priceHkd === 'number' ? body.priceHkd : null;
+      const remark = typeof body.remark === 'string' ? body.remark.trim() : '';
+      if (!name || !cate1 || !cate2) return sendJson(res, 400, { ok: false, error: 'bad_request' });
+      if (cate2 === JERSEY_CATE2 && (!cate3 || !cate4)) throw new Error('jersey_requires_cate3_cate4');
+      const updated = await sql`
+        update styles set
+          name = ${name}, cate1 = ${cate1}, cate2 = ${cate2},
+          cate3 = ${cate3 || null}, cate4 = ${cate4 || null},
+          cost_rmb = ${costRmb}, price_hkd = ${priceHkd}, remark = ${remark || null},
+          updated_at = current_timestamp
+        where id = ${id}::uuid
+        returning id, code, name, cate1, cate2, cate3, cate4, cost_rmb, price_hkd, remark, created_at
+      `;
+      if (!updated.rows[0]) return sendJson(res, 404, { ok: false, error: 'not_found' });
+      const x = updated.rows[0];
+      await audit(session.userId, 'admin_edit_style', 'style', id, { name: x.name });
+      return sendJson(res, 200, {
+        ok: true,
+        style: {
+          id: x.id, code: x.code, name: x.name,
+          cate1: x.cate1, cate2: x.cate2, cate3: x.cate3 || '', cate4: x.cate4 || '',
+          costRmb: x.cost_rmb ? parseFloat(x.cost_rmb) : null,
+          priceHkd: x.price_hkd ? parseFloat(x.price_hkd) : null,
+          remark: x.remark || '', createdAt: x.created_at
+        }
+      });
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'bad_request' });
+    }
+  }
+
   if (req.method === 'DELETE') {
     const id = (url.searchParams.get('id') || '').trim();
     if (!id) return sendJson(res, 400, { ok: false, error: 'id_required' });
