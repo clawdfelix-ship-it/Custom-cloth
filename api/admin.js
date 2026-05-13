@@ -735,20 +735,24 @@ async function factorySettlementsHandler(req, res, url) {
       whereClause = sql`WHERE fs.status = ${status}`;
     }
 
-    const countR = await sql`SELECT COUNT(*) as total FROM factory_settlements fs ${whereClause}`;
+    let countQuery, countVals;
+    let listQuery, listVals;
+    if (status) {
+      countQuery = `SELECT COUNT(*) as total FROM factory_settlements fs WHERE fs.status = $1`;
+      countVals = [status];
+      listQuery = `SELECT fs.*, u.name as factory_name FROM factory_settlements fs JOIN users u ON u.id = fs.factory_user_id::uuid WHERE fs.status = $1 ORDER BY fs.created_at DESC LIMIT $2 OFFSET $3`;
+      listVals = [status, limit, offset];
+    } else {
+      countQuery = `SELECT COUNT(*) as total FROM factory_settlements fs`;
+      countVals = [];
+      listQuery = `SELECT fs.*, u.name as factory_name FROM factory_settlements fs JOIN users u ON u.id = fs.factory_user_id::uuid ORDER BY fs.created_at DESC LIMIT $1 OFFSET $2`;
+      listVals = [limit, offset];
+    }
+
+    const countR = await sql.query(countQuery, countVals);
     const total = Number(countR.rows[0].total);
 
-    const records = await sql`
-      SELECT
-        fs.*,
-        u.name as factory_name
-      FROM factory_settlements fs
-      JOIN users u ON u.id = fs.factory_user_id::uuid
-      ${whereClause}
-      ORDER BY fs.created_at DESC
-      LIMIT ${limit}
-      OFFSET ${offset}
-    `;
+    const records = await sql.query(listQuery, listVals);
 
     return sendJson(res, 200, {
       ok: true,
