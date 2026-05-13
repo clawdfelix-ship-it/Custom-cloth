@@ -33,7 +33,7 @@ async function findUnpaidOrdersToCancel() {
       o.id, o.order_sn, o.status, o.create_time,
       o.customer_id,
       c.email as customer_email,
-      c.nickname as customer_name
+      c.contact_name as customer_name
     FROM orders o
     LEFT JOIN customers c ON c.id = o.customer_id
     WHERE o.status = '客戶已提交'
