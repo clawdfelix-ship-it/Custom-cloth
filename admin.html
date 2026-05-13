@@ -229,6 +229,14 @@
             <label class="text-sm font-medium">尺碼表</label>
             <select id="styleSizeTableId" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm"></select>
           </div>
+          <div>
+            <label class="text-sm font-medium">成本價（人民幣）</label>
+            <input id="styleCostRmb" type="number" step="0.01" min="0" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="0.00" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">售價（HKD）</label>
+            <input id="stylePriceHkd" type="number" step="0.01" min="0" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" placeholder="0.00" />
+          </div>
           <div class="sm:col-span-3">
             <label class="text-sm font-medium">圖片（<500KB）</label>
             <input id="styleImage" type="file" accept="image/*" class="mt-1 w-full rounded-lg border px-3 py-2 text-sm" />
@@ -251,6 +259,8 @@
                 <th class="px-3 py-2 font-medium">編號</th>
                 <th class="px-3 py-2 font-medium">名稱</th>
                 <th class="px-3 py-2 font-medium">分類</th>
+                <th class="px-3 py-2 font-medium">成本（¥）</th>
+                <th class="px-3 py-2 font-medium">售價（HK$）</th>
                 <th class="px-3 py-2 font-medium">尺碼表</th>
                 <th class="px-3 py-2 text-right font-medium">操作</th>
               </tr>
@@ -1470,6 +1480,8 @@
           <td class="px-3 py-2 font-medium">${escapeHtml(s.code)}</td>
           <td class="px-3 py-2">${escapeHtml(s.name)}</td>
               <td class="px-3 py-2">${escapeHtml(cateText)}</td>
+          <td class="px-3 py-2 text-right">${s.costRmb != null ? '¥' + s.costRmb.toFixed(2) : '-'}</td>
+          <td class="px-3 py-2 text-right">${s.priceHkd != null ? 'HK$' + s.priceHkd.toFixed(2) : '-'}</td>
           <td class="px-3 py-2 text-xs text-slate-600">${escapeHtml(s.sizeTableId)}</td>
           <td class="px-3 py-2 text-right">
             <button data-id="${escapeHtml(s.id)}" class="delStyle rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">刪除</button>
@@ -1500,6 +1512,8 @@
       const cate3 = styleCate3Sel.value.trim();
       const cate4 = styleCate4Sel.value.trim();
       const sizeTableId = styleSizeTableId.value;
+      const costRmb = parseFloat(document.getElementById('styleCostRmb').value) || null;
+      const priceHkd = parseFloat(document.getElementById('stylePriceHkd').value) || null;
       const remark = document.getElementById('styleRemark').value.trim();
       const file = document.getElementById('styleImage').files[0];
       let imgBase64 = '';
@@ -1538,7 +1552,7 @@
       const res = await apiFetch('/api/admin/styles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, name, cate1, cate2, cate3, cate4, sizeTableId, imgUrl, imgBase64, remark })
+        body: JSON.stringify({ code, name, cate1, cate2, cate3, cate4, sizeTableId, imgUrl, imgBase64, remark, costRmb, priceHkd })
       });
       const out = await res.json().catch(() => null);
       if (!out || !out.ok) {

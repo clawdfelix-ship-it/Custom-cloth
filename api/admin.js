@@ -128,27 +128,29 @@ async function stylesHandler(req, res, url) {
     const cate1 = (url.searchParams.get('cate1') || '').trim();
     const cate2 = (url.searchParams.get('cate2') || '').trim();
     const r = await sql`
-      select id, code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark, created_at
+      select id, code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark, cost_rmb, price_hkd, created_at
       from styles
       where (${cate1} = '' or cate1 = ${cate1})
         and (${cate2} = '' or cate2 = ${cate2})
       order by created_at desc
       limit 500
     `;
-    const styles = r.rows.map((x) => ({
-      id: x.id,
-      code: x.code,
-      name: x.name,
-      cate1: x.cate1,
-      cate2: x.cate2,
-      cate3: x.cate3 || '',
-      cate4: x.cate4 || '',
-      sizeTableId: x.size_table_id,
-      imgUrl: x.img_url || '',
-      imgBase64: x.img_base64 || '',
-      remark: x.remark || '',
-      createdAt: x.created_at
-    }));
+      const styles = r.rows.map((x) => ({
+        id: x.id,
+        code: x.code,
+        name: x.name,
+        cate1: x.cate1,
+        cate2: x.cate2,
+        cate3: x.cate3 || '',
+        cate4: x.cate4 || '',
+        sizeTableId: x.size_table_id,
+        imgUrl: x.img_url || '',
+        imgBase64: x.img_base64 || '',
+        remark: x.remark || '',
+        costRmb: x.cost_rmb ? parseFloat(x.cost_rmb) : null,
+        priceHkd: x.price_hkd ? parseFloat(x.price_hkd) : null,
+        createdAt: x.created_at
+      }));
     return sendJson(res, 200, { ok: true, styles });
   }
 
@@ -166,6 +168,8 @@ async function stylesHandler(req, res, url) {
       const remark = typeof body.remark === 'string' ? body.remark.trim() : '';
       const imgUrl = typeof body.imgUrl === 'string' ? body.imgUrl.trim() : '';
       const imgBase64 = typeof body.imgBase64 === 'string' ? body.imgBase64.trim() : '';
+      const costRmb = typeof body.costRmb === 'number' ? body.costRmb : null;
+      const priceHkd = typeof body.priceHkd === 'number' ? body.priceHkd : null;
       if (!code || !name || !cate1 || !cate2 || !sizeTableId) return sendJson(res, 400, { ok: false, error: 'bad_request' });
       if (imgBase64 && imgBase64.length > 700000) return sendJson(res, 400, { ok: false, error: 'image_too_large' });
 
@@ -179,9 +183,9 @@ async function stylesHandler(req, res, url) {
       }
 
       const inserted = await sql`
-        insert into styles (code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark)
-        values (${code}, ${name}, ${cate1}, ${cate2}, ${cate3 || null}, ${cate4 || null}, ${sizeTableId}::uuid, ${imgUrl || null}, ${imgBase64 || null}, ${remark || null})
-        returning id, code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark, created_at
+        insert into styles (code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark, cost_rmb, price_hkd)
+        values (${code}, ${name}, ${cate1}, ${cate2}, ${cate3 || null}, ${cate4 || null}, ${sizeTableId}::uuid, ${imgUrl || null}, ${imgBase64 || null}, ${remark || null}, ${costRmb}, ${priceHkd})
+        returning id, code, name, cate1, cate2, cate3, cate4, size_table_id, img_url, img_base64, remark, cost_rmb, price_hkd, created_at
       `;
       const x = inserted.rows[0];
       await audit(session.userId, 'admin_create_style', 'style', String(x.id), { code: x.code, name: x.name });
@@ -199,6 +203,8 @@ async function stylesHandler(req, res, url) {
           imgUrl: x.img_url || '',
           imgBase64: x.img_base64 || '',
           remark: x.remark || '',
+          costRmb: x.cost_rmb ? parseFloat(x.cost_rmb) : null,
+          priceHkd: x.price_hkd ? parseFloat(x.price_hkd) : null,
           createdAt: x.created_at
         }
       });
