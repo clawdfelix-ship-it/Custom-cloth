@@ -151,17 +151,9 @@ async function runAutoCancelJob({ dryRun = false, limit = 100 } = {}) {
   return result;
 }
 
-/**
- * Vercel Cron Job 入口
- * Vercel Cron 會通過 GET/POST 調用這個 endpoint
- * 在 vercel.json 中配置：
- * {
- *   "crons": [{
- *     "path": "/api/jobs/auto-cancel",
- *     "schedule": "*/10 * * * *"
- *   }]
- * }
- */
+// Vercel Cron Job 入口
+// Vercel Cron 調用 GET/POST /api/jobs/auto-cancel
+// Cron schedule 在 vercel.json crons 配置
 async function handleCronRequest(req, res) {
   // 簡單的安全校驗（Production 應用環境變量 token）
   const authHeader = req.headers.authorization;
