@@ -39,7 +39,7 @@ async function findUnpaidOrdersToCancel() {
     WHERE o.status = '客戶已提交'
       AND o.paid = 0
       AND o.create_time < ${cutoff.toISOString()}
-      AND o.is_del = 0
+      
     ORDER BY o.create_time ASC
     LIMIT 100
   `;
