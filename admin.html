@@ -801,8 +801,19 @@
     const copyDeliveryDate = document.getElementById('copyDeliveryDate');
     const copyInfo = document.getElementById('copyInfo');
     const copyMsg = document.getElementById('copyMsg');
+
+    const viewOrderModal = document.getElementById('viewOrderModal');
+    const closeViewOrderModal = document.getElementById('closeViewOrderModal');
+    const viewOrderContent = document.getElementById('viewOrderContent');
+    let viewOrderData = null;
+
+    closeViewOrderModal.addEventListener('click', () => {
+      viewOrderModal.classList.add('hidden');
+      viewOrderModal.classList.remove('flex');
+    });
     let copySourceOrderId = null;
     let factoryUsers = [];
+    let loadedOrders = [];
 
     const factoryModal = document.getElementById('factoryModal');
     const closeFactoryModal = document.getElementById('closeFactoryModal');
@@ -977,6 +988,7 @@
         return;
       }
       const orders = data.orders || [];
+      loadedOrders = orders;
       ordersBody.innerHTML = '';
       orders.forEach((o) => {
         const tr = document.createElement('tr');
@@ -1008,7 +1020,8 @@
             <select data-id="${o.id}" class="factorySel w-full rounded-xl border border-zenex-border bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-zenex-500/25 focus:ring-offset-2">${factoryOptions}</select>
           </td>
           <td class="px-3 py-2 text-right">
-            <button data-id="${o.id}" data-sn="${escapeHtml(o.orderSn)}" class="copyBtn rounded-xl border border-zenex-border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">翻單</button>
+            <button data-id="${o.id}" data-sn="${escapeHtml(o.orderSn)}" class="viewBtn rounded-xl border border-zenex-border bg-white px-2 py-1 text-xs font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2 mr-1">檢視</button>
+            <button data-id="${o.id}" data-sn="${escapeHtml(o.orderSn)}" class="copyBtn rounded-xl border border-zenex-border bg-white px-2 py-1 text-xs font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">翻單</button>
           </td>
         `;
         ordersBody.appendChild(tr);
@@ -1029,6 +1042,64 @@
           });
           const data = await res.json().catch(() => null);
           if (!data || !data.ok) appMsg.textContent = '更新狀態失敗';
+        });
+      });
+
+      document.querySelectorAll('.viewBtn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const orderId = btn.dataset.id;
+          const order = loadedOrders.find((o) => o.id === orderId);
+          if (!order) { appMsg.textContent = '找不到訂單'; return; }
+          viewOrderData = order;
+          const items = order.items || [];
+          const itemsHtml = items.length ? items.map((item) => `
+            <div class="rounded-lg border p-3 mt-2">
+              <div class="font-medium">${escapeHtml(item.styleName || '')} <span class="text-zenex-muted text-xs">(${escapeHtml(item.styleCode || '')})</span></div>
+              <div class="mt-1 text-xs text-slate-600 grid grid-cols-2 gap-x-4">
+                <div>尺碼資料：${escapeHtml(JSON.stringify(item.qty || {}))}</div>
+                ${item.customText ? `<div>客製化文字：${escapeHtml(item.customText)}</div>` : ''}
+              </div>
+            </div>`).join('') : '<div class="text-slate-500 mt-2">無款式項目</div>';
+          viewOrderContent.innerHTML = `
+            <div class="grid grid-cols-2 gap-4">
+              <div class="rounded-lg border p-3">
+                <div class="text-xs font-semibold text-zenex-600 mb-1">基本資訊</div>
+                <div><span class="text-slate-500">訂單編號：</span>${escapeHtml(order.orderSn)}</div>
+                <div><span class="text-slate-500">狀態：</span><span id="viewOrderStatusBadge"></span></div>
+                <div><span class="text-slate-500">建立時間：</span>${new Date(order.createdAt).toLocaleString('zh-HK')}</div>
+                <div><span class="text-slate-500">訂單類型：</span>${escapeHtml(order.orderType || '')}</div>
+              </div>
+              <div class="rounded-lg border p-3">
+                <div class="text-xs font-semibold text-zenex-600 mb-1">客戶資訊</div>
+                <div><span class="text-slate-500">公司：</span>${escapeHtml(order.companyName || '')}</div>
+                <div><span class="text-slate-500">聯絡人：</span>${escapeHtml(order.contactName || '')}</div>
+                <div><span class="text-slate-500">電話：</span>${escapeHtml(order.phone || '')}</div>
+              </div>
+              <div class="rounded-lg border p-3">
+                <div class="text-xs font-semibold text-zenex-600 mb-1">交貨資訊</div>
+                <div><span class="text-slate-500">建議交貨日：</span>${escapeHtml(order.suggestedDeliveryDate || '未設定')}</div>
+                <div><span class="text-slate-500">客戶要求交貨日：</span>${escapeHtml(order.requestedDeliveryDate || '未設定')}</div>
+                <div><span class="text-slate-500">工廠：</span>${escapeHtml(order.factoryName || '未指派')}</div>
+              </div>
+              <div class="rounded-lg border p-3">
+                <div class="text-xs font-semibold text-zenex-600 mb-1">金額 / 備註</div>
+                <div><span class="text-slate-500">訂單金額：</span>${escapeHtml(order.amount || '未報價')}</div>
+                <div><span class="text-slate-500">備註：</span>${escapeHtml(order.remark || '無')}</div>
+              </div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-zenex-600">款式項目</div>
+              ${itemsHtml}
+            </div>
+          `;
+          // Set status badge
+          const badge = document.getElementById('viewOrderStatusBadge');
+          if (badge) {
+            badge.textContent = order.status;
+            badge.className = 'text-xs font-semibold px-2 py-0.5 rounded ' + statusBadgeTheme(order.status);
+          }
+          viewOrderModal.classList.remove('hidden');
+          viewOrderModal.classList.add('flex');
         });
       });
 
@@ -1732,4 +1803,19 @@
     init();
   </script>
 </body>
+</html
+</body>
+<!-- 訂單檢視 Modal -->
+<div id="viewOrderModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4 z-50">
+  <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between border-b px-5 py-4 shrink-0">
+      <div class="text-base font-semibold">訂單詳情</div>
+      <button id="closeViewOrderModal" class="rounded-xl border border-zenex-border bg-white px-3 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2">關閉</button>
+    </div>
+    <div id="viewOrderContent" class="px-5 py-4 overflow-y-auto flex-1 text-sm space-y-4"></div>
+    <div class="flex items-center justify-end gap-2 border-t px-5 py-4 shrink-0">
+      <button id="printOrderBtn" class="rounded-xl border border-zenex-border bg-white px-4 py-2 text-sm font-semibold hover:bg-zenex-50 focus:outline-none focus:ring-2 focus:ring-zenex-500/30 focus:ring-offset-2" onclick="window.print()">列印</button>
+    </div>
+  </div>
+</div>
 </html>
