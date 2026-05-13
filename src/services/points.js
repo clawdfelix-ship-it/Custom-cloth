@@ -7,8 +7,8 @@
  * - 積分抵扣（訂單支付時使用）
  * - 積分过期處理
  */
-const { sql } = require('../src/lib/db');
-const { emit, EVENTS } = require('../src/lib/events');
+const { sql } = require('../lib/db');
+const { emit, EVENTS } = require('../lib/events');
 
 /** 積分配置 */
 const POINTS_CONFIGS = {
@@ -79,7 +79,7 @@ async function addPoints(customerId, points, type, title, extra = {}) {
 
   // 寫入積分流水（可選，如果有單獨的積分流水表）
   // 目前用 ledger 表記錄所有資金變動
-  const { createLedgerEntry, LEDGER_TYPES } = require('../src/lib/ledger');
+  const { createLedgerEntry, LEDGER_TYPES } = require('../lib/ledger');
   await createLedgerEntry({
     accountId: customerId,
     accountType: 'customer',

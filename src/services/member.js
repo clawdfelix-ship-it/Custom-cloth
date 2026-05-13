@@ -8,7 +8,7 @@
  * - 等級折扣計算（商品價格 × 等級折扣率）
  * - 等級權益查詢
  */
-const { sql } = require('../src/lib/db');
+const { sql } = require('../lib/db');
 const { bcAdd, bcMul, bcCmp } = require('../src/lib/math');
 
 /**

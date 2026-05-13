@@ -14,9 +14,9 @@
  *   import { runAutoCancelJob } from './jobs/auto-cancel'
  *   await runAutoCancelJob()
  */
-const { sql } = require('../src/lib/db');
-const { emit, EVENTS } = require('../src/lib/events');
-const { updateOrderStatus } = require('../src/lib/order-dao');
+const { sql } = require('../lib/db');
+const { emit, EVENTS } = require('../lib/events');
+const { updateOrderStatus } = require('../lib/order-dao');
 
 /** 訂單自動取消時長（分鐘） */
 const AUTO_CANCEL_MINUTES = parseInt(process.env.ORDER_AUTO_CANCEL_MINUTES || '30', 10);

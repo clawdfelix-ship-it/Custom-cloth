@@ -10,8 +10,8 @@
  * - 傭金提現申請
  * - 工廠傭金結算
  */
-const { sql } = require('../src/lib/db');
-const { emit, EVENTS } = require('../src/lib/events');
+const { sql } = require('../lib/db');
+const { emit, EVENTS } = require('../lib/events');
 
 /** 推廣員成為條件：消費滿足以下任一 */
 const PROMOTER_CONFIGS = {
