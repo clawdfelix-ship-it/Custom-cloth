@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/jobs/auto-cancel",
+      "destination": "/api/jobs/auto-cancel"
+    },
+    {
       "source": "/admin",
       "destination": "/admin.html"
     },
@@ -107,6 +111,12 @@
     {
       "source": "/api/factory/upload",
       "destination": "/api/factory?action=upload"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/jobs/auto-cancel",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
