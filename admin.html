@@ -801,19 +801,21 @@
     const copyDeliveryDate = document.getElementById('copyDeliveryDate');
     const copyInfo = document.getElementById('copyInfo');
     const copyMsg = document.getElementById('copyMsg');
+    let copySourceOrderId = null;
+    let loadedOrders = [];
 
     const viewOrderModal = document.getElementById('viewOrderModal');
     const closeViewOrderModal = document.getElementById('closeViewOrderModal');
     const viewOrderContent = document.getElementById('viewOrderContent');
-    let viewOrderData = null;
-
     closeViewOrderModal.addEventListener('click', () => {
       viewOrderModal.classList.add('hidden');
       viewOrderModal.classList.remove('flex');
     });
-    let copySourceOrderId = null;
+    viewOrderModal.addEventListener('click', (e) => {
+      if (e.target === viewOrderModal) { viewOrderModal.classList.add('hidden'); viewOrderModal.classList.remove('flex'); }
+    });
+
     let factoryUsers = [];
-    let loadedOrders = [];
 
     const factoryModal = document.getElementById('factoryModal');
     const closeFactoryModal = document.getElementById('closeFactoryModal');
@@ -1050,7 +1052,6 @@
           const orderId = btn.dataset.id;
           const order = loadedOrders.find((o) => o.id === orderId);
           if (!order) { appMsg.textContent = '找不到訂單'; return; }
-          viewOrderData = order;
           const items = order.items || [];
           const itemsHtml = items.length ? items.map((item) => `
             <div class="rounded-lg border p-3 mt-2">
@@ -1060,12 +1061,13 @@
                 ${item.customText ? `<div>客製化文字：${escapeHtml(item.customText)}</div>` : ''}
               </div>
             </div>`).join('') : '<div class="text-slate-500 mt-2">無款式項目</div>';
+          const statusBadgeClass = order.status === '已完成' ? 'bg-green-100 text-green-700' : order.status === '已取消' ? 'bg-red-100 text-red-700' : order.status === '已出貨' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700';
           viewOrderContent.innerHTML = `
             <div class="grid grid-cols-2 gap-4">
               <div class="rounded-lg border p-3">
                 <div class="text-xs font-semibold text-zenex-600 mb-1">基本資訊</div>
                 <div><span class="text-slate-500">訂單編號：</span>${escapeHtml(order.orderSn)}</div>
-                <div><span class="text-slate-500">狀態：</span><span id="viewOrderStatusBadge"></span></div>
+                <div><span class="text-slate-500">狀態：</span><span class="text-xs font-semibold px-2 py-0.5 rounded ${statusBadgeClass}">${escapeHtml(order.status)}</span></div>
                 <div><span class="text-slate-500">建立時間：</span>${new Date(order.createdAt).toLocaleString('zh-HK')}</div>
                 <div><span class="text-slate-500">訂單類型：</span>${escapeHtml(order.orderType || '')}</div>
               </div>
@@ -1092,12 +1094,6 @@
               ${itemsHtml}
             </div>
           `;
-          // Set status badge
-          const badge = document.getElementById('viewOrderStatusBadge');
-          if (badge) {
-            badge.textContent = order.status;
-            badge.className = 'text-xs font-semibold px-2 py-0.5 rounded ' + statusBadgeTheme(order.status);
-          }
           viewOrderModal.classList.remove('hidden');
           viewOrderModal.classList.add('flex');
         });
@@ -1802,9 +1798,6 @@
 
     init();
   </script>
-</body>
-</html
-</body>
 <!-- 訂單檢視 Modal -->
 <div id="viewOrderModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4 z-50">
   <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl max-h-[90vh] flex flex-col">
@@ -1818,4 +1811,5 @@
     </div>
   </div>
 </div>
+</body>
 </html>
