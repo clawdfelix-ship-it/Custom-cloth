@@ -116,7 +116,7 @@
   "crons": [
     {
       "path": "/api/jobs/auto-cancel",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 3 * * *"  // 每日凌晨3點一次
     }
   ]
 }
