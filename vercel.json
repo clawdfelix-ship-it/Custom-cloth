@@ -93,6 +93,34 @@
       "destination": "/api/admin?action=feedbackStatus"
     },
     {
+      "source": "/api/admin/stats",
+      "destination": "/api/admin?action=stats"
+    },
+    {
+      "source": "/api/admin/mark-paid",
+      "destination": "/api/admin?action=markPaid"
+    },
+    {
+      "source": "/api/admin/factory-settlements",
+      "destination": "/api/admin?action=factorySettlements"
+    },
+    {
+      "source": "/api/admin/factory-settlement-pay",
+      "destination": "/api/admin?action=factorySettlementPay"
+    },
+    {
+      "source": "/api/factory/orders/accept",
+      "destination": "/api/factory?action=accept"
+    },
+    {
+      "source": "/api/factory/orders/reject",
+      "destination": "/api/factory?action=reject"
+    },
+    {
+      "source": "/api/factory/orders/pending",
+      "destination": "/api/factory?action=pendingOrders"
+    },
+    {
       "source": "/api/factory/orders/status",
       "destination": "/api/factory?action=orderStatus"
     },
@@ -103,6 +131,18 @@
     {
       "source": "/api/factory/orders",
       "destination": "/api/factory?action=orders"
+    },
+    {
+      "source": "/api/factory/settlement",
+      "destination": "/api/factory?action=settlement"
+    },
+    {
+      "source": "/api/factory/withdraw",
+      "destination": "/api/factory?action=withdraw"
+    },
+    {
+      "source": "/api/factory/qc-record",
+      "destination": "/api/factory?action=qcRecord"
     },
     {
       "source": "/api/factory/feedback",

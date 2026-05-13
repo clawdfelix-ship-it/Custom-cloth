@@ -670,6 +670,449 @@ async function feedbackStatusHandler(req, res) {
   }
 }
 
+// ============================================================
+// 10. Admin 確認收款
+// ============================================================
+async function markPaidHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'POST') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const orderId = typeof body.orderId === 'string' ? body.orderId.trim() : '';
+    const paidMethod = typeof body.paidMethod === 'string' ? body.paidMethod.trim() : '銀行轉帳';
+
+    if (!orderId) return sendJson(res, 400, { ok: false, error: 'orderId_required' });
+
+    const existing = await sql`SELECT id, paid, status FROM orders WHERE id = ${orderId}::uuid LIMIT 1`;
+    if (!existing.rows[0]) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    if (existing.rows[0].paid === 1) {
+      return sendJson(res, 409, { ok: false, error: 'already_paid', message: '訂單已確認收款' });
+    }
+
+    const updated = await sql`
+      UPDATE orders
+      SET paid = 1, paid_at = NOW(), paid_method = ${paidMethod}
+      WHERE id = ${orderId}::uuid
+      RETURNING id, paid, paid_at, paid_method
+    `;
+    const row = updated.rows[0];
+
+    await audit(session.userId, 'admin_mark_paid', 'order', orderId, {
+      paidMethod: row.paid_method,
+      paidAt: row.paid_at
+    });
+
+    return sendJson(res, 200, {
+      ok: true,
+      orderId: row.id,
+      paid: row.paid,
+      paidAt: row.paid_at,
+      paidMethod: row.paid_method
+    });
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
+}
+
+// ============================================================
+// 11. Admin 工廠結算管理
+// ============================================================
+async function factorySettlementsHandler(req, res, url) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+
+  // GET: 列表
+  if (req.method === 'GET') {
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+    const offset = (page - 1) * limit;
+    const status = url.searchParams.get('status') || '';
+
+    let whereClause = sql``;
+    if (status) {
+      whereClause = sql`WHERE fs.status = ${status}`;
+    }
+
+    const countR = await sql`SELECT COUNT(*) as total FROM factory_settlements fs ${whereClause}`;
+    const total = Number(countR.rows[0].total);
+
+    const records = await sql`
+      SELECT
+        fs.*,
+        u.name as factory_name
+      FROM factory_settlements fs
+      JOIN users u ON u.id = fs.factory_user_id::uuid
+      ${whereClause}
+      ORDER BY fs.created_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `;
+
+    return sendJson(res, 200, {
+      ok: true,
+      records: records.rows.map(r => ({
+        id: r.id,
+        factoryUserId: r.factory_user_id,
+        factoryName: r.factory_name,
+        periodStart: r.period_start,
+        periodEnd: r.period_end,
+        orderCount: r.order_count,
+        totalAmount: Number(r.total_amount),
+        commissionRate: Number(r.commission_rate),
+        commission: Number(r.commission),
+        status: r.status,
+        settledAt: r.settled_at,
+        paidAt: r.paid_at,
+        createdAt: r.created_at
+      })),
+      total,
+      page,
+      limit
+    });
+  }
+
+  // POST: 建立結算單
+  if (req.method === 'POST') {
+    try {
+      const raw = await readBody(req);
+      const body = raw ? JSON.parse(raw) : {};
+      const factoryUserId = typeof body.factoryUserId === 'string' ? body.factoryUserId.trim() : '';
+      const periodStart = typeof body.periodStart === 'string' ? body.periodStart.trim() : '';
+      const periodEnd = typeof body.periodEnd === 'string' ? body.periodEnd.trim() : '';
+
+      if (!factoryUserId || !periodStart || !periodEnd) {
+        return sendJson(res, 400, { ok: false, error: 'bad_request' });
+      }
+
+      // 查詢周期內工廠完成的訂單
+      const ordersInPeriod = await sql`
+        SELECT
+          COUNT(*) as order_count,
+          COALESCE(SUM(COALESCE(amount::numeric, 0)), 0) as total_amount
+        FROM orders
+        WHERE factory_user_id = ${factoryUserId}::uuid
+          AND status = '已完成'
+          AND shipped_at >= ${periodStart}::date
+          AND shipped_at < ${periodEnd}::date + interval '1 day'
+      `;
+
+      const orderCount = Number(ordersInPeriod.rows[0]?.order_count || 0);
+      const totalAmount = Number(ordersInPeriod.rows[0]?.total_amount || 0);
+
+      // 查詢工廠傭金比例
+      const ba = await sql`
+        SELECT commission_rate FROM brokerage_accounts
+        WHERE account_id = ${factoryUserId}::uuid AND account_type = 'factory'
+      `;
+      const commissionRate = Number(ba.rows[0]?.commission_rate || 0.03);
+      const commission = Number((totalAmount * commissionRate).toFixed(2));
+
+      const inserted = await sql`
+        INSERT INTO factory_settlements
+          (factory_user_id, period_start, period_end, order_count, total_amount, commission_rate, commission, status)
+        VALUES
+          (${factoryUserId}::uuid, ${periodStart}, ${periodEnd}, ${orderCount}, ${totalAmount}, ${commissionRate}, ${commission}, 'pending')
+        RETURNING id, created_at
+      `;
+
+      await audit(session.userId, 'admin_create_settlement', 'factory_settlement', String(inserted.rows[0].id), {
+        factoryUserId,
+        periodStart,
+        periodEnd,
+        commission
+      });
+
+      return sendJson(res, 200, {
+        ok: true,
+        settlementId: inserted.rows[0].id,
+        orderCount,
+        totalAmount,
+        commissionRate,
+        commission
+      });
+    } catch (e) {
+      return sendJson(res, 400, { ok: false, error: 'bad_request', message: String(e && e.message ? e.message : e) });
+    }
+  }
+
+  return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+}
+
+// PATCH: 更新結算狀態（確認付款）
+async function factorySettlementPayHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'PATCH') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  try {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    const settlementId = typeof body.settlementId === 'string' ? body.settlementId.trim() : '';
+    const action = typeof body.action === 'string' ? body.action.trim() : ''; // 'pay' | 'cancel'
+
+    if (!settlementId) return sendJson(res, 400, { ok: false, error: 'settlementId_required' });
+
+    const existing = await sql`SELECT * FROM factory_settlements WHERE id = ${parseInt(settlementId, 10)} LIMIT 1`;
+    if (!existing.rows[0]) return sendJson(res, 404, { ok: false, error: 'not_found' });
+    const s = existing.rows[0];
+
+    let newStatus;
+    if (action === 'pay') {
+      newStatus = 'paid';
+      await sql`
+        UPDATE factory_settlements
+        SET status = 'paid', paid_at = NOW()
+        WHERE id = ${parseInt(settlementId, 10)}
+      `;
+    } else if (action === 'cancel') {
+      newStatus = 'cancelled';
+      await sql`
+        UPDATE factory_settlements
+        SET status = 'cancelled'
+        WHERE id = ${parseInt(settlementId, 10)}
+      `;
+    } else {
+      return sendJson(res, 400, { ok: false, error: 'invalid_action' });
+    }
+
+    await audit(session.userId, 'admin_settlement_pay', 'factory_settlement', settlementId, {
+      action,
+      previousStatus: s.status,
+      newStatus
+    });
+
+    return sendJson(res, 200, { ok: true, settlementId, newStatus });
+  } catch (e) {
+    return sendJson(res, 400, { ok: false, error: 'bad_request' });
+  }
+}
+
+// ============================================================
+// 12. 儀表板統計
+// ============================================================
+async function statsHandler(req, res) {
+  const session = await requireAdmin(req, res);
+  if (!session) return;
+  if (req.method !== 'GET') return sendJson(res, 405, { ok: false, error: 'method_not_allowed' });
+
+  try {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const todayStart = todayStr + ' 00:00:00';
+    const todayEnd = todayStr + ' 23:59:59';
+    const last7Days = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const last30Days = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // --- 今日概覽 ---
+    const todayOrders = await sql`
+      SELECT
+        COUNT(*) as total_count,
+        COUNT(*) FILTER (WHERE status = '已完成') as completed_count,
+        COALESCE(SUM(COALESCE(amount::numeric, 0)) FILTER (WHERE status = '已完成'), 0) as completed_amount
+      FROM orders
+      WHERE create_time >= ${todayStart}::timestamptz AND create_time <= ${todayEnd}::timestamptz
+    `;
+
+    const pendingOrders = await sql`
+      SELECT COUNT(*) as count FROM orders WHERE status = '客戶已提交'
+    `;
+
+    const factoryAssignedOrders = await sql`
+      SELECT COUNT(*) as count
+      FROM orders
+      WHERE factory_user_id IS NOT NULL
+        AND status NOT IN ('已完成', '已取消', '已退款')
+        AND factory_accepted_at IS NULL
+        AND factory_rejected_at IS NULL
+    `;
+
+    // --- 總訂單/銷售統計 ---
+    const totalStats = await sql`
+      SELECT
+        COUNT(*) as total_orders,
+        COALESCE(SUM(COALESCE(amount::numeric, 0)) FILTER (WHERE paid = 1), 0) as total_sales_amount,
+        COUNT(*) FILTER (WHERE paid = 1) as paid_orders,
+        COUNT(*) FILTER (WHERE paid = 0 AND status != '已取消') as unpaid_orders
+      FROM orders
+      WHERE is_del = 0 OR is_del IS NULL
+    `;
+
+    // --- 7天訂單趨勢（按日）---
+    const trend7d = await sql`
+      SELECT
+        DATE(create_time) as date,
+        COUNT(*) as order_count,
+        COALESCE(SUM(COALESCE(amount::numeric, 0)) FILTER (WHERE status = '已完成'), 0) as sales_amount
+      FROM orders
+      WHERE create_time >= ${last7Days}::date
+      GROUP BY DATE(create_time)
+      ORDER BY date ASC
+    `;
+
+    // --- 30天銷售趨勢 ---
+    const trend30d = await sql`
+      SELECT
+        DATE(create_time) as date,
+        COUNT(*) as order_count,
+        COALESCE(SUM(COALESCE(amount::numeric, 0)) FILTER (WHERE status = '已完成'), 0) as sales_amount
+      FROM orders
+      WHERE create_time >= ${last30Days}::date
+      GROUP BY DATE(create_time)
+      ORDER BY date ASC
+    `;
+
+    // --- 各狀態訂單分佈 ---
+    const statusDist = await sql`
+      SELECT status, COUNT(*) as count
+      FROM orders
+      WHERE is_del = 0 OR is_del IS NULL
+      GROUP BY status
+      ORDER BY count DESC
+    `;
+
+    // --- 工廠產量排行（7天）---
+    const factoryStats7d = await sql`
+      SELECT
+        factory_name,
+        factory_user_id,
+        COUNT(*) as order_count,
+        COUNT(*) FILTER (WHERE status = '已完成') as completed_count,
+        COUNT(*) FILTER (WHERE status = '已出貨') as shipped_count,
+        COALESCE(SUM(COALESCE(amount::numeric, 0)) FILTER (WHERE status = '已完成'), 0) as completed_amount
+      FROM orders
+      WHERE factory_name IS NOT NULL
+        AND create_time >= ${last7Days}::date
+      GROUP BY factory_name, factory_user_id
+      ORDER BY completed_amount DESC
+      LIMIT 10
+    `;
+
+    // --- 款式暢銷排行（30天）---
+    const productStats = await sql`
+      SELECT
+        s.name as style_name,
+        s.code as style_code,
+        COUNT(oi.id) as order_count,
+        SUM(COALESCE((oi.qty->0->>'qty')::int, 0)) as total_qty
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      JOIN styles s ON s.id = oi.style_id
+      WHERE o.create_time >= ${last30Days}::date
+        AND o.status NOT IN ('已取消', '退款中')
+      GROUP BY s.id, s.name, s.code
+      ORDER BY total_qty DESC NULLS LAST
+      LIMIT 10
+    `;
+
+    // --- 客戶消費排行（30天）---
+    const customerStats = await sql`
+      SELECT
+        c.company_name,
+        c.contact_name,
+        COUNT(o.id) as order_count,
+        COALESCE(SUM(COALESCE(o.amount::numeric, 0)), 0) as total_amount
+      FROM customers c
+      JOIN orders o ON o.customer_id = c.id
+      WHERE o.create_time >= ${last30Days}::date
+        AND o.status NOT IN ('已取消', '退款中')
+      GROUP BY c.id, c.company_name, c.contact_name
+      ORDER BY total_amount DESC
+      LIMIT 10
+    `;
+
+    // --- 待處理反饋 ---
+    const pendingFeedback = await sql`
+      SELECT COUNT(*) as count FROM feedback WHERE status = '待處理'
+    `;
+
+    // --- 會員統計 ---
+    const memberStats = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE is_registered = TRUE) as total_members,
+        COUNT(*) FILTER (WHERE is_promoter = TRUE) as total_promoters,
+        COALESCE(SUM(total_amount), 0) as total_sales,
+        COALESCE(SUM(total_points), 0) as total_points
+      FROM customers
+    `;
+
+    // --- 工廠結算統計 ---
+    const settlementStats = await sql`
+      SELECT
+        COUNT(*) as total_settlements,
+        COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
+        COUNT(*) FILTER (WHERE status = 'paid') as paid_count,
+        COALESCE(SUM(commission) FILTER (WHERE status = 'paid'), 0) as total_paid_commission
+      FROM factory_settlements
+    `;
+
+    const to = r => ({
+      date: String(r.date),
+      orderCount: Number(r.order_count),
+      salesAmount: Number(r.sales_amount || 0)
+    });
+
+    return sendJson(res, 200, {
+      ok: true,
+      overview: {
+        todayOrders: Number(todayOrders.rows[0]?.total_count || 0),
+        todayCompleted: Number(todayOrders.rows[0]?.completed_count || 0),
+        todaySales: Number(todayOrders.rows[0]?.completed_amount || 0),
+        pendingOrders: Number(pendingOrders.rows[0]?.count || 0),
+        factoryAssignedPending: Number(factoryAssignedOrders.rows[0]?.count || 0),
+        pendingFeedback: Number(pendingFeedback.rows[0]?.count || 0)
+      },
+      totals: {
+        orders: Number(totalStats.rows[0]?.total_orders || 0),
+        salesAmount: Number(totalStats.rows[0]?.total_sales_amount || 0),
+        paidOrders: Number(totalStats.rows[0]?.paid_orders || 0),
+        unpaidOrders: Number(totalStats.rows[0]?.unpaid_orders || 0)
+      },
+      members: {
+        total: Number(memberStats.rows[0]?.total_members || 0),
+        promoters: Number(memberStats.rows[0]?.total_promoters || 0),
+        totalSales: Number(memberStats.rows[0]?.total_sales || 0),
+        totalPoints: Number(memberStats.rows[0]?.total_points || 0)
+      },
+      settlements: {
+        total: Number(settlementStats.rows[0]?.total_settlements || 0),
+        pending: Number(settlementStats.rows[0]?.pending_count || 0),
+        paid: Number(settlementStats.rows[0]?.paid_count || 0),
+        totalPaidCommission: Number(settlementStats.rows[0]?.total_paid_commission || 0)
+      },
+      trend7d: trend7d.rows.map(to),
+      trend30d: trend30d.rows.map(to),
+      statusDistribution: statusDist.rows.map(r => ({
+        status: r.status,
+        count: Number(r.count)
+      })),
+      factoryRanking: factoryStats7d.rows.map(r => ({
+        factoryName: r.factory_name,
+        factoryId: r.factory_user_id,
+        orderCount: Number(r.order_count),
+        completedCount: Number(r.completed_count),
+        shippedCount: Number(r.shipped_count),
+        completedAmount: Number(r.completed_amount)
+      })),
+      productRanking: productStats.rows.map(r => ({
+        styleName: r.style_name,
+        styleCode: r.style_code,
+        orderCount: Number(r.order_count),
+        totalQty: Number(r.total_qty || 0)
+      })),
+      customerRanking: customerStats.rows.map(r => ({
+        companyName: r.company_name,
+        contactName: r.contact_name || '',
+        orderCount: Number(r.order_count),
+        totalAmount: Number(r.total_amount)
+      }))
+    });
+  } catch (e) {
+    return sendJson(res, 500, { ok: false, error: 'server_error', message: String(e && e.message ? e.message : e) });
+  }
+}
+
 module.exports = async function handler(req, res) {
   await ensureMigrations();
   const url = new URL(req.url, 'http://localhost');
@@ -686,6 +1129,10 @@ module.exports = async function handler(req, res) {
   if (action === 'upload') return uploadHandler(req, res);
   if (action === 'feedback') return feedbackHandler(req, res, url);
   if (action === 'feedbackStatus') return feedbackStatusHandler(req, res);
+  if (action === 'stats') return statsHandler(req, res);
+  if (action === 'markPaid') return markPaidHandler(req, res);
+  if (action === 'factorySettlements') return factorySettlementsHandler(req, res, url);
+  if (action === 'factorySettlementPay') return factorySettlementPayHandler(req, res);
 
   return sendJson(res, 404, { ok: false, error: 'not_found' });
 };
