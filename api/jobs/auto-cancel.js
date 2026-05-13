@@ -15,7 +15,7 @@
  * - CRON_SECRET: 授權 token（生產環境必須設置）
  * - ORDER_AUTO_CANCEL_MINUTES: 自動取消分鐘數（默認30分鐘）
  */
-const { handleCronRequest } = require('../src/jobs/auto-cancel');
+const { handleCronRequest } = require('../../src/jobs/auto-cancel');
 
 module.exports = async function handler(req, res) {
   // 只允許 cron 或已授權的請求
