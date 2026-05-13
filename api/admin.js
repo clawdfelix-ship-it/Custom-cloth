@@ -936,7 +936,7 @@ async function statsHandler(req, res) {
         COUNT(*) FILTER (WHERE paid = 1) as paid_orders,
         COUNT(*) FILTER (WHERE paid = 0 AND status != '已取消') as unpaid_orders
       FROM orders
-      WHERE is_del = 0 OR is_del IS NULL
+      WHERE 1=1
     `;
 
     // --- 7天訂單趨勢（按日）---
@@ -967,7 +967,7 @@ async function statsHandler(req, res) {
     const statusDist = await sql`
       SELECT status, COUNT(*) as count
       FROM orders
-      WHERE is_del = 0 OR is_del IS NULL
+      WHERE 1=1
       GROUP BY status
       ORDER BY count DESC
     `;
