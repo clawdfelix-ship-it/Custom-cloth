@@ -5,42 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ZENEX-SPORTS｜後台管理</title>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              zenex: {
-                bg: '#f6f8fb',
-                surface: '#ffffff',
-                text: '#0f172a',
-                muted: '#64748b',
-                border: '#e2e8f0',
-                50: '#eaf2ff',
-                500: '#0066ff',
-                600: '#0052cc',
-                700: '#0047b3'
-              }
-            },
-            fontFamily: {
-              sans: [
-                'ui-sans-serif',
-                'system-ui',
-                '-apple-system',
-                '"Segoe UI"',
-                'Roboto',
-                'Helvetica',
-                'Arial',
-                '"Microsoft JhengHei"',
-                '"PingFang HK"',
-                '"Noto Sans CJK TC"',
-                'sans-serif'
-              ]
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            zenex: {
+              bg: '#f6f8fb',
+              surface: '#ffffff',
+              text: '#0f172a',
+              muted: '#64748b',
+              border: '#e2e8f0',
+              50: '#eaf2ff',
+              500: '#0066ff',
+              600: '#0052cc',
+              700: '#0047b3'
             }
+          },
+          fontFamily: {
+            sans: [
+              'ui-sans-serif',
+              'system-ui',
+              '-apple-system',
+              '"Segoe UI"',
+              'Roboto',
+              'Helvetica',
+              'Arial',
+              '"Microsoft JhengHei"',
+              '"PingFang HK"',
+              '"Noto Sans CJK TC"',
+              'sans-serif'
+            ]
           }
         }
-      };
-    });
+      }
+    };
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -493,10 +491,10 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
     const loginSection = document.getElementById('loginSection');
     const appSection = document.getElementById('appSection');
     const loginMsg = document.getElementById('loginMsg');
+    document.addEventListener('DOMContentLoaded', () => {
     const appMsg = document.getElementById('appMsg');
     const whoami = document.getElementById('whoami');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -918,30 +916,24 @@
 
     loginBtn.addEventListener('click', async () => {
       loginMsg.textContent = '';
-      loginMsg.classList.remove('hidden');
       const acc = accInput.value.trim();
       const pwd = pwdInput.value;
       if (!acc || !pwd) {
         loginMsg.textContent = '請輸入帳號及密碼';
         return;
       }
-      loginMsg.textContent = '登入中...';
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ acc, pwd })
-        });
-        const data = await res.json().catch(() => null);
-        if (!data || !data.ok) {
-          loginMsg.textContent = '登入失敗：' + (data && data.message ? data.message : '帳號或密碼錯誤');
-          return;
-        }
-        setSession(data.token, data.role, data.name);
-        await showApp();
-      } catch (e) {
-        loginMsg.textContent = '網絡錯誤：' + e.message;
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acc, pwd })
+      });
+      const data = await res.json().catch(() => null);
+      if (!data || !data.ok) {
+        loginMsg.textContent = '登入失敗';
+        return;
       }
+      setSession(data.token, data.role, data.name);
+      await showApp();
     });
 
     logoutBtn.addEventListener('click', async () => {
@@ -1804,8 +1796,8 @@
     }
 
     init();
-  </script>
     });
+  </script>
 <!-- 訂單檢視 Modal -->
 <div id="viewOrderModal" class="fixed inset-0 hidden items-center justify-center bg-black/40 p-4 z-50">
   <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl max-h-[90vh] flex flex-col">
