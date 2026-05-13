@@ -1,20 +1,9 @@
-/**
- * 自動取消未付款訂單 API
- * 
- * GET /api/jobs/auto-cancel
- * 
- * Vercel Cron 配置（在 vercel.json 中）：
- * {
- *   "crons": [{
- *     "path": "/api/jobs/auto-cancel",
- *     "schedule": "*/10 * * * *"
- *   }]
- * }
- * 
- * 環境變量：
- * - CRON_SECRET: 授權 token（生產環境必須設置）
- * - ORDER_AUTO_CANCEL_MINUTES: 自動取消分鐘數（默認30分鐘）
- */
+// 自動取消未付款訂單 API
+// GET /api/jobs/auto-cancel
+// Vercel Cron 配置：vercel.json crons 配置
+// 環境變量：
+//   CRON_SECRET: 授權 token（生產環境必須設置）
+//   ORDER_AUTO_CANCEL_MINUTES: 自動取消分鐘數（默認30分鐘）
 const { handleCronRequest } = require('../../src/jobs/auto-cancel');
 
 module.exports = async function handler(req, res) {
