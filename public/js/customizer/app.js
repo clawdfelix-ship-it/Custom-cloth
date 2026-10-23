@@ -435,6 +435,38 @@
     selectTemplateFamily,
     selectPartVariant,
     setPreviewSide,
+    setPreviewMode(mode) {
+      store.update((state) => ({
+        ...state,
+        previews: {
+          ...state.previews,
+          mode3d: mode === '3d',
+        },
+      }));
+      previewManager.syncMode(mode);
+    },
+    exportKit() {
+      const state = store.getState();
+      const design = state.design || {};
+      if (!global.CustomizerKitExporter || typeof global.CustomizerKitExporter.buildZip !== 'function') {
+        setSubmissionPhase('error', '匯出模組未載入');
+        return;
+      }
+      setSubmissionPhase('exporting');
+      global.CustomizerKitExporter.buildZip({
+        design,
+        includeHotspots: true,
+        renderLogosSeparately: true,
+        fileName: `custom-kit-${Date.now()}`,
+      })
+        .then((result) => {
+          global.CustomizerKitExporter.downloadBlob(result.blob, result.fileName);
+          setSubmissionPhase('idle', null);
+        })
+        .catch((error) => {
+          setSubmissionPhase('error', error && error.message ? error.message : '匯出失敗');
+        });
+    },
     updateZoneColor,
     updateTextField,
     selectLogoAsset,
@@ -454,11 +486,94 @@
     ? CustomizerCompositor.createPreviewCompositor(root)
     : null;
 
+  /**
+   * 3D preview manager.
+   *
+   * The 2D canvas is the source of truth for the exported texture; the 3D
+   * view renders the same texture on a procedurally generated garment so the
+   * customer can see the construction from a second angle. It is created
+   * lazily on first use because WebGL is expensive to initialise.
+   */
+  const previewManager = {
+    instance: null,
+    mode: '2d',
+
+    ensure() {
+      if (this.instance) return this.instance;
+      if (!global.CustomizerKitPreview || typeof global.CustomizerKitPreview.create !== 'function') {
+        return null;
+      }
+      const host = root.querySelector('[data-role="preview-3d"]');
+      if (!host) return null;
+      const instance = global.CustomizerKitPreview.create({ container: host });
+      if (!instance) return null;
+      instance.buildGarment(previewManager.bodyForDesign(store.getState()));
+      this.instance = instance;
+      return instance;
+    },
+
+    bodyForDesign(state) {
+      const family = state.selectedTemplateFamily || {};
+      // The catalog exposes garment proportions on the template family so the
+      // 3D preview matches the selected template rather than a default.
+      const body = family.body || {};
+      return {
+        length: body.length || 1,
+        chestWidth: body.chestWidth || 0.52,
+        waistWidth: body.waistWidth || 0.46,
+        sleeveLength: body.sleeveLength || 0.22,
+      };
+    },
+
+    syncMode(mode) {
+      this.mode = mode;
+      const host = root.querySelector('[data-role="preview-3d"]');
+      const canvas = root.querySelector('[data-role="preview-canvas"]');
+      const overlay = root.querySelector('[data-role="preview-overlay"]');
+      if (!host || !canvas) return;
+
+      if (mode === '3d') {
+        const instance = this.ensure();
+        if (!instance) {
+          // WebGL unavailable: fall back to the 2D view rather than showing a
+          // blank stage.
+          host.hidden = true;
+          canvas.hidden = false;
+          if (overlay) overlay.hidden = false;
+          return;
+        }
+        host.hidden = false;
+        canvas.hidden = true;
+        if (overlay) overlay.hidden = true;
+        instance.applyColors(store.getState().design);
+        this.refreshTexture();
+      } else {
+        host.hidden = true;
+        canvas.hidden = false;
+        if (overlay) overlay.hidden = false;
+      }
+    },
+
+    refreshTexture() {
+      if (!this.instance) return;
+      const state = store.getState();
+      const textures = global.CustomizerKitTexture
+        ? global.CustomizerKitTexture.renderArea('shirt', state.design)
+        : null;
+      if (!textures) return;
+      this.instance.setTexture(textures.color);
+    },
+  };
+
   store.subscribe((state) => {
     renderer.render(state);
     if (compositor) compositor.render(state);
     root.dataset.startMode = startMode;
     root.dataset.phase = state.submission.phase || 'idle';
+    if (previewManager.mode === '3d' && previewManager.instance) {
+      previewManager.instance.applyColors(state.design);
+      previewManager.refreshTexture();
+    }
   });
 
   async function init() {

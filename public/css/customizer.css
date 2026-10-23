@@ -462,3 +462,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* 3D preview stage                                                    */
+/* ------------------------------------------------------------------ */
+
+.customizer-preview__stage3d {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.customizer-preview__stage3d[hidden] {
+  display: none;
+}
+
+.customizer-preview__canvas[hidden] {
+  display: none;
+}
+
+.customizer-preview__overlay[hidden] {
+  display: none;
+}
+
+.customizer-preview__stage3d canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

@@ -173,6 +173,30 @@ function mapTemplateFamily(row) {
     colorZones: preset.colorZones,
     partVariants: preset.partVariants,
     defaultPartSelection: preset.defaultPartSelection,
+    // Garment proportions consumed by the procedural 3D preview. These are
+    // dimensionless ratios so the same values work across garments.
+    body: buildTemplateBody(row),
+  };
+}
+
+/**
+ * Derive garment proportions for the 3D preview.
+ *
+ * The template family does not store mesh data, so we derive sensible
+ * ratios from the product type: football tops are a little boxier, sleeveless
+ * garments have no sleeve, and polo shirts are shorter.
+ */
+function buildTemplateBody(row) {
+  const productType = String(row.product_type_slug || '').toLowerCase();
+  const isBasketball = productType.includes('basketball') || productType.includes('singlet');
+  const isPolo = productType.includes('polo');
+  const isVolleyball = productType.includes('volleyball');
+
+  return {
+    length: isPolo ? 0.9 : isVolleyball ? 0.96 : 1,
+    chestWidth: isBasketball ? 0.56 : 0.52,
+    waistWidth: isBasketball ? 0.5 : 0.46,
+    sleeveLength: isBasketball ? 0.08 : isPolo ? 0.18 : 0.22,
   };
 }
 

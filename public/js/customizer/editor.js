@@ -293,14 +293,32 @@
           <button type="button" class="customizer-preview__toggle${activeSide === 'front' ? ' is-active' : ''}" data-side="front">前幅</button>
           <button type="button" class="customizer-preview__toggle${activeSide === 'back' ? ' is-active' : ''}" data-side="back">後幅</button>
         </div>
+        ${renderPreview3dToggle(state)}
       </div>
       <div class="customizer-preview__stage">
         <canvas class="customizer-preview__canvas" data-role="preview-canvas" aria-label="${escapeHtml(title)}"></canvas>
-        <div class="customizer-preview__overlay">
+        <div class="customizer-preview__overlay" data-role="preview-overlay">
           <div class="customizer-preview__title">${escapeHtml(title)}</div>
           <div class="customizer-preview__meta">${escapeHtml(productType)} / ${escapeHtml(familyName)}</div>
           <div class="customizer-preview__hint">逐個切換 body / sleeve / collar，就會見到款式結構即時改變。</div>
         </div>
+        <div class="customizer-preview__stage3d" data-role="preview-3d" hidden></div>
+      </div>
+    `;
+  }
+
+  /**
+   * 3D preview toolbar. The 2D canvas stays the default because it is the
+   * source of truth for the exported texture; the 3D view is an optional
+   * companion that reads the same texture.
+   */
+  function renderPreview3dToggle(state) {
+    const enabled = !!(state.previews && state.previews.mode3d);
+    return `
+      <div class="customizer-preview__toggle-group">
+        <button type="button" class="customizer-preview__toggle${enabled ? '' : ' is-active'}" data-role="mode-2d">2D</button>
+        <button type="button" class="customizer-preview__toggle${enabled ? ' is-active' : ''}" data-role="mode-3d">3D</button>
+        <button type="button" class="customizer-action-button is-secondary" data-role="export-kit">匯出 ZIP</button>
       </div>
     `;
   }
@@ -403,6 +421,18 @@
       root.querySelectorAll('[data-side]').forEach((button) => {
         button.addEventListener('click', () => {
           actions.setPreviewSide(button.getAttribute('data-side'));
+        });
+      });
+
+      root.querySelectorAll('[data-role="mode-2d"], [data-role="mode-3d"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          actions.setPreviewMode(button.getAttribute('data-role') === 'mode-3d' ? '3d' : '2d');
+        });
+      });
+
+      root.querySelectorAll('[data-role="export-kit"]').forEach((button) => {
+        button.addEventListener('click', () => {
+          actions.exportKit();
         });
       });
 

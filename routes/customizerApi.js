@@ -7,6 +7,7 @@ const { createQuotesModel } = require('../models/customizer/quotes');
 const { buildDesignSession, createSessionsModel } = require('../models/customizer/sessions');
 const { createUploadsModel } = require('../models/customizer/uploads');
 const { createSnapshotRecord } = require('../utils/customizer/snapshot');
+const { buildKitArchive } = require('../utils/customizer/kitExport');
 const { validateRosterItems } = require('../utils/customizer/validation');
 
 function createSessionToken() {
@@ -240,6 +241,42 @@ module.exports = function registerCustomizerApi(app, pool) {
 
     const rows = await previewsModel.savePreviewRefs(sessionId, snapshotPayload);
     res.status(201).json({ previews: mapPreviewRowsBySide(rows) });
+  });
+
+  /**
+   * Export a saved session as a kit ZIP.
+   *
+   * Rendering happens server-side so a kit can be downloaded without a
+   * browser and so quote emails can carry the exact archive.
+   */
+  app.get('/api/customizer/sessions/:id/export', async (req, res) => {
+    if (!pool) return res.status(500).json({ error: 'Database not configured' });
+    const sessionId = toNullableId(req.params.id);
+    if (!sessionId) return res.status(400).json({ error: 'Invalid session id' });
+
+    try {
+      const designRow = await sessionsModel.getLatestDesign(sessionId);
+      if (!designRow) return res.status(404).json({ error: 'No design saved for session' });
+
+      const design = designRow.design_json || designRow.designJson || {};
+      const includeHotspots = req.query.hotspots !== '0';
+
+      const result = await buildKitArchive(design, {
+        includeHotspots,
+        fileName: `custom-kit-${sessionId}`,
+      });
+
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+      res.setHeader('Content-Length', String(result.buffer.length));
+      res.setHeader('X-Kit-File-Count', String(result.files.length));
+      return res.send(result.buffer);
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Export failed',
+        message: error && error.message ? error.message : 'Unknown error',
+      });
+    }
   });
 
   app.post('/api/customizer/sessions/:id/submit', async (req, res) => {
