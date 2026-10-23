@@ -1,0 +1,24 @@
+<div id="admin-bulk-skus" class="space-y-3">
+  <div class="admin-card space-y-2">
+    <div class="font-bold">步驟 1：下載模板</div>
+    <div class="text-sm text-gray-700">下載 CSV 模板，填好後再上傳。</div>
+    <button id="bs-download-template" class="admin-btn-secondary" type="button">下載模板 CSV</button>
+  </div>
+
+  <div class="admin-card space-y-2">
+    <div class="font-bold">步驟 2：上傳 CSV</div>
+    <div class="text-sm text-gray-700">會先做檢查（dry-run），無錯先可以套用。</div>
+    <input id="bs-file" class="admin-input w-full" type="file" accept=".csv,text/csv" />
+    <div class="flex gap-2">
+      <button id="bs-check" class="admin-btn" type="button">檢查</button>
+      <button id="bs-apply" class="admin-btn-secondary hidden" type="button">確認套用</button>
+    </div>
+    <div id="bs-error" class="admin-error hidden"></div>
+    <div id="bs-summary" class="text-sm text-gray-700"></div>
+    <pre id="bs-errors" class="text-xs bg-gray-50 border border-gray-200 rounded p-2 hidden"></pre>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/bulk-skus.js"></script>
+</div>
+

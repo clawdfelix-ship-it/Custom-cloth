@@ -1,0 +1,14 @@
+frontend
+node_modules
+.git
+test
+docs
+migrations
+data/*
+!data/mzakka-taxonomy.json
+!data/mzakka-item-leaf-map.json
+!data/japan-holidays.json
+*.md
+*.sql
+node_modules/@img
+node_modules/sharp/vendor

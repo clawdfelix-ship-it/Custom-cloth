@@ -1,0 +1,104 @@
+/* mz-range — 叨叨 #2 雙滑桿價格區間（按住變粗 / 填充跟手 / 橡皮筋）---------- */
+.mz-range {
+  width: 100%;
+  min-width: 220px;
+  max-width: 320px;
+}
+
+.mz-range__track {
+  position: relative;
+  height: 28px; /* 大觸控命中區 */
+  touch-action: pan-y; /* 橫向由 slider 接管，縱向保留畀頁面滾 */
+}
+
+/* 視覺軌道本體（垂直居中），按住時變粗 */
+.mz-range__track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: #374151; /* ink-600-ish */
+  transition: height 0.18s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+.mz-range.is-active .mz-range__track::before {
+  height: 8px;
+}
+
+.mz-range__fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: #f59e0b; /* orange/gold */
+  transition: height 0.18s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+.mz-range.is-active .mz-range__fill {
+  height: 8px;
+}
+
+.mz-range__thumb {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+  transition:
+    width 0.18s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+    height 0.18s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+.mz-range__thumb.is-drag {
+  width: 26px;
+  height: 26px;
+  cursor: grabbing;
+}
+
+/* 拖動中：thumb/fill/track 即時跟手，唔做補間 */
+.mz-range.is-dragging .mz-range__thumb,
+.mz-range.is-dragging .mz-range__fill {
+  transition: none;
+}
+/* 鬆手：thumb 回位 + 橡皮筋回彈用彈簧 */
+.mz-range:not(.is-dragging) .mz-range__thumb {
+  transition:
+    left 0.42s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+    width 0.18s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+    height 0.18s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+.mz-range:not(.is-dragging) .mz-range__fill {
+  transition:
+    left 0.42s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+    right 0.42s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+    height 0.18s var(--fluid-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+}
+
+.mz-range__ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+/* 觸控/滑鼠反饋 */
+.mz-range__thumb:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mz-range__track::before,
+  .mz-range__fill,
+  .mz-range__thumb,
+  .mz-range:not(.is-dragging) .mz-range__thumb,
+  .mz-range:not(.is-dragging) .mz-range__fill {
+    transition: none !important;
+  }
+}

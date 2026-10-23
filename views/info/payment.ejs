@@ -1,0 +1,46 @@
+<%- include('../partials/info-top') %>
+
+<p>為提供安全可靠嘅購物體驗，本店接受以下付款方式。落單後請依頁面指示完成付款，並於<strong><%= store.payment.proofWindowHours %> 小時內</strong>提交付款證明，以便我們盡快確認及安排入口。</p>
+
+<h2>轉數快 FPS</h2>
+<p>轉數快係快速、安全嘅銀行付款方式。請於網上理財或支付程式掃描／輸入以下 FPS ID 過數，並確認戶口名稱正確：</p>
+<table>
+  <tbody>
+    <tr><th style="width:40%">收款戶口名稱</th><td><%= store.payment.accountName %></td></tr>
+    <tr><th>轉數快識別碼（FPS ID）</th><td class="font-bold text-gold-light"><%= store.payment.fpsId %></td></tr>
+  </tbody>
+</table>
+<p class="text-sm text-gray-400">完成轉帳後，請將付款記錄截圖，連同<strong>訂單號碼</strong>，WhatsApp 或電郵發送給我們核實。</p>
+
+<h2>銀行轉帳</h2>
+<p>請將款項存入以下銀行戶口：</p>
+<table>
+  <tbody>
+    <tr><th style="width:40%">銀行名稱</th><td><%= store.payment.bankName %></td></tr>
+    <tr><th>戶口名稱</th><td><%= store.payment.accountName %></td></tr>
+    <tr><th>戶口號碼</th><td class="font-bold text-gold-light"><%= store.payment.accountNumber %></td></tr>
+  </tbody>
+</table>
+<p class="text-sm text-gray-400">完成入數後，請將銀行收據／入數記錄截圖，連同<strong>訂單號碼</strong>，WhatsApp 或電郵發送給我們核實。</p>
+
+<h2>提交付款證明</h2>
+<ol>
+  <li>截圖完整顯示已過數金額、收款戶口及交易時間／參考編號。</li>
+  <li>附上訂單號碼（order number）。</li>
+  <li>於 <%= store.payment.proofWindowHours %> 小時內發送至：
+    <ul>
+      <li>WhatsApp：<a href="<%= store.contact.whatsappLink %>" target="_blank" rel="noopener"><%= store.contact.whatsappDisplay %></a></li>
+      <li>電郵：<a href="mailto:<%= store.contact.email %>"><%= store.contact.email %></a></li>
+    </ul>
+  </li>
+  <li>我們核實無誤後會確認訂單並安排入口送貨。</li>
+</ol>
+
+<div class="rounded-lg border border-gold/30 bg-gold/10 p-4 text-sm text-gold-light">
+  <strong>溫馨提示：</strong>訂單需待我們確認收款後方為正式生效。請勿將款項轉入任何非本頁列明嘅戶口；我們只會使用以上官方收款資料。
+</div>
+
+<h2>本地運費</h2>
+<p>本地派送採用<strong>順豐速運到付</strong>，運費於收貨時直接向順豐支付，不包含在貨款之內。詳見<a href="/shipping">送貨安排</a>。</p>
+
+<%- include('../partials/info-bottom') %>

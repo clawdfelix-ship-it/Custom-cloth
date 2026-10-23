@@ -1,0 +1,136 @@
+<%
+/*
+  partials/shipping-calendar.ejs
+  - 今個月曆：置中，大格（主角）
+  - 下個月迷你曆：釘喺右上角（md 以上先顯示，唔阻手機）
+  日本(wine) / 香港(gold) / 兩地(gradient)
+  locals:
+    - holidaysMap: { 'YYYY-MM-DD': { type:'jp'|'hk'|'both', name } }
+*/
+const hmap = (typeof holidaysMap === 'object' && holidaysMap) ? holidaysMap : {};
+const WEEKDAYS = ['日','一','二','三','四','五','六'];
+const MONTH_LABELS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+function pad(n){ return String(n).padStart(2,'0'); }
+function keyOf(y,m,d){ return y + '-' + pad(m+1) + '-' + pad(d); }
+
+// Vercel serverless 預設 UTC；HK 已進入下個月但 UTC 仍未跳時，server-render 會出錯月。
+// nowHKT() 用 Asia/Hong_Kong 取今日年月日，避開 UTC 落差。
+function nowHKT(){
+  const fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Hong_Kong',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const parts=Object.fromEntries(fmt.formatToParts(new Date()).map(p=>[p.type,p.value]));
+  return new Date(Number(parts.year), Number(parts.month)-1, Number(parts.day), Number(parts.hour)%24, Number(parts.minute), Number(parts.second));
+}
+
+function buildMonth(offset){
+  const base = nowHKT();
+  const t = new Date(base.getFullYear(), base.getMonth()+offset, 1);
+  const y=t.getFullYear(), m=t.getMonth();
+  const firstWeekday=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const cells=[];
+  for(let i=0;i<firstWeekday;i++) cells.push(null);
+  for(let d=1;d<=daysInMonth;d++) cells.push(d);
+  while(cells.length%7!==0) cells.push(null);
+  return {y,m,cells};
+}
+
+const today = nowHKT(); today.setHours(0,0,0,0);
+const cur = buildMonth(0);
+const next = buildMonth(1);
+
+// 每格點樣（共用）
+function cellState(mm,d){
+  const k=keyOf(mm.y,mm.m,d);
+  const dow=new Date(mm.y,mm.m,d).getDay();
+  const entry=hmap[k]||null;
+  const cellDate=new Date(mm.y,mm.m,d);
+  const isToday=(cellDate.getTime()===today.getTime());
+  const isPast=(cellDate<today);
+  const isWeekend=(dow===0||dow===6);
+  let cls='text-gray-300', title='';
+  if(entry){
+    const ty=entry.type;
+    if(ty==='both') cls='bg-gradient-to-br from-wine/35 to-gold/35 text-white font-black ring-1 ring-gold/50';
+    else if(ty==='jp') cls='bg-wine/25 text-wine-light font-black ring-1 ring-wine/50';
+    else cls='bg-gold/20 text-gold-light font-black ring-1 ring-gold/50';
+    title=entry.name;
+  } else if(isWeekend){
+    // 週末：淡底色＋紅字，結構性區分，唔止靠字色
+    cls='bg-ink-800/70 text-wine-light';
+    title=(dow===0?'星期日':'星期六')+'休息';
+  } else if(isPast){
+    // 過去工作日：調淡，令今日同假期突出
+    cls='text-gray-600';
+  }
+  if(isToday) cls+=' ring-2 ring-gold';
+  return {cls,title,isWeekend,isToday, name: entry ? entry.name : '', type: entry ? entry.type : ''};
+}
+
+// 某個月嘅假期清單（畀下面文字列表用）
+function monthHolidays(mm){
+  const out=[];
+  for(let d=1;d<=new Date(mm.y,mm.m+1,0).getDate();d++){
+    const k=keyOf(mm.y,mm.m,d);
+    const e=hmap[k];
+    if(e) out.push({d, name:e.name, type:e.type});
+  }
+  return out;
+}
+%>
+<section id="shipping-calendar" class="relative mb-6 rounded-3xl border border-ink-600 bg-ink-850 p-6 shadow-card">
+  <div class="mb-5">
+    <h2 class="mz-display text-xl font-black text-white">📅 出貨日曆</h2>
+    <p class="mt-1 text-sm text-gray-400">日本假期暫停入貨、香港假期暫停出貨，週末休息</p>
+  </div>
+
+  <%# 桌面（lg）：今、下兩個月等大並排；手機：只顯示今個月（下個月 lg 以上先見）。 %>
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <% [
+         { mm: cur, wrap: '' },
+         { mm: next, wrap: 'hidden lg:block' },
+       ].forEach(function(item){
+         const mm = item.mm;
+    %>
+      <div class="rounded-2xl border border-ink-700 bg-ink-900 p-5 sm:p-6 <%= item.wrap %>">
+        <div class="mb-4 text-center text-base font-black text-gold-light"><%= mm.y %>年 <%= MONTH_LABELS[mm.m] %></div>
+        <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-gray-500">
+          <% WEEKDAYS.forEach((w,i)=>{ %>
+            <div class="<%= (i===0)?'text-wine-light':(i===6?'text-sky-400':'') %>"><%= w %></div>
+          <% }) %>
+        </div>
+        <div class="mt-1.5 grid grid-cols-7 gap-1.5 text-center text-sm">
+          <% mm.cells.forEach(d=>{
+               if(!d){ %><div class="aspect-square"></div><% } else {
+                 const s=cellState(mm,d);
+            %>
+              <div class="flex aspect-square items-center justify-center rounded-lg <%= s.cls %> transition" <%= s.title?('title="'+s.title+'"'):'' %>><%= d %></div>
+            <% } }) %>
+        </div>
+        <%# 假期名：色點 + 日期 + 名稱，手機都睇到 %>
+        <% const holis=monthHolidays(mm); %>
+        <% if(holis.length){ %>
+          <ul class="mt-4 space-y-1.5 border-t border-ink-700 pt-3 text-[11px]">
+            <% holis.forEach(function(h){ %>
+              <li class="flex items-start gap-2">
+                <span class="mt-0.5 h-2 w-2 shrink-0 rounded-full <%= h.type==='both' ? 'bg-gradient-to-br from-wine to-gold' : (h.type==='jp' ? 'bg-wine' : 'bg-gold') %>"></span>
+                <span class="shrink-0 font-black text-gray-300"><%= pad(h.d) %>日</span>
+                <span class="text-gray-400"><%= h.name %></span>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="mt-4 border-t border-ink-700 pt-3 text-[11px] text-gray-600">本月無假期</p>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+
+  <!-- 圖例：全寬置中 -->
+  <div class="mx-auto mt-5 flex max-w-2xl flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-gray-400">
+    <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-wine ring-1 ring-wine/60"></span>日本假期・暫停入貨</span>
+    <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-gold ring-1 ring-gold/60"></span>香港假期・暫停出貨</span>
+    <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-wine to-gold"></span>兩地皆假期</span>
+    <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full ring-2 ring-gold"></span>今日</span>
+    <span class="w-full text-center text-[11px] text-gray-500">週末休息；假期前後訂單或有延誤，實際以 WhatsApp 通知為準</span>
+  </div>
+</section>

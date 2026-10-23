@@ -1,0 +1,80 @@
+<div id="admin-blog" class="space-y-3">
+  <div class="flex flex-wrap gap-2">
+    <button id="blog-create" class="admin-btn" type="button">新增文章</button>
+  </div>
+
+  <div id="bl-error" class="admin-error hidden"></div>
+
+  <!-- ============ 網誌文章彈窗（新增／編輯即喺眼前打開） ============ -->
+  <div id="blog-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl">
+      <div class="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+        <div id="blog-modal-title" class="font-bold text-lg">新增 / 編輯網誌文章</div>
+        <button id="blog-modal-close" type="button" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="p-4">
+        <input id="bl-id" class="admin-input hidden" />
+        <div class="grid grid-cols-2 gap-2">
+          <input id="bl-title" class="admin-input col-span-2" placeholder="標題（必填）" />
+          <div class="flex gap-2 col-span-2">
+            <input id="bl-slug" class="admin-input grow" placeholder="Slug（必填，例如 autumn-collection）" />
+            <button id="bl-slug-gen" class="admin-btn-secondary" type="button">由標題產生</button>
+          </div>
+          <input id="bl-featured-image" class="admin-input col-span-2" placeholder="封面圖片網址" />
+          <label class="text-sm">
+            <div class="mb-1">狀態</div>
+            <select id="bl-status" class="admin-input">
+              <option value="draft">草稿（draft）</option>
+              <option value="published">已發佈（published）</option>
+              <option value="archived">已封存（archived）</option>
+            </select>
+          </label>
+          <label class="text-sm">
+            <div class="mb-1">發佈時間（可留空）</div>
+            <input id="bl-publish-at" type="datetime-local" class="admin-input" />
+          </label>
+          <input id="bl-meta-title" class="admin-input col-span-2" placeholder="SEO Meta Title" />
+          <textarea id="bl-excerpt" class="admin-input col-span-2" rows="2" placeholder="摘要（excerpt）"></textarea>
+          <textarea id="bl-content" class="admin-input col-span-2 font-mono" rows="14" placeholder="內文（必填，HTML 或純文字）"></textarea>
+          <textarea id="bl-meta-description" class="admin-input col-span-2" rows="2" placeholder="SEO Meta Description"></textarea>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button id="bl-save" class="admin-btn" type="button">儲存</button>
+          <button id="bl-reset" class="admin-btn-secondary" type="button">清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-card space-y-2">
+    <div class="flex flex-wrap gap-2 items-end">
+      <label class="text-sm">
+        <div class="mb-1">狀態篩選</div>
+        <select id="bl-filter" class="admin-input">
+          <option value="">全部</option>
+          <option value="draft">草稿</option>
+          <option value="published">已發佈</option>
+          <option value="archived">已封存</option>
+        </select>
+      </label>
+      <button id="bl-refresh" class="admin-btn-secondary" type="button">刷新</button>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>標題</th>
+          <th>Slug</th>
+          <th>狀態</th>
+          <th>發佈時間</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="bl-tbody"></tbody>
+    </table>
+    <div id="bl-pagination" class="flex flex-wrap gap-2 items-center"></div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/blog.js"></script>
+</div>

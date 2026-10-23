@@ -1,0 +1,31 @@
+<% const childList = Array.isArray(node.children) ? node.children : []; %>
+<% const isCurrent = activeSlug === node.slug; %>
+<% const hasChildren = childList.length > 0; %>
+<% const hasActiveDescendant = childList.some((child) => nodeContainsActive(child, activeSlug)); %>
+<% const isOpen = activeSlug ? (isCurrent || hasActiveDescendant) : depth === 0; %>
+<% const paddingLeftRem = (depth * 0.9) + 0.75; %>
+<% const targetHref = `/products?category=${encodeURIComponent(node.slug)}&page=1`; %>
+
+<% if (hasChildren) { %>
+  <details class="group overflow-hidden rounded-2xl border border-ink-600 bg-ink-800" <%= isOpen ? 'open' : '' %>>
+    <summary class="flex list-none items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-gray-200 marker:content-none" style="padding-left: <%= paddingLeftRem %>rem;">
+      <a href="<%= targetHref %>" class="<%= isCurrent ? 'text-gold-light' : 'text-gray-200 hover:text-gold-light' %> min-w-0 flex-1">
+        <span class="block truncate"><%= node.name %></span>
+      </a>
+      <span class="flex items-center gap-2 text-[11px] text-gray-500">
+        <span><%= node.count %></span>
+        <span class="transition group-open:rotate-180">⌄</span>
+      </span>
+    </summary>
+    <div class="space-y-2 border-t border-ink-700 bg-ink-850 px-2 py-2">
+      <% childList.forEach((child) => { %>
+        <%- include('category-mobile-node', { node: child, depth: depth + 1, activeSlug, nodeContainsActive }) %>
+      <% }) %>
+    </div>
+  </details>
+<% } else { %>
+  <a href="<%= targetHref %>" class="<%= isCurrent ? 'border-gold/40 bg-wine/15 text-gold-light' : 'border-transparent bg-ink-800 text-gray-300 hover:bg-ink-700' %> flex items-center justify-between rounded-2xl border px-3 py-3 text-sm font-semibold transition" style="padding-left: <%= paddingLeftRem %>rem;">
+    <span class="min-w-0 truncate"><%= node.name %></span>
+    <span class="ml-3 text-[11px] text-gray-500"><%= node.count %></span>
+  </a>
+<% } %>

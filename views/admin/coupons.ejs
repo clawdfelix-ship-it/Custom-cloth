@@ -1,0 +1,107 @@
+<div id="admin-coupons" class="space-y-3">
+  <div id="cp-error" class="admin-error hidden"></div>
+
+  <div class="flex flex-wrap gap-2 items-center justify-between">
+    <div class="font-bold">優惠券列表</div>
+    <button id="coupon-create" class="admin-btn" type="button">新增優惠券</button>
+  </div>
+
+  <!-- ============ 優惠券 新增/編輯彈窗 ============ -->
+  <div id="coupon-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl">
+      <div class="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+        <div class="font-bold text-lg" id="coupon-modal-title">新增 / 編輯優惠券</div>
+        <button id="coupon-modal-close" type="button" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="p-4">
+        <div class="space-y-3">
+          <div class="space-y-2">
+            <div class="text-sm font-semibold">基本資料</div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="cp-id" class="admin-input hidden" />
+              <input id="cp-code" class="admin-input" placeholder="優惠碼（例如 SAVE10）" />
+              <select id="cp-type" class="admin-input">
+                <option value="percentage">百分比折扣（%）</option>
+                <option value="fixed">固定金額（HK$）</option>
+                <option value="free_shipping">免運費</option>
+              </select>
+              <input id="cp-value" class="admin-input col-span-2" type="number" step="0.01" min="0" placeholder="折扣數值（百分比 / 金額，免運費可填 0）" />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-sm font-semibold">使用條件</div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="cp-min-order-amount" class="admin-input" type="number" step="0.01" min="0" placeholder="最低訂單金額（HK$，可空）" />
+              <input id="cp-max-discount-amount" class="admin-input" type="number" step="0.01" min="0" placeholder="最高折扣金額（HK$，可空）" />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-sm font-semibold">使用限額</div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="cp-usage-limit" class="admin-input" type="number" min="0" placeholder="總使用次數上限（可空 = 無限）" />
+              <input id="cp-usage-limit-per-user" class="admin-input" type="number" min="0" placeholder="每位會員上限（可空 = 無限）" />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-sm font-semibold">適用範圍（只係新增時生效；ID 用逗號分隔，可空）</div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="cp-allowed-categories" class="admin-input" placeholder="適用分類 ID，例如 1,2,3" />
+              <input id="cp-allowed-products" class="admin-input" placeholder="適用商品 ID，例如 10,22" />
+              <input id="cp-allowed-member-levels" class="admin-input col-span-2" placeholder="適用會員等級，例如 gold,vip" />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="text-sm font-semibold">有效日期</div>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="cp-starts-at" class="admin-input" type="datetime-local" />
+              <input id="cp-expires-at" class="admin-input" type="datetime-local" />
+            </div>
+            <label class="text-sm flex items-center gap-2">
+              <input id="cp-active" type="checkbox" />
+              <span>啟用</span>
+            </label>
+          </div>
+
+          <div class="flex gap-2">
+            <button id="cp-save" class="admin-btn" type="button">儲存</button>
+            <button id="cp-reset" class="admin-btn-secondary" type="button">清空</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-card space-y-2">
+    <div class="flex items-center gap-2">
+      <label class="text-sm">篩選狀態：</label>
+      <select id="cp-filter" class="admin-input" style="width:auto;">
+        <option value="">全部</option>
+        <option value="true">啟用中</option>
+        <option value="false">已停用</option>
+      </select>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>優惠碼</th>
+          <th>類型</th>
+          <th>面值</th>
+          <th>使用量</th>
+          <th>有效期</th>
+          <th>狀態</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="cp-tbody"></tbody>
+    </table>
+    <div id="cp-pagination" class="text-sm"></div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/coupons.js"></script>
+</div>

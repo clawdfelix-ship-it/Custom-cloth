@@ -1,0 +1,27 @@
+<div id="admin-abandoned-carts" class="space-y-3">
+  <div id="ac-error" class="admin-error hidden"></div>
+
+  <div class="admin-card">
+    <div class="font-bold mb-2">遺棄購物車（未恢復）</div>
+    <p class="text-sm mb-2">
+      系統只提供唯讀列表。「恢復連結」會打開購物車頁並帶住恢復參數，管理員可以自己試，或者將連結發俾客戶。
+      暫時冇後台提醒發送端點，故唔設提醒掣。
+    </p>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>建立時間</th>
+          <th>客戶 / 聯絡</th>
+          <th>購物車內容</th>
+          <th>金額</th>
+          <th>提醒</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="ac-tbody"></tbody>
+    </table>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/abandoned-carts.js"></script>
+</div>

@@ -1,0 +1,10 @@
+[
+  { "url": "https://mzakka.com/images/bg_menu.gif", "dest": "public/assets/mzakka/ui/bg_menu.gif" },
+  { "url": "https://mzakka.com/images/bg_footer.2019012400.gif", "dest": "public/assets/mzakka/ui/bg_footer.2019012400.gif" },
+  { "url": "https://mzakka.com/images/logo_18.gif", "dest": "public/assets/mzakka/ui/logo_18.gif" },
+  { "url": "https://mzakka.com/images/btn_entry.gif", "dest": "public/assets/mzakka/ui/btn_entry.gif" },
+
+  { "url": "https://i.mzakka.com/free/214x78.jpg", "dest": "public/assets/mzakka/banners/214x78.jpg" },
+  { "url": "https://i.mzakka.com/free/M_zakka_214x78.jpg", "dest": "public/assets/mzakka/banners/M_zakka_214x78.jpg" },
+  { "url": "https://i.mzakka.com/free/214_78(1).png", "dest": "public/assets/mzakka/banners/214_78(1).png" }
+]

@@ -1,0 +1,287 @@
+/* ==========================================================================
+   BottomSheet 系統 — 高級彈窗交互（10 patterns）
+   對應：底部抽屜 / 半屏停住 / 全屏展開 / 背景退後 / 彈性出現 /
+        拖拽關閉 / 拖拽擴展(吸附) / 嵌套抽屜 / 抽屜變頁面
+   成功形態（按鈕變對勾）見 .mz-success 一節。
+   狀態一律由 .is-open / .is-dragging / data-detent 驅動；拖拽期間行內
+   transform，松手由 JS 吸附，唔可以停喺中間。
+   ========================================================================== */
+
+.bs-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  visibility: hidden;
+}
+.bs-root.is-open { visibility: visible; }
+
+/* ---- 04 背景退後：模糊 + 變暗（scaling 由 .bs-backdrop 類加落 <main>） ---- */
+.bs-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 8, 12, 0.55);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  backdrop-filter: blur(6px) saturate(1.1);
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+.is-open > .bs-scrim { opacity: 1; }
+
+/* 頁面層退後：縮小 + 下移 + 變暗，由 JS 喺 body 加 .bs-page-behind */
+.bs-page-behind #mz-wrapper,
+.bs-page-behind .mz-page-layer {
+  transform: scale(0.94) translateY(-6px);
+  filter: brightness(0.85);
+  border-radius: 18px;
+  overflow: hidden;
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+              filter 0.38s ease, border-radius 0.38s ease;
+  transform-origin: center top;
+}
+
+/* ---- 01/02/03 面板：由底部方向進入，唔係中間放大 ---- */
+.bs-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  background: #15151c;
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid rgba(200, 164, 93, 0.28);
+  box-shadow: 0 -24px 70px -24px rgba(0, 0, 0, 0.85);
+  padding-bottom: env(safe-area-inset-bottom);
+  transform: translateY(100%);
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+              border-radius 0.3s ease;
+  touch-action: none;
+  will-change: transform;
+}
+.is-open > .bs-panel { transform: translateY(0); }
+
+/* detent 高度：半屏 / 全屏，圓角隨全屏收走（03 連續性） */
+.bs-root[data-detent="half"] .bs-panel { height: var(--bs-half, 52vh); }
+.bs-root[data-detent="full"] .bs-panel {
+  height: 92vh;
+  max-height: 92vh;
+  border-radius: 0;
+  border-top-color: transparent;
+}
+.bs-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 1rem 1.2rem;
+}
+
+/* 抓手 + header */
+.bs-grip {
+  flex-shrink: 0;
+  width: 40px;
+  height: 4px;
+  margin: 0.55rem auto 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.bs-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 1.1rem 0.7rem;
+}
+.bs-title { font-size: 1rem; font-weight: 800; color: #f0e9da; }
+.bs-close {
+  width: 34px; height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d8d8de;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.bs-close:active { background: rgba(160, 30, 61, 0.35); }
+
+/* ---- 05 彈性出現：輕微「過衝」再回落（spring keyframes） ---- */
+@keyframes bsSpringUp {
+  0%   { transform: translateY(100%); }
+  62%  { transform: translateY(-2.2%); }
+  78%  { transform: translateY(0.7%); }
+  90%  { transform: translateY(-0.3%); }
+  100% { transform: translateY(0); }
+}
+.bs-root.bs-spring.is-open > .bs-panel {
+  animation: bsSpringUp 0.52s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+/* ---- 06/07 拖拽中：鬆開 transition，跟手；scrim 跟位移淡 ---- */
+.bs-root.is-dragging .bs-panel { transition: none; }
+.bs-root.is-dragging .bs-scrim { transition: none; }
+
+/* ---- 08 嵌套抽屜：上一層後退縮小變暗（JS 加 .bs-nested-behind） ---- */
+.bs-root.bs-nested-behind > .bs-panel {
+  transform: translateY(0) scale(0.92);
+  filter: brightness(0.7);
+  border-radius: 18px;
+  transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), filter 0.36s ease;
+}
+
+/* ---- 09 抽屜變頁面：直接擴展為全屏 route-like，唔先關再開 ---- */
+.bs-root.bs-expand-page > .bs-panel {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+              border-radius 0.4s ease, height 0.4s ease;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+  border-top-color: transparent;
+}
+
+/* ==========================================================================
+   10 彈窗變成功：按鈕 → 圓形 → 畫對勾 → 收成提示
+   ========================================================================== */
+.bs-success-btn {
+  position: relative;
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #a01e3d, #7d1530);
+  color: #fff;
+  font-weight: 800;
+  overflow: hidden;
+  transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              border-radius 0.32s ease, background 0.32s ease,
+              transform 0.2s ease;
+}
+.bs-success-btn:active { transform: scale(0.98); }
+.bs-success-btn.is-loading { width: 52px; border-radius: 999px; }
+.bs-success-btn.is-loading .bs-success-label { opacity: 0; }
+.bs-success-btn.is-done {
+  width: 52px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2f9e63, #1f7d4b);
+}
+.bs-success-spinner {
+  position: absolute; inset: 0; margin: auto;
+  width: 22px; height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 999px;
+  opacity: 0;
+  animation: bsSpin 0.7s linear infinite;
+}
+.is-loading .bs-success-spinner { opacity: 1; }
+@keyframes bsSpin { to { transform: rotate(360deg); } }
+.bs-success-check {
+  position: absolute; inset: 0; margin: auto;
+  width: 24px; height: 24px;
+  opacity: 0;
+}
+.is-done .bs-success-check { opacity: 1; animation: bsPop 0.3s cubic-bezier(0.34, 1.6, 0.5, 1); }
+.bs-success-check path {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+}
+.is-done .bs-success-check path { animation: bsDraw 0.35s 0.05s ease forwards; }
+@keyframes bsPop { from { transform: scale(0.4); } to { transform: scale(1); } }
+@keyframes bsDraw { to { stroke-dashoffset: 0; } }
+
+/* 成功後頂部 toast 提示（由 sheet 收縮飛出） */
+.bs-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 88px;
+  transform: translate(-50%, 20px);
+  opacity: 0;
+  z-index: 200;
+  background: rgba(28, 28, 36, 0.96);
+  border: 1px solid rgba(200, 164, 93, 0.4);
+  color: #f0e9da;
+  padding: 0.7rem 1.1rem;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+}
+.bs-toast.is-show { transform: translate(-50%, 0); opacity: 1; }
+
+/* ==========================================================================
+   加購物車按鈕 → morph 成功（pattern 10）
+   外層掣保持寬度（商品卡同行嘅「查看詳情」唔會跳位）；內容 morph 做一個
+   置中圓形：label 淡出 → spinner → 綠底畫對勾 → 還原。
+   ========================================================================== */
+[data-add-to-cart] { position: relative; }
+[data-add-to-cart]:active { transform: scale(.96); }
+
+.mzc-label { transition: opacity .15s ease; }
+
+.mzc-circle {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 38px; height: 38px;
+  margin: -19px 0 0 -19px;
+  border-radius: 999px;
+  background: linear-gradient(135deg,#a01e3d,#7d1530);
+  opacity: 0;
+  transform: scale(.5);
+  transition: opacity .2s ease, transform .25s cubic-bezier(.34,1.5,.5,1), background .3s ease;
+  pointer-events: none;
+}
+.mzc-spinner {
+  position: absolute; inset: 0; margin: auto;
+  width: 18px; height: 18px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 999px;
+  animation: mzcSpin .7s linear infinite;
+}
+.mzc-check {
+  position: absolute; inset: 0; margin: auto;
+  width: 20px; height: 20px;
+  opacity: 0;
+}
+.mzc-check path { stroke-dasharray: 30; stroke-dashoffset: 30; }
+
+/* morphing：label 淡出，紅色圓形彈入顯示 spinner */
+[data-add-to-cart].is-morphing .mzc-label { opacity: 0; }
+[data-add-to-cart].is-morphing .mzc-circle {
+  opacity: 1; transform: scale(1);
+}
+/* added：圓形變綠，spinner 收走，對勾畫出 */
+[data-add-to-cart].is-added .mzc-circle {
+  background: linear-gradient(135deg,#2f9e63,#1f7d4b);
+}
+[data-add-to-cart].is-added .mzc-spinner { opacity: 0; transition: opacity .15s ease; }
+[data-add-to-cart].is-added .mzc-check { opacity: 1; }
+[data-add-to-cart].is-added .mzc-check path {
+  animation: mzcDraw .35s .05s ease forwards;
+}
+@keyframes mzcSpin { to { transform: rotate(360deg); } }
+@keyframes mzcDraw { to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-add-to-cart], .mzc-circle, .mzc-label, .mzc-check path { transition: none !important; animation: none !important; }
+}
+
+/* desktop：彈窗都保持底部抽屜，但可選居中（data-present="center"） */
+@media (min-width: 768px) {
+  .bs-panel { left: 50%; right: auto; width: 460px; transform: translate(-50%, 100%); }
+  .is-open > .bs-panel { transform: translate(-50%, 0); }
+  .bs-root.bs-spring.is-open > .bs-panel { animation-name: bsSpringUpMd; }
+  @keyframes bsSpringUpMd {
+    0% { transform: translate(-50%, 100%); }
+    62% { transform: translate(-50%, -2.2%); }
+    78% { transform: translate(-50%, 0.7%); }
+    90% { transform: translate(-50%, -0.3%); }
+    100% { transform: translate(-50%, 0); }
+  }
+  .bs-root.bs-nested-behind > .bs-panel { transform: translate(-50%, 0) scale(0.92); }
+  .bs-root[data-detent="half"] .bs-panel { height: var(--bs-half, 420px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-panel, .bs-scrim, .bs-toast, #mz-wrapper { transition: none !important; }
+  .bs-root.bs-spring.is-open > .bs-panel { animation: none; transform: translate(-50%, 0); }
+}

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/mzakka-theme.css">
+  <link rel="stylesheet" href="/css/interactions.css">
+  <%# bottom-sheet.css 已由 mobile-tabbar 全頁載入 %>
+  <%- include('partials/theme-head') %>
+  <meta name="csrf-token" content="<%= csrfToken || '' %>">
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    .jpn-bracket::before { content: '【'; }
+    .jpn-bracket::after { content: '】'; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-animate {
+      animation: slideDown 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="mz-body min-h-screen text-gray-200" data-logged-in="<%= user ? '1' : '0' %>">
+
+  <%- include('partials/age-modal') %>
+
+  <%- include('partials/header') %>
+
+  <div id="mz-wrapper" class="mz-wrapper max-w-7xl mx-auto px-2 mt-4 mb-4">
+    <div class="mz-3col">
+      <%- include('partials/sidebar-left') %>
+
+      <div id="wrap_center" class="min-w-0">
+  <div class="max-w-4xl mx-auto px-0 sm:px-6 lg:px-8 py-6">
+    <h1 class="text-3xl font-bold text-white mb-8 jpn-bracket inline-block">🛒 我的購物車</h1>
+    <div id="cart-message" class="hidden mb-4 rounded-xl border px-4 py-3 text-sm"></div>
+
+    <%# 撤銷條：刪除後 5 秒內可反悔，底部進度條顯示剩餘時間 %>
+    <div id="undo-bar" class="mz-undo hidden" role="status" aria-live="polite">
+      <span class="mz-undo__text" id="undo-text">已移除商品</span>
+      <button type="button" class="mz-undo__btn" id="undo-button">撤銷</button>
+      <span class="mz-undo__progress"><span id="undo-progress-fill"></span></span>
+    </div>
+    
+    <div id="cart-items" class="space-y-4">
+      <!-- 動態加載 -->
+    </div>
+    
+    <div id="empty-cart" class="text-center py-16 bg-ink-850 rounded-xl border border-ink-600">
+      <lord-icon
+        src="https://media.lordicon.com/icons/wired/outline/146-cart.li"
+        trigger="in"
+        colors="primary:#c8a45d"
+        style="width:120px;height:120px"
+        aria-label="空購物車">
+      </lord-icon>
+      <p class="text-gray-500 mb-6 mt-2">購物車仲係空嘅</p>
+      <a href="/products" class="bg-wine text-white px-6 py-3 rounded-lg font-medium hover:bg-wine transition inline-block">
+        去購物 →
+      </a>
+    </div>
+    
+    <div id="cart-summary" class="mt-8 bg-ink-850 rounded-xl p-6 border border-ink-600 hidden">
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-400">商品小計</span>
+          <span class="font-bold text-white" id="subtotal-price">HK$0</span>
+        </div>
+
+        <%# 積分兌換（登入用戶先有） %>
+        <% if (user && pointsCfg && pointsCfg.enabled && pointsBalance > 0) { %>
+        <div class="rounded-xl border border-gold/30 bg-wine/10 p-3" id="points-redeem-box">
+          <label class="flex items-start gap-2">
+            <input type="checkbox" id="use-points-toggle" class="mt-0.5">
+            <span class="flex-1">
+              <span class="block text-sm font-bold text-gold-light">使用積分即時扣錢</span>
+              <span class="block text-xs text-gray-400">你有 <b id="user-points-avail"><%= pointsBalance %></b> 分，每 <%= pointsCfg.redeemHkd %> 分 = HK$1；最低兌換 <%= pointsCfg.minRedeem %> 分</span>
+            </span>
+          </label>
+          <div id="points-redeem-detail" class="mt-2 hidden">
+            <div class="flex items-center gap-2">
+              <input type="number" id="points-redeem-input" min="<%= pointsCfg.minRedeem %>" step="<%= pointsCfg.redeemHkd %>" max="<%= pointsBalance %>" class="w-full rounded-lg border border-gray-600 bg-ink-800 text-gray-100 px-3 py-2 text-sm" placeholder="要兌換嘅分數">
+              <button type="button" id="points-redeem-max" class="shrink-0 rounded-lg bg-ink-700 px-3 py-2 text-xs font-bold text-gold-light">用最多</button>
+            </div>
+            <div id="points-redeem-preview" class="mt-1 text-xs text-gray-400"></div>
+          </div>
+        </div>
+        <% } %>
+
+        <div class="flex justify-between" id="discount-row" style="display:none">
+          <span class="text-gray-400">積分折扣</span>
+          <span class="font-bold text-green-400" id="discount-price">-HK$0</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="text-gray-400">運費</span>
+          <span class="font-bold text-orange-600">到付（收貨時支付）</span>
+        </div>
+        <div class="flex justify-between items-center border-t border-ink-700 pt-3">
+          <span class="text-xl font-bold text-white">而家需付款</span>
+          <span class="text-2xl font-bold text-gold" id="total-price">HK$0</span>
+        </div>
+      </div>
+
+      <div class="mt-5 rounded-xl bg-ink-800 p-4">
+        <p class="text-sm font-bold text-white mb-3">付款方式</p>
+        <button type="button" id="payment-sheet-open"
+          class="flex w-full items-center justify-between rounded-xl border border-ink-600 bg-ink-850 px-4 py-3.5 text-left transition hover:border-gold/50 active:scale-[0.99]"
+          aria-haspopup="dialog">
+          <span class="flex items-center gap-3">
+            <span id="payment-selected-icon" class="text-xl">🏦</span>
+            <span>
+              <span id="payment-selected-name" class="block text-sm font-bold text-white">銀行轉帳</span>
+              <span id="payment-selected-desc" class="block text-xs text-gray-500">落單後顯示收款戶口，24 小時內過數</span>
+            </span>
+          </span>
+          <span class="text-xs font-bold text-gold-light">更改</span>
+        </button>
+        <span class="sr-only">
+          <input type="radio" name="payment_method" value="bank_transfer" checked>
+          <input type="radio" name="payment_method" value="fps">
+        </span>
+      </div>
+
+      <p id="guest-checkout-hint" class="hidden mt-4 mb-4 rounded-lg border border-amber-500/40 bg-amber-500/15 px-4 py-3 text-sm text-amber-300">
+        請先登入，登入後會自動將暫存購物車轉入會員購物車並可正式下單。
+      </p>
+      <div id="checkout-fields" class="hidden space-y-3 mb-4">
+        <input id="checkout-name" type="text" class="w-full rounded-lg border border-gray-600 bg-ink-800 text-gray-100 placeholder-gray-500 px-4 py-3 focus:border-gold focus:outline-none" placeholder="收件人姓名">
+        <input id="checkout-phone" type="text" class="w-full rounded-lg border border-gray-600 bg-ink-800 text-gray-100 placeholder-gray-500 px-4 py-3 focus:border-gold focus:outline-none" placeholder="聯絡電話">
+        <textarea id="checkout-address" rows="3" class="w-full rounded-lg border border-gray-600 bg-ink-800 text-gray-100 placeholder-gray-500 px-4 py-3 focus:border-gold focus:outline-none" placeholder="送貨地址"></textarea>
+        <textarea id="checkout-note" rows="2" class="w-full rounded-lg border border-gray-600 bg-ink-800 text-gray-100 placeholder-gray-500 px-4 py-3 focus:border-gold focus:outline-none" placeholder="訂單備註（可選）"></textarea>
+      </div>
+      <button id="checkout-button" onclick="checkout()" class="w-full bg-wine text-white py-4 rounded-xl font-bold text-lg hover:bg-wine transition">
+        📦 結帳
+      </button>
+    </div>
+  </div>
+      </div>
+
+      <%- include('partials/sidebar-right') %>
+    </div>
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <script src="/js/cart-client.js"></script>
+  <%# bottom-sheet.js 已由 mobile-tabbar 全頁載入 %>
+  <script src="/js/payment-sheet.js"></script>
+  <script>
+    // Age Verification
+    function checkAgeVerification() {
+      const verified = localStorage.getItem('ageVerified');
+      if (!verified) {
+        document.getElementById('ageModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function verifyAge(isAdult) {
+      if (isAdult) {
+        localStorage.setItem('ageVerified', 'true');
+        document.getElementById('ageModal').classList.add('hidden');
+        document.body.style.overflow = '';
+      } else {
+        window.location.href = 'https://www.google.com';
+      }
+    }
+
+    function toggleCategories() {
+      const list = document.getElementById('catList');
+      const toggle = document.getElementById('catToggle');
+      if (!list || !toggle) return;
+      const hidden = list.classList.contains('hidden');
+      if (hidden) {
+        list.classList.remove('hidden');
+        toggle.textContent = '▲';
+      } else {
+        list.classList.add('hidden');
+        toggle.textContent = '▼';
+      }
+    }
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    const isLoggedIn = document.body.dataset.loggedIn === '1';
+    let cart = [];
+
+    // ===================== 積分兌換 =====================
+    // 比率由後端 render 入 JS，避免硬編碼
+    const POINTS_RATE = {
+      redeemHkd: <%- (pointsCfg && pointsCfg.redeemHkd) || 100 %>,
+      minRedeem: <%- (pointsCfg && pointsCfg.minRedeem) || 0 %>,
+    };
+    let pointsDiscount = 0;
+    let appliedRedeemPts = 0;
+
+    function calcPointsDiscount() {
+      const toggle = document.getElementById('use-points-toggle');
+      const input = document.getElementById('points-redeem-input');
+      const preview = document.getElementById('points-redeem-preview');
+      const discRow = document.getElementById('discount-row');
+      const discPrice = document.getElementById('discount-price');
+
+      if (!toggle || !toggle.checked) {
+        pointsDiscount = 0; appliedRedeemPts = 0;
+        if (discRow) discRow.style.display = 'none';
+        return;
+      }
+
+      let pts = parseInt(input.value, 10);
+      if (!Number.isInteger(pts) || pts <= 0) {
+        pointsDiscount = 0; appliedRedeemPts = 0;
+        if (preview) preview.textContent = '請輸入要兌換嘅分數';
+        if (discRow) discRow.style.display = 'none';
+        return;
+      }
+      // 對齊 redeemHkd 整數倍
+      pts = Math.floor(pts / POINTS_RATE.redeemHkd) * POINTS_RATE.redeemHkd;
+      const avail = parseInt(document.getElementById('user-points-avail').textContent, 10);
+      if (pts > avail) pts = avail;
+
+      if (pts < POINTS_RATE.minRedeem) {
+        pointsDiscount = 0; appliedRedeemPts = 0;
+        if (preview) preview.textContent = '最低兌換 ' + POINTS_RATE.minRedeem + ' 分';
+        if (discRow) discRow.style.display = 'none';
+        return;
+      }
+
+      appliedRedeemPts = pts;
+      pointsDiscount = pts / POINTS_RATE.redeemHkd;
+      if (preview) preview.textContent = pts + ' 分 → 即減 HK$' + pointsDiscount.toFixed(2);
+      if (discRow) discRow.style.display = 'flex';
+      if (discPrice) discPrice.textContent = '-HK$' + pointsDiscount.toFixed(2);
+    }
+
+    function bindPointsUI() {
+      const toggle = document.getElementById('use-points-toggle');
+      const detail = document.getElementById('points-redeem-detail');
+      const input = document.getElementById('points-redeem-input');
+      const maxBtn = document.getElementById('points-redeem-max');
+      if (!toggle) return;
+
+      toggle.addEventListener('change', () => {
+        detail.classList.toggle('hidden', !toggle.checked);
+        calcPointsDiscount();
+      });
+      if (input) input.addEventListener('input', calcPointsDiscount);
+      if (maxBtn) maxBtn.addEventListener('click', () => {
+        const avail = parseInt(document.getElementById('user-points-avail').textContent, 10);
+        const maxUsable = Math.floor(avail / POINTS_RATE.redeemHkd) * POINTS_RATE.redeemHkd;
+        input.value = String(maxUsable);
+        calcPointsDiscount();
+      });
+    }
+
+    function readGuestCart() {
+      return JSON.parse(localStorage.getItem('cart') || '[]');
+    }
+
+    function writeGuestCart(nextCart) {
+      localStorage.setItem('cart', JSON.stringify(nextCart));
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatPriceValue(price) {
+      return MZCart.formatPrice(price);
+    }
+
+    function setCartCount(count) {
+      const badge = document.getElementById('cart-count');
+      if (badge) {
+        badge.textContent = String(count);
+      }
+    }
+
+    function showCartMessage(message, tone = 'error') {
+      const box = document.getElementById('cart-message');
+      if (!box) return;
+
+      const toneClasses = tone === 'success'
+        ? ['border-green-500/40', 'bg-green-500/10', 'text-green-300']
+        : ['border-gold/40', 'bg-wine/15', 'text-wine-light'];
+
+      box.className = `mb-4 rounded-xl border px-4 py-3 text-sm ${toneClasses.join(' ')}`;
+      box.textContent = message;
+      box.classList.remove('hidden');
+    }
+
+    function clearCartMessage() {
+      const box = document.getElementById('cart-message');
+      if (box) {
+        box.classList.add('hidden');
+        box.textContent = '';
+      }
+    }
+
+    async function requestJson(url, options = {}) {
+      const finalOptions = { credentials: 'same-origin', ...options };
+      const headers = new Headers(finalOptions.headers || {});
+      const method = String(finalOptions.method || 'GET').toUpperCase();
+
+      if (finalOptions.body && !headers.has('content-type')) {
+        headers.set('content-type', 'application/json');
+      }
+      if (method !== 'GET' && method !== 'HEAD' && csrfToken) {
+        headers.set('csrf-token', csrfToken);
+      }
+
+      finalOptions.headers = headers;
+
+      const response = await fetch(url, finalOptions);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data.error || '請稍後再試');
+        error.status = response.status;
+        throw error;
+      }
+
+      return data;
+    }
+
+    async function syncGuestCartToServer() {
+      const guestCart = readGuestCart();
+      if (!isLoggedIn || guestCart.length === 0) {
+        return;
+      }
+
+      const failures = [];
+      for (const item of guestCart) {
+        try {
+          await requestJson('/api/cart/add', {
+            method: 'POST',
+            body: JSON.stringify({
+              product_id: item.id,
+              quantity: item.quantity,
+            }),
+          });
+        } catch (error) {
+          console.error('Failed to sync guest cart item:', error);
+          failures.push(item);
+        }
+      }
+
+      writeGuestCart(failures);
+      if (failures.length > 0) {
+        showCartMessage('部分暫存商品未能轉入會員購物車，請檢查庫存後再試。');
+      }
+    }
+
+    async function loadCart() {
+      clearCartMessage();
+
+      if (isLoggedIn) {
+        await syncGuestCartToServer();
+        const data = await requestJson('/api/cart');
+        cart = Array.isArray(data.items) ? data.items.map(item => ({
+          id: Number(item.id),
+          productId: Number(item.product_id),
+          quantity: Number(item.quantity),
+          price: Number(item.price),
+          name: item.name,
+          image: item.image_url,
+          slug: item.slug,
+        })) : [];
+      } else {
+        cart = readGuestCart().map(item => ({
+          id: Number(item.id),
+          productId: Number(item.id),
+          quantity: Number(item.quantity),
+          price: Number(item.price),
+          name: item.name,
+          image: item.image,
+        }));
+      }
+
+      renderCart();
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cart-items');
+      const emptyCart = document.getElementById('empty-cart');
+      const summary = document.getElementById('cart-summary');
+      const guestHint = document.getElementById('guest-checkout-hint');
+      const checkoutFields = document.getElementById('checkout-fields');
+      const checkoutButton = document.getElementById('checkout-button');
+      
+      if (cart.length === 0) {
+        emptyCart.classList.remove('hidden');
+        summary.classList.add('hidden');
+        container.innerHTML = '';
+        setCartCount(0);
+        return;
+      }
+      
+      emptyCart.classList.add('hidden');
+      summary.classList.remove('hidden');
+      guestHint.classList.toggle('hidden', isLoggedIn);
+      checkoutFields.classList.toggle('hidden', !isLoggedIn);
+      checkoutButton.textContent = isLoggedIn ? '📦 提交訂單' : '🔐 登入後結帳';
+      
+      let total = 0;
+      container.innerHTML = cart.map(item => {
+        const itemTotal = Number(item.price) * Number(item.quantity);
+        total += itemTotal;
+        const detailHref = item.productId ? `/product/${item.productId}` : '/products';
+        
+        return `
+          <div class="bg-ink-850 rounded-xl shadow-sm p-3 sm:p-4 border border-ink-600 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 bg-ink-700 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+            ${item.image ? `<img src="${escapeHtml(item.image)}" loading="lazy" decoding="async" class="w-full h-full object-contain p-0.5" alt="${escapeHtml(item.name)}">` : '📦'}
+          </div>
+          <div class="flex-grow min-w-0">
+            <a href="${detailHref}" class="font-semibold text-white hover:text-gold line-clamp-2">${escapeHtml(item.name)}</a>
+            <p class="text-gold font-bold mt-1">單價 ${formatPriceValue(item.price)}</p>
+          </div>
+          <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t border-ink-700 pt-3 sm:pt-0 sm:border-0">
+            <div class="flex items-center gap-2">
+              <button onclick="updateQuantity(${item.id}, -1)" aria-label="減少數量" class="w-9 h-9 bg-ink-700 rounded-lg hover:bg-ink-500 transition">−</button>
+              <span class="w-8 text-center font-medium" aria-label="數量">${item.quantity}</span>
+              <button onclick="updateQuantity(${item.id}, 1)" aria-label="增加數量" class="w-9 h-9 bg-ink-700 rounded-lg hover:bg-ink-500 transition">+</button>
+            </div>
+            <div class="text-right">
+              <p class="font-bold text-white whitespace-nowrap">${formatPriceValue(itemTotal)}</p>
+              <button onclick="removeItem(${item.id})" class="text-wine-light text-sm hover:text-gold">移除</button>
+            </div>
+          </div>
+        </div>
+        `;
+      }).join('');
+      
+      document.getElementById('total-price').textContent = formatPriceValue(total - pointsDiscount);
+      const subtotalEl = document.getElementById('subtotal-price');
+      if (subtotalEl) subtotalEl.textContent = formatPriceValue(total);
+      calcPointsDiscount();
+      document.getElementById('total-price').textContent = formatPriceValue(total - pointsDiscount);
+      setCartCount(cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0));
+    }
+    
+    async function updateQuantity(id, delta) {
+      const item = cart.find(i => i.id === id);
+      if (!item) {
+        return;
+      }
+
+      if (isLoggedIn) {
+        try {
+          await requestJson(`/api/cart/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ quantity: item.quantity + delta }),
+          });
+          await loadCart();
+        } catch (error) {
+          console.error('Failed to update cart item:', error);
+          showCartMessage(error.message);
+        }
+        return;
+      }
+
+      const nextCart = readGuestCart()
+        .map(entry => entry.id === id ? { ...entry, quantity: entry.quantity + delta } : entry)
+        .filter(entry => entry.quantity > 0);
+      writeGuestCart(nextCart);
+      cart = nextCart.map(entry => ({ ...entry, productId: entry.id }));
+      renderCart();
+    }
+    
+    // --- 撤銷條狀態 ---
+    const UNDO_MS = 5000;
+    let undoTimer = null;
+    let lastRemoved = null;
+    function showUndo(item) {
+      lastRemoved = item;
+      const bar = document.getElementById('undo-bar');
+      const text = document.getElementById('undo-text');
+      const fill = document.getElementById('undo-progress-fill');
+      text.textContent = `已移除「${(item.name || '商品').length > 18 ? item.name.slice(0, 18) + '…' : (item.name || '商品')}」`;
+      // 重啟倒數動畫
+      fill.style.animationDuration = UNDO_MS + 'ms';
+      fill.style.animationName = 'none';
+      void fill.offsetWidth;
+      fill.style.animationName = '';
+      bar.classList.remove('hidden');
+
+      clearTimeout(undoTimer);
+      undoTimer = setTimeout(() => {
+        bar.classList.add('hidden');
+        undoTimer = null;
+      }, UNDO_MS);
+    }
+
+    async function restoreItem(item) {
+      clearTimeout(undoTimer);
+      document.getElementById('undo-bar').classList.add('hidden');
+
+      if (isLoggedIn) {
+        try {
+          await requestJson('/api/cart/add', {
+            method: 'POST',
+            body: JSON.stringify({ product_id: Number(item.productId), quantity: Number(item.quantity) }),
+          });
+          await loadCart();
+          return;
+        } catch (error) {
+          console.error('Failed to restore cart item:', error);
+          showCartMessage(error.message);
+          return;
+        }
+      }
+
+      const cur = readGuestCart();
+      cur.push({ id: Number(item.productId), name: item.name, price: Number(item.price), image: item.image, quantity: Number(item.quantity) });
+      writeGuestCart(cur);
+      cart = cur.map(entry => ({ ...entry, productId: entry.id }));
+      renderCart();
+    }
+
+    async function removeItem(id) {
+      const removed = cart.find(i => i.id === id);
+      if (!removed) return;
+
+      if (isLoggedIn) {
+        try {
+          await requestJson(`/api/cart/${id}`, { method: 'DELETE' });
+          await loadCart();
+          showUndo(removed);
+        } catch (error) {
+          console.error('Failed to remove cart item:', error);
+          showCartMessage(error.message);
+        }
+        return;
+      }
+
+      const nextCart = readGuestCart().filter(entry => entry.id !== id);
+      writeGuestCart(nextCart);
+      cart = nextCart.map(entry => ({ ...entry, productId: entry.id }));
+      renderCart();
+      showUndo(removed);
+    }
+    
+    document.getElementById('undo-button').addEventListener('click', function () {
+      if (lastRemoved) restoreItem(lastRemoved);
+    });
+
+    async function checkout() {
+      if (!isLoggedIn) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const contact_name = document.getElementById('checkout-name').value.trim();
+      const contact_phone = document.getElementById('checkout-phone').value.trim();
+      const contact_address = document.getElementById('checkout-address').value.trim();
+      const note = document.getElementById('checkout-note').value.trim();
+      const paymentRadio = document.querySelector('input[name="payment_method"]:checked');
+      const selectedPayment = paymentRadio ? paymentRadio.value : '';
+
+      if (!contact_name || !contact_phone || !contact_address) {
+        showCartMessage('請先填寫收件人姓名、電話同送貨地址。');
+        return;
+      }
+      if (!selectedPayment) {
+        showCartMessage('請選擇付款方式。');
+        return;
+      }
+
+      try {
+        const data = await requestJson('/api/orders', {
+          method: 'POST',
+          body: JSON.stringify({
+            contact_name,
+            contact_phone,
+            contact_address,
+            note,
+            payment_method: selectedPayment,
+            points_redeem: appliedRedeemPts > 0 ? appliedRedeemPts : 0,
+          }),
+        });
+
+        // 跳轉訂單確認頁（顯示收款指示）
+        window.location.href = '/order/' + data.orderId;
+      } catch (error) {
+        console.error('Checkout failed:', error);
+        showCartMessage(error.message);
+      }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async function() {
+      checkAgeVerification();
+      bindPointsUI();
+      try {
+        await loadCart();
+      } catch (error) {
+        console.error('Failed to load cart:', error);
+        showCartMessage(error.message || '載入購物車失敗');
+      }
+    });
+  </script>
+  <script src="https://cdn.lordicon.com/lordicon.js" defer></script>
+</body>
+</html>

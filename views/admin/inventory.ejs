@@ -1,0 +1,105 @@
+<div id="admin-inventory" class="space-y-3">
+  <div class="flex flex-wrap gap-2 items-end">
+    <label class="text-sm">
+      <div class="mb-1">倉庫</div>
+      <select id="inv-warehouse" class="admin-input"></select>
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">商品 ID（可選）</div>
+      <input id="inv-product-id" class="admin-input" placeholder="例如：123" />
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">SKU ID（可選）</div>
+      <input id="inv-sku-id" class="admin-input" placeholder="例如：456" />
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">由</div>
+      <input id="inv-from" class="admin-input" type="date" />
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">至</div>
+      <input id="inv-to" class="admin-input" type="date" />
+    </label>
+    <button id="inv-refresh" class="admin-btn">刷新</button>
+    <button id="inv-adjust-open" class="admin-btn-secondary" type="button">調整庫存</button>
+  </div>
+
+  <div id="inv-error" class="admin-error hidden"></div>
+
+  <div id="inv-levels-card" class="admin-card space-y-2">
+    <div class="flex items-center justify-between gap-2">
+      <div class="font-bold">庫存分佈</div>
+      <button id="inv-levels-refresh" class="admin-btn-secondary" type="button">刷新分佈</button>
+    </div>
+    <div id="inv-levels-meta" class="text-sm text-gray-700">請輸入 SKU ID 或在「調整庫存」選擇 SKU</div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>倉庫</th>
+          <th>庫存</th>
+          <th>預設</th>
+          <th>狀態</th>
+        </tr>
+      </thead>
+      <tbody id="inv-levels-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="admin-card">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>時間</th>
+          <th>商品</th>
+          <th>SKU</th>
+          <th>倉庫</th>
+          <th>類型</th>
+          <th>變動</th>
+          <th>調整前</th>
+          <th>調整後</th>
+          <th>備註</th>
+        </tr>
+      </thead>
+      <tbody id="inv-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="flex items-center gap-2 text-sm">
+    <button id="inv-prev" class="admin-btn-secondary" type="button">上一頁</button>
+    <div id="inv-page" class="text-gray-700"></div>
+    <button id="inv-next" class="admin-btn-secondary" type="button">下一頁</button>
+  </div>
+
+  <div id="inv-adjust-modal" class="hidden space-y-2 p-3 border border-gray-200 rounded">
+    <div class="font-bold">調整庫存</div>
+    <label class="text-sm block">
+      <div class="mb-1">搜尋（SKU/條碼/商品名）</div>
+      <input id="inv-sku-q" class="admin-input w-full" placeholder="例如：ABC / 490xxxx / 商品名" />
+    </label>
+    <div class="text-sm">
+      <div class="mb-1">SKU</div>
+      <select id="inv-sku-select" class="admin-input w-full"></select>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <label class="text-sm block">
+        <div class="mb-1">調整數量</div>
+        <input id="inv-delta" class="admin-input w-full" type="number" step="1" />
+      </label>
+      <label class="text-sm block">
+        <div class="mb-1">倉庫（可選）</div>
+        <select id="inv-warehouse-modal" class="admin-input w-full"></select>
+      </label>
+    </div>
+    <label class="text-sm block">
+      <div class="mb-1">備註（可選）</div>
+      <textarea id="inv-note" class="admin-input w-full" rows="2"></textarea>
+    </label>
+    <div class="flex gap-2">
+      <button id="inv-confirm" class="admin-btn" type="button">確認</button>
+      <button id="inv-cancel" class="admin-btn-secondary" type="button">取消</button>
+    </div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/inventory.js"></script>
+</div>

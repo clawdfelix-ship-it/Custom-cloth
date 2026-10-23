@@ -1,0 +1,40 @@
+<div id="admin-reconciliation" class="space-y-3">
+  <div class="flex flex-wrap gap-2 items-end">
+    <label class="text-sm">
+      <div class="mb-1">日期</div>
+      <input id="recon-date" class="admin-input" type="date" />
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">支付方式（可選）</div>
+      <input id="recon-method" class="admin-input" placeholder="例如 fps_payme" />
+    </label>
+    <button id="recon-run" class="admin-btn">生成差異表</button>
+  </div>
+
+  <div id="recon-error" class="admin-error hidden"></div>
+
+  <div class="admin-card">
+    <div class="font-bold mb-2">結果</div>
+    <div id="recon-summary" class="text-sm text-gray-700">請先選日期</div>
+  </div>
+
+  <div class="admin-grid-2">
+    <div class="admin-card">
+      <div class="font-bold mb-2">Missing Transaction（有訂單、無交易）</div>
+      <div id="recon-missing-tx" class="text-sm"></div>
+    </div>
+    <div class="admin-card">
+      <div class="font-bold mb-2">Amount Mismatch（金額不符）</div>
+      <div id="recon-mismatch" class="text-sm"></div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="font-bold mb-2">Missing Order（有交易、訂單未標 paid）</div>
+    <div id="recon-missing-order" class="text-sm"></div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/reconciliation.js"></script>
+</div>
+

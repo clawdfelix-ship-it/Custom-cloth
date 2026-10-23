@@ -1,0 +1,194 @@
+<div id="admin-reports" class="space-y-3">
+  <div class="flex flex-wrap gap-2 items-end">
+    <label class="text-sm">
+      <div class="mb-1">開始日</div>
+      <input id="rp-start" class="admin-input" type="date" />
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">結束日</div>
+      <input id="rp-end" class="admin-input" type="date" />
+    </label>
+    <label class="text-sm" id="rp-group-wrap">
+      <div class="mb-1">分組</div>
+      <select id="rp-group" class="admin-input">
+        <option value="day">日</option>
+        <option value="week">週</option>
+        <option value="month">月</option>
+      </select>
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">快速範圍</div>
+      <span id="rp-range-seg" class="inline-flex"></span>
+    </label>
+    <button id="rp-refresh" class="admin-btn" type="button">刷新</button>
+  </div>
+
+  <div id="rp-error" class="admin-error hidden"></div>
+
+  <div class="admin-card">
+    <div class="flex flex-wrap gap-1 border-b border-gray-200 mb-3" role="tablist">
+      <button class="px-3 py-1.5 text-sm rounded-t border-b-2 border-black font-bold" type="button" role="tab" data-tab="sales">銷售</button>
+      <button class="px-3 py-1.5 text-sm rounded-t border-b-2 border-transparent text-gray-600 hover:text-black" type="button" role="tab" data-tab="top">熱賣商品</button>
+      <button class="px-3 py-1.5 text-sm rounded-t border-b-2 border-transparent text-gray-600 hover:text-black" type="button" role="tab" data-tab="customers">客戶</button>
+      <button class="px-3 py-1.5 text-sm rounded-t border-b-2 border-transparent text-gray-600 hover:text-black" type="button" role="tab" data-tab="inventory">庫存</button>
+      <button class="px-3 py-1.5 text-sm rounded-t border-b-2 border-transparent text-gray-600 hover:text-black" type="button" role="tab" data-tab="coupons">優惠券</button>
+      <button class="px-3 py-1.5 text-sm rounded-t border-b-2 border-transparent text-gray-600 hover:text-black" type="button" role="tab" data-tab="tax">稅務</button>
+    </div>
+
+    <!-- 銷售 -->
+    <div id="rp-panel-sales" class="space-y-3" role="tabpanel">
+      <div class="flex justify-end">
+        <button id="rp-export" class="admin-btn-secondary" type="button">匯出訂單 CSV</button>
+      </div>
+      <div>
+        <div class="font-bold mb-2">總覽</div>
+        <div id="rp-overview" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+      </div>
+      <div class="space-y-2">
+        <div class="font-bold">銷售趨勢</div>
+        <div id="rp-sales-chart" class="overflow-x-auto"></div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>期間</th>
+              <th class="text-right">訂單數</th>
+              <th class="text-right">銷售額</th>
+              <th class="text-right">客戶數</th>
+              <th class="text-right">平均客單</th>
+            </tr>
+          </thead>
+          <tbody id="rp-sales-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 熱賣商品 -->
+    <div id="rp-panel-top" class="space-y-2 hidden" role="tabpanel">
+      <div class="font-bold">熱賣商品</div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>商品</th>
+            <th class="text-right">數量</th>
+            <th class="text-right">銷售額</th>
+          </tr>
+        </thead>
+        <tbody id="rp-top-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- 客戶 -->
+    <div id="rp-panel-customers" class="space-y-3 hidden" role="tabpanel">
+      <div id="rp-customer-summary" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+      <div class="space-y-2">
+        <div class="font-bold">新增客戶（按日）</div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th class="text-right">新增人數</th>
+            </tr>
+          </thead>
+          <tbody id="rp-new-cust-tbody"></tbody>
+        </table>
+      </div>
+      <div class="space-y-2">
+        <div class="font-bold">最高消費客戶（頭 20 名）</div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>用戶名</th>
+              <th>Email</th>
+              <th>電話</th>
+              <th class="text-right">訂單數</th>
+              <th class="text-right">總消費</th>
+            </tr>
+          </thead>
+          <tbody id="rp-top-cust-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 庫存 -->
+    <div id="rp-panel-inventory" class="space-y-3 hidden" role="tabpanel">
+      <div class="flex flex-wrap gap-2 items-end">
+        <label class="text-sm flex items-center gap-2">
+          <input id="rp-inv-low" type="checkbox" />
+          <span>只顯示低庫存（≤ 10 件）</span>
+        </label>
+        <button id="rp-inv-search" class="admin-btn-secondary" type="button">篩選</button>
+      </div>
+      <div id="rp-inv-summary" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>商品</th>
+            <th class="text-right">售價</th>
+            <th class="text-right">成本價</th>
+            <th class="text-right">庫存</th>
+            <th class="text-right">庫存成本</th>
+          </tr>
+        </thead>
+        <tbody id="rp-inv-tbody"></tbody>
+      </table>
+      <div class="flex flex-wrap gap-2 items-center justify-between">
+        <div id="rp-inv-page-info" class="text-sm text-gray-600"></div>
+        <div class="flex gap-2">
+          <button id="rp-inv-prev" class="admin-btn-secondary" type="button">上一頁</button>
+          <button id="rp-inv-next" class="admin-btn-secondary" type="button">下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 優惠券 -->
+    <div id="rp-panel-coupons" class="space-y-2 hidden" role="tabpanel">
+      <div class="font-bold">優惠券使用情況</div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>代碼</th>
+            <th>類型</th>
+            <th class="text-right">面值</th>
+            <th class="text-right">已用次數</th>
+            <th class="text-right">關聯訂單金額</th>
+          </tr>
+        </thead>
+        <tbody id="rp-coupon-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- 稅務 -->
+    <div id="rp-panel-tax" class="space-y-3 hidden" role="tabpanel">
+      <div class="flex flex-wrap gap-2 items-end">
+        <label class="text-sm">
+          <div class="mb-1">月份（YYYY-MM）</div>
+          <input id="rp-tax-month" class="admin-input" type="month" />
+        </label>
+        <span class="text-sm text-gray-500">或</span>
+        <label class="text-sm">
+          <div class="mb-1">年份（YYYY）</div>
+          <input id="rp-tax-year" class="admin-input" type="number" min="2000" max="2100" step="1" placeholder="2026" />
+        </label>
+        <button id="rp-tax-search" class="admin-btn-secondary" type="button">查詢</button>
+        <button id="rp-tax-export" class="admin-btn-secondary" type="button">匯出稅務 CSV</button>
+      </div>
+      <div id="rp-tax-summary" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th class="text-right">訂單數</th>
+            <th class="text-right">商品金額</th>
+            <th class="text-right">運費</th>
+            <th class="text-right">總額</th>
+            <th class="text-right">客戶數</th>
+          </tr>
+        </thead>
+        <tbody id="rp-tax-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/reports.js"></script>
+</div>

@@ -1,0 +1,1593 @@
+{
+  "generatedAt": "2026-09-19T03:34:44.415Z",
+  "source": "https://mzakka.com/pc/detail/category.php",
+  "note": "Real product taxonomy. Facet/brand/promotion nodes excluded; see data/mzakka-product-canonical-category-plan.md",
+  "roots": [
+    {
+      "id": 1792,
+      "name": "ローション・クリーナー",
+      "children": [
+        {
+          "id": 1793,
+          "name": "ノーマル",
+          "children": []
+        },
+        {
+          "id": 1799,
+          "name": "オナホ用",
+          "children": []
+        },
+        {
+          "id": 1797,
+          "name": "アナル用",
+          "children": []
+        },
+        {
+          "id": 1795,
+          "name": "ホット・クール",
+          "children": []
+        },
+        {
+          "id": 2149,
+          "name": "洗い不要ローション",
+          "children": []
+        },
+        {
+          "id": 2296,
+          "name": "感度アップ",
+          "children": []
+        },
+        {
+          "id": 2644,
+          "name": "元気系",
+          "children": []
+        },
+        {
+          "id": 2198,
+          "name": "愛液ローション",
+          "children": []
+        },
+        {
+          "id": 3172,
+          "name": "唾液ローション",
+          "children": []
+        },
+        {
+          "id": 2515,
+          "name": "肌に優しい",
+          "children": []
+        },
+        {
+          "id": 2696,
+          "name": "消臭・抗菌",
+          "children": []
+        },
+        {
+          "id": 2697,
+          "name": "〇〇ローション",
+          "children": []
+        },
+        {
+          "id": 1798,
+          "name": "お風呂用",
+          "children": []
+        },
+        {
+          "id": 2362,
+          "name": "高粘度",
+          "children": []
+        },
+        {
+          "id": 2563,
+          "name": "ソフト",
+          "children": []
+        },
+        {
+          "id": 2648,
+          "name": "粘度・潤い持続",
+          "children": []
+        },
+        {
+          "id": 2065,
+          "name": "大容量（1Ｌ以上）",
+          "children": []
+        },
+        {
+          "id": 2293,
+          "name": "携帯サイズ",
+          "children": []
+        },
+        {
+          "id": 2389,
+          "name": "膣ケア",
+          "children": []
+        },
+        {
+          "id": 2653,
+          "name": "注入式",
+          "children": []
+        },
+        {
+          "id": 1796,
+          "name": "特殊",
+          "children": []
+        },
+        {
+          "id": 1800,
+          "name": "クリーナー・パウダー",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 1801,
+      "name": "オナホール・おっぱい",
+      "children": [
+        {
+          "id": 2810,
+          "name": "タイプ・サイズ別",
+          "children": [
+            {
+              "id": 2814,
+              "name": "中型・大型トルソーホール",
+              "children": []
+            },
+            {
+              "id": 2815,
+              "name": "据え置き型ホール",
+              "children": []
+            },
+            {
+              "id": 2816,
+              "name": "大型ホール",
+              "children": []
+            },
+            {
+              "id": 2817,
+              "name": "中型ホール",
+              "children": []
+            },
+            {
+              "id": 2818,
+              "name": "小型ホール",
+              "children": []
+            },
+            {
+              "id": 2819,
+              "name": "ミニホール",
+              "children": []
+            },
+            {
+              "id": 2820,
+              "name": "カップホール",
+              "children": []
+            },
+            {
+              "id": 2821,
+              "name": "電動ホール",
+              "children": []
+            },
+            {
+              "id": 2822,
+              "name": "ドール専用ホール",
+              "children": []
+            },
+            {
+              "id": 2823,
+              "name": "おっぱい",
+              "children": []
+            },
+            {
+              "id": 2824,
+              "name": "メンテナンス・アクセサリ",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1808,
+      "name": "ダッチ・抱き枕・ドール",
+      "children": [
+        {
+          "id": 1810,
+          "name": "抱き枕",
+          "children": [
+            {
+              "id": 2576,
+              "name": "抱き枕本体",
+              "children": []
+            },
+            {
+              "id": 2514,
+              "name": "抱き枕カバー",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1809,
+          "name": "ダッチ",
+          "children": [
+            {
+              "id": 2319,
+              "name": "エアダッチ",
+              "children": []
+            },
+            {
+              "id": 2321,
+              "name": "高級ダッチ",
+              "children": []
+            },
+            {
+              "id": 2676,
+              "name": "お尻型ダッチ",
+              "children": []
+            },
+            {
+              "id": 2368,
+              "name": "ダッチ用オナホール",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2262,
+          "name": "ドール",
+          "children": [
+            {
+              "id": 2618,
+              "name": "シリコンドール",
+              "children": []
+            },
+            {
+              "id": 2619,
+              "name": "ぬいぐるみドール",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1811,
+      "name": "バイブ・電マ・ディルド",
+      "children": [
+        {
+          "id": 1816,
+          "name": "デンマ（電マ）",
+          "children": [
+            {
+              "id": 2568,
+              "name": "本体",
+              "children": []
+            },
+            {
+              "id": 2569,
+              "name": "アタッチメント",
+              "children": []
+            },
+            {
+              "id": 2380,
+              "name": "マッサージャー",
+              "children": []
+            },
+            {
+              "id": 2288,
+              "name": "ハンディタイプ",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2081,
+          "name": "ディルド",
+          "children": [
+            {
+              "id": 2120,
+              "name": "シングル",
+              "children": []
+            },
+            {
+              "id": 2121,
+              "name": "ダブル（双頭）",
+              "children": []
+            },
+            {
+              "id": 2122,
+              "name": "電動ディルド",
+              "children": []
+            },
+            {
+              "id": 2123,
+              "name": "ペニスバンド（ペニバン）",
+              "children": []
+            },
+            {
+              "id": 2384,
+              "name": "吸盤付き",
+              "children": []
+            },
+            {
+              "id": 2649,
+              "name": "芯（骨格）入り・二層構造",
+              "children": []
+            },
+            {
+              "id": 2555,
+              "name": "ガラス製ディルド",
+              "children": []
+            },
+            {
+              "id": 2621,
+              "name": "二穴挿入用",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1813,
+          "name": "バイブ:スモール",
+          "children": []
+        },
+        {
+          "id": 1814,
+          "name": "バイブ:ミドル",
+          "children": []
+        },
+        {
+          "id": 1815,
+          "name": "バイブ:ラージ",
+          "children": []
+        },
+        {
+          "id": 2377,
+          "name": "Gスポ刺激",
+          "children": []
+        },
+        {
+          "id": 2192,
+          "name": "1本バイブ",
+          "children": []
+        },
+        {
+          "id": 2363,
+          "name": "クリバイブ付き",
+          "children": []
+        },
+        {
+          "id": 2645,
+          "name": "回転玉(パール)入り",
+          "children": []
+        },
+        {
+          "id": 2461,
+          "name": "ピストンバイブ",
+          "children": []
+        },
+        {
+          "id": 2403,
+          "name": "防水",
+          "children": []
+        },
+        {
+          "id": 2646,
+          "name": "温感バイブ",
+          "children": []
+        },
+        {
+          "id": 2340,
+          "name": "バイブ固定具",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 1820,
+      "name": "ローター・クリ,乳首責め",
+      "children": [
+        {
+          "id": 1821,
+          "name": "ローター:エッグ",
+          "children": [
+            {
+              "id": 2381,
+              "name": "単体",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1822,
+          "name": "ローター:スティック",
+          "children": []
+        },
+        {
+          "id": 1823,
+          "name": "ローター:無線・リモコン",
+          "children": [
+            {
+              "id": 2382,
+              "name": "コードレス",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2103,
+          "name": "ローター　ツイン、トリプル",
+          "children": []
+        },
+        {
+          "id": 2354,
+          "name": "ローター:乳首",
+          "children": []
+        },
+        {
+          "id": 2577,
+          "name": "クリトリス吸引",
+          "children": []
+        },
+        {
+          "id": 1825,
+          "name": "ローター:防水",
+          "children": []
+        },
+        {
+          "id": 2566,
+          "name": "指装着型ローター",
+          "children": []
+        },
+        {
+          "id": 1824,
+          "name": "ローター:特殊",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 1826,
+      "name": "コンドーム",
+      "children": [
+        {
+          "id": 2506,
+          "name": "極うすタイプ",
+          "children": [
+            {
+              "id": 2507,
+              "name": "0.01ミリ",
+              "children": []
+            },
+            {
+              "id": 2508,
+              "name": "0.02ミリ",
+              "children": []
+            },
+            {
+              "id": 2509,
+              "name": "0.03ミリ",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1827,
+          "name": "ノーマル",
+          "children": []
+        },
+        {
+          "id": 1828,
+          "name": "ホット&クール",
+          "children": [
+            {
+              "id": 2516,
+              "name": "ホット",
+              "children": []
+            },
+            {
+              "id": 2517,
+              "name": "クール",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1829,
+          "name": "凹凸",
+          "children": []
+        },
+        {
+          "id": 1830,
+          "name": "ビッグ&スモール",
+          "children": []
+        },
+        {
+          "id": 2290,
+          "name": "スタミナ系",
+          "children": []
+        },
+        {
+          "id": 2505,
+          "name": "ぴったりフィット系",
+          "children": []
+        },
+        {
+          "id": 2412,
+          "name": "業務用",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 1831,
+      "name": "アナル",
+      "children": [
+        {
+          "id": 1832,
+          "name": "アナル用ローション・洗浄器",
+          "children": []
+        },
+        {
+          "id": 2364,
+          "name": "ローター",
+          "children": []
+        },
+        {
+          "id": 1834,
+          "name": "スティック・バイブ",
+          "children": [
+            {
+              "id": 2282,
+              "name": "アナルビーズ",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1835,
+          "name": "プラグ・ストッパー",
+          "children": [
+            {
+              "id": 2564,
+              "name": "電動",
+              "children": []
+            },
+            {
+              "id": 2629,
+              "name": "拡張系",
+              "children": []
+            },
+            {
+              "id": 2628,
+              "name": "しっぽ付",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1836,
+          "name": "指サック",
+          "children": []
+        },
+        {
+          "id": 1833,
+          "name": "エネマグラ系",
+          "children": [
+            {
+              "id": 2322,
+              "name": "電動エネマグラ",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1837,
+      "name": "サポートグッズ",
+      "children": [
+        {
+          "id": 1838,
+          "name": "リング・サック",
+          "children": [
+            {
+              "id": 2423,
+              "name": "プレイサック",
+              "children": []
+            },
+            {
+              "id": 2673,
+              "name": "ローター付サック",
+              "children": []
+            },
+            {
+              "id": 2424,
+              "name": "プレイリング",
+              "children": []
+            },
+            {
+              "id": 2562,
+              "name": "バイブリング",
+              "children": []
+            },
+            {
+              "id": 2565,
+              "name": "睾丸締め",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1839,
+          "name": "増強具・ポンプ",
+          "children": [
+            {
+              "id": 2366,
+              "name": "ポンプ",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1840,
+          "name": "包茎改善",
+          "children": []
+        },
+        {
+          "id": 1922,
+          "name": "女性用サポートグッズ",
+          "children": [
+            {
+              "id": 2700,
+              "name": "膣トレ",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1841,
+      "name": "SM・拘束具",
+      "children": [
+        {
+          "id": 3199,
+          "name": "SMセット",
+          "children": []
+        },
+        {
+          "id": 1842,
+          "name": "アイマスク",
+          "children": []
+        },
+        {
+          "id": 1843,
+          "name": "クリップ（乳首）",
+          "children": []
+        },
+        {
+          "id": 1844,
+          "name": "医療",
+          "children": []
+        },
+        {
+          "id": 1845,
+          "name": "口枷",
+          "children": [
+            {
+              "id": 2624,
+              "name": "ボールギャグ",
+              "children": []
+            },
+            {
+              "id": 2626,
+              "name": "リング口枷",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1846,
+          "name": "手枷・手錠",
+          "children": []
+        },
+        {
+          "id": 1847,
+          "name": "首枷・首輪",
+          "children": []
+        },
+        {
+          "id": 1848,
+          "name": "全身拘束・複数拘束",
+          "children": []
+        },
+        {
+          "id": 1849,
+          "name": "足枷・腿枷",
+          "children": []
+        },
+        {
+          "id": 1850,
+          "name": "縄・ロープ・チェーン",
+          "children": []
+        },
+        {
+          "id": 2343,
+          "name": "拘束テープ",
+          "children": []
+        },
+        {
+          "id": 2000,
+          "name": "鞭（ムチ）",
+          "children": [
+            {
+              "id": 2335,
+              "name": "バラムチ",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2623,
+          "name": "鼻フック",
+          "children": []
+        },
+        {
+          "id": 2187,
+          "name": "貞操帯",
+          "children": []
+        },
+        {
+          "id": 2738,
+          "name": "尿道責め（ニョドニー）CBT",
+          "children": []
+        },
+        {
+          "id": 2487,
+          "name": "コスチューム（SM・ボンデージ）",
+          "children": []
+        },
+        {
+          "id": 1888,
+          "name": "大型器具",
+          "children": []
+        },
+        {
+          "id": 2001,
+          "name": "その他",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 1851,
+      "name": "ラブサプリ,コスメ,匂い",
+      "children": [
+        {
+          "id": 2046,
+          "name": "女性用サプリメント",
+          "children": [
+            {
+              "id": 2407,
+              "name": "感度アップ",
+              "children": []
+            },
+            {
+              "id": 2409,
+              "name": "媚〇",
+              "children": []
+            },
+            {
+              "id": 2294,
+              "name": "塗り系",
+              "children": []
+            },
+            {
+              "id": 3039,
+              "name": "乳首用",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2045,
+          "name": "男性用サプリメント",
+          "children": [
+            {
+              "id": 2295,
+              "name": "ドリンク",
+              "children": []
+            },
+            {
+              "id": 2365,
+              "name": "粒タイプ",
+              "children": []
+            },
+            {
+              "id": 2404,
+              "name": "元気系",
+              "children": []
+            },
+            {
+              "id": 2405,
+              "name": "持続力系",
+              "children": []
+            },
+            {
+              "id": 2408,
+              "name": "ペニスクリーム",
+              "children": []
+            },
+            {
+              "id": 3040,
+              "name": "乳首用",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2040,
+          "name": "フェチ系匂いアイテム",
+          "children": [
+            {
+              "id": 2413,
+              "name": "淫臭系",
+              "children": []
+            },
+            {
+              "id": 2414,
+              "name": "女の子の匂い",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2263,
+          "name": "ソープ・バスグッズ",
+          "children": []
+        },
+        {
+          "id": 2415,
+          "name": "フェロモン系",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 1852,
+      "name": "コスチューム",
+      "children": [
+        {
+          "id": 2095,
+          "name": "男性用",
+          "children": [
+            {
+              "id": 2139,
+              "name": "おとこの娘",
+              "children": []
+            },
+            {
+              "id": 2326,
+              "name": "ブラジャー",
+              "children": []
+            },
+            {
+              "id": 2324,
+              "name": "ショーツ",
+              "children": []
+            },
+            {
+              "id": 2329,
+              "name": "ブラ&ショーツ",
+              "children": []
+            },
+            {
+              "id": 2328,
+              "name": "ベビードール",
+              "children": []
+            },
+            {
+              "id": 2327,
+              "name": "ストッキング",
+              "children": []
+            },
+            {
+              "id": 2428,
+              "name": "リング付きランジェリー",
+              "children": []
+            },
+            {
+              "id": 2692,
+              "name": "ペニスサック付",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1877,
+          "name": "水着・スイムウエア",
+          "children": [
+            {
+              "id": 2556,
+              "name": "スクール水着・スク水",
+              "children": []
+            },
+            {
+              "id": 2557,
+              "name": "ビキニ",
+              "children": []
+            },
+            {
+              "id": 2558,
+              "name": "競泳水着・ワンピース",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1853,
+          "name": "ランジェリー",
+          "children": [
+            {
+              "id": 2163,
+              "name": "フルバックショーツ",
+              "children": []
+            },
+            {
+              "id": 2178,
+              "name": "ハーフバックショーツ",
+              "children": []
+            },
+            {
+              "id": 2164,
+              "name": "Tバックショーツ",
+              "children": []
+            },
+            {
+              "id": 2634,
+              "name": "Oバックショーツ",
+              "children": []
+            },
+            {
+              "id": 2168,
+              "name": "男性用",
+              "children": []
+            },
+            {
+              "id": 2633,
+              "name": "紐パン",
+              "children": []
+            },
+            {
+              "id": 2165,
+              "name": "縞パン・ボーダーショーツ",
+              "children": []
+            },
+            {
+              "id": 2166,
+              "name": "パイル地ショーツ",
+              "children": []
+            },
+            {
+              "id": 2385,
+              "name": "柄ショーツ",
+              "children": []
+            },
+            {
+              "id": 2169,
+              "name": "穴あきショーツ",
+              "children": []
+            },
+            {
+              "id": 2278,
+              "name": "パール付",
+              "children": []
+            },
+            {
+              "id": 2138,
+              "name": "ローターポケット付ランジェリー",
+              "children": []
+            },
+            {
+              "id": 2180,
+              "name": "ガーターベルト",
+              "children": []
+            },
+            {
+              "id": 2172,
+              "name": "ブラジャー（ノーマル）",
+              "children": []
+            },
+            {
+              "id": 2170,
+              "name": "スポーツブラ",
+              "children": []
+            },
+            {
+              "id": 2179,
+              "name": "オープンブラ",
+              "children": []
+            },
+            {
+              "id": 2171,
+              "name": "ブラジャー＆ショーツ",
+              "children": []
+            },
+            {
+              "id": 2182,
+              "name": "テディ",
+              "children": []
+            },
+            {
+              "id": 2190,
+              "name": "キャミソール、ベビードール",
+              "children": []
+            },
+            {
+              "id": 2226,
+              "name": "ビスチェ",
+              "children": []
+            },
+            {
+              "id": 2266,
+              "name": "ガウン",
+              "children": []
+            },
+            {
+              "id": 2181,
+              "name": "シースルー",
+              "children": []
+            },
+            {
+              "id": 2167,
+              "name": "Lサイズ以上",
+              "children": []
+            },
+            {
+              "id": 2194,
+              "name": "マイクロビキニ・スリングショット",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1854,
+          "name": "体操着・チアガール",
+          "children": []
+        },
+        {
+          "id": 1855,
+          "name": "ナース",
+          "children": []
+        },
+        {
+          "id": 1856,
+          "name": "セーラー服・制服",
+          "children": [
+            {
+              "id": 2416,
+              "name": "セーラー",
+              "children": []
+            },
+            {
+              "id": 2417,
+              "name": "ブレザー",
+              "children": []
+            },
+            {
+              "id": 2418,
+              "name": "お仕事服",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1857,
+          "name": "バニー・レオタード・ボディコン",
+          "children": []
+        },
+        {
+          "id": 1858,
+          "name": "メイド服・エプロン",
+          "children": [
+            {
+              "id": 2702,
+              "name": "メイド服",
+              "children": []
+            },
+            {
+              "id": 2701,
+              "name": "エプロン",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 1859,
+          "name": "アニメ・ゲーム",
+          "children": []
+        },
+        {
+          "id": 2269,
+          "name": "サンタ・巫女",
+          "children": [
+            {
+              "id": 2511,
+              "name": "サンタ",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2272,
+          "name": "オフィス系",
+          "children": []
+        },
+        {
+          "id": 2371,
+          "name": "ドレス・チャイナ・プリンセス系",
+          "children": []
+        },
+        {
+          "id": 2300,
+          "name": "パジャマ・ルームウェア",
+          "children": []
+        },
+        {
+          "id": 2733,
+          "name": "ハロウィン",
+          "children": []
+        },
+        {
+          "id": 2030,
+          "name": "ソックス・ストッキング",
+          "children": [
+            {
+              "id": 2345,
+              "name": "ボディストッキング",
+              "children": []
+            },
+            {
+              "id": 2346,
+              "name": "ハイソックス・ニーハイ",
+              "children": []
+            },
+            {
+              "id": 2419,
+              "name": "パンスト",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2486,
+          "name": "手袋・グローブ",
+          "children": []
+        },
+        {
+          "id": 2488,
+          "name": "SM・ボンデージコスチューム",
+          "children": []
+        },
+        {
+          "id": 2055,
+          "name": "使用済み系コスチューム",
+          "children": [
+            {
+              "id": 2420,
+              "name": "下着",
+              "children": []
+            },
+            {
+              "id": 2421,
+              "name": "ストッキング",
+              "children": []
+            },
+            {
+              "id": 2422,
+              "name": "洋服",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2651,
+          "name": "極薄・スケスケ生地",
+          "children": []
+        },
+        {
+          "id": 2281,
+          "name": "アクセサリー",
+          "children": []
+        },
+        {
+          "id": 2426,
+          "name": "ウィッグ",
+          "children": []
+        },
+        {
+          "id": 2056,
+          "name": "ダッチワイフ・ドール用",
+          "children": []
+        },
+        {
+          "id": 2479,
+          "name": "TATTOO（タトゥ）シール",
+          "children": []
+        },
+        {
+          "id": 1860,
+          "name": "風俗店向け業務用",
+          "children": []
+        },
+        {
+          "id": 1903,
+          "name": "その他",
+          "children": [
+            {
+              "id": 2427,
+              "name": "着物",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1861,
+      "name": "書籍・雑貨",
+      "children": [
+        {
+          "id": 1869,
+          "name": "書籍",
+          "children": []
+        },
+        {
+          "id": 1870,
+          "name": "雑貨",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": 1865,
+      "name": "業務用",
+      "children": [
+        {
+          "id": 1866,
+          "name": "風俗店向け業務用",
+          "children": []
+        },
+        {
+          "id": 2235,
+          "name": "液体消耗品",
+          "children": [
+            {
+              "id": 2238,
+              "name": "ローション",
+              "children": []
+            },
+            {
+              "id": 2239,
+              "name": "ソープ",
+              "children": []
+            },
+            {
+              "id": 2390,
+              "name": "オイル",
+              "children": []
+            },
+            {
+              "id": 2240,
+              "name": "うがい・口内洗浄",
+              "children": []
+            },
+            {
+              "id": 2241,
+              "name": "詰め替え用空容器",
+              "children": []
+            },
+            {
+              "id": 2242,
+              "name": "その他",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2236,
+          "name": "店舗消耗品",
+          "children": [
+            {
+              "id": 2245,
+              "name": "手袋・指サック",
+              "children": []
+            },
+            {
+              "id": 2243,
+              "name": "その他",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 2237,
+          "name": "店舗雑貨・備品",
+          "children": [
+            {
+              "id": 2246,
+              "name": "マット",
+              "children": []
+            },
+            {
+              "id": 2247,
+              "name": "すけべ椅子",
+              "children": []
+            },
+            {
+              "id": 2244,
+              "name": "その他",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "facetGroupIds": {
+    "ranking": {
+      "1792": 2111,
+      "1801": 2108,
+      "1808": 2113,
+      "1811": 2116,
+      "1820": 2124,
+      "1826": 2126,
+      "1831": 2129,
+      "1837": 2132,
+      "1841": 2134,
+      "1851": 2136,
+      "1852": 2140
+    },
+    "makerByRoot": {
+      "1801": 1934,
+      "1852": 2025
+    },
+    "onaholeTypeGroup": 2810,
+    "onaholeFacetGroups": {
+      "feature": 2811,
+      "material": 2812,
+      "package": 2813
+    },
+    "globalMaker": 1957,
+    "globalSale": 1862
+  },
+  "excludedNodes": {
+    "1792": [
+      {
+        "id": 2111,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 1794,
+        "name": "色・味・香り",
+        "reason": "facet-name"
+      },
+      {
+        "id": 2350,
+        "name": "ペペ",
+        "reason": "curated-facet"
+      }
+    ],
+    "1801": [
+      {
+        "id": 2108,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 1934,
+        "name": "メーカー別",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2811,
+        "name": "特徴・内部構造別",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2812,
+        "name": "素材別",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2813,
+        "name": "パッケージタイプ別",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 1807,
+        "name": "TENGA",
+        "reason": "curated-facet"
+      }
+    ],
+    "1808": [
+      {
+        "id": 2113,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      }
+    ],
+    "1811": [
+      {
+        "id": 2116,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 1817,
+        "name": "LELO",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 1812,
+        "name": "オルガスター",
+        "reason": "curated-facet"
+      }
+    ],
+    "1820": [
+      {
+        "id": 2124,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2352,
+        "name": "飛っ子",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2410,
+        "name": "海外ブランド",
+        "reason": "curated-facet"
+      }
+    ],
+    "1826": [
+      {
+        "id": 2126,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2494,
+        "name": "オカモト",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2495,
+        "name": "サガミ",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2496,
+        "name": "ジェクス",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2497,
+        "name": "不二ラテックス",
+        "reason": "curated-facet"
+      }
+    ],
+    "1831": [
+      {
+        "id": 2129,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2765,
+        "name": "PRO-Eシリーズ",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2342,
+        "name": "メテオール",
+        "reason": "curated-facet"
+      }
+    ],
+    "1837": [
+      {
+        "id": 2132,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      }
+    ],
+    "1841": [
+      {
+        "id": 2134,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2094,
+        "name": "紅椿シリーズ",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2042,
+        "name": "激感シリーズ",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2043,
+        "name": "SMart[スマート]シリーズ",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2041,
+        "name": "虜シリーズ",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2044,
+        "name": "ERO TAPE",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2161,
+        "name": "LELO・PicoBong",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2159,
+        "name": "黒猫館",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2625,
+        "name": "SMVIPシリーズ",
+        "reason": "curated-facet"
+      }
+    ],
+    "1851": [
+      {
+        "id": 2136,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2736,
+        "name": "軽減税率適用商品",
+        "reason": "curated-facet"
+      }
+    ],
+    "1852": [
+      {
+        "id": 2140,
+        "name": "ランキング",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2480,
+        "name": "むにむに製作所（女の子変身アイテム）",
+        "reason": "curated-facet"
+      },
+      {
+        "id": 2025,
+        "name": "メーカー、ブランド別",
+        "reason": "curated-facet"
+      }
+    ],
+    "1861": [],
+    "1865": []
+  },
+  "stats": {
+    "roots": 13,
+    "totalNodes": 257,
+    "maxDepth": 3,
+    "duplicateIds": [],
+    "bannedNameHits": []
+  }
+}

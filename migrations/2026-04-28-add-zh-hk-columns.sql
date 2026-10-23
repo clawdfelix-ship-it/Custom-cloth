@@ -1,0 +1,9 @@
+ALTER TABLE products ADD COLUMN IF NOT EXISTS name_zh_hk VARCHAR(255);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS description_zh_hk TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description_zh_hk TEXT;
+
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS name_zh_hk VARCHAR(100);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS description_zh_hk TEXT;
+
+ALTER TABLE brands ADD COLUMN IF NOT EXISTS name_zh_hk VARCHAR(100);
+ALTER TABLE brands ADD COLUMN IF NOT EXISTS description_zh_hk TEXT;

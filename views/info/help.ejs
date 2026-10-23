@@ -1,0 +1,43 @@
+<%- include('../partials/info-top') %>
+
+<p>第一次喺 OHYA2.0 購物？以下集合咗落單、付款、送貨及售後嘅重點，幫你快速了解成個流程。</p>
+
+<div class="grid gap-4 sm:grid-cols-2">
+  <a href="/shipping" class="block rounded-xl border border-ink-600 bg-ink-800 p-5 transition hover:border-gold/50 hover:shadow-card">
+    <h3 class="mt-0 text-gold-light">🚚 送貨安排</h3>
+    <p class="text-sm text-gray-400">日本入口 → 香港倉庫 → 順豐到付，整體約 <%= store.shipping.etaDays %> 個工作天，保密包裝。</p>
+  </a>
+  <a href="/payment" class="block rounded-xl border border-ink-600 bg-ink-800 p-5 transition hover:border-gold/50 hover:shadow-card">
+    <h3 class="mt-0 text-gold-light">💳 付款方式</h3>
+    <p class="text-sm text-gray-400">轉數快 FPS 或 HSBC 銀行轉帳，付款後 <%= store.payment.proofWindowHours %> 小時內提交證明核實。</p>
+  </a>
+  <a href="/returns" class="block rounded-xl border border-ink-600 bg-ink-800 p-5 transition hover:border-gold/50 hover:shadow-card">
+    <h3 class="mt-0 text-gold-light">↩️ 退換須知</h3>
+    <p class="text-sm text-gray-400">新品瑕疵 7 天內可跟進；已拆封／使用商品基於衛生不設退換。</p>
+  </a>
+  <a href="/faq" class="block rounded-xl border border-ink-600 bg-ink-800 p-5 transition hover:border-gold/50 hover:shadow-card">
+    <h3 class="mt-0 text-gold-light">❓ 常見問題</h3>
+    <p class="text-sm text-gray-400">落單、運費、追蹤、正貨、缺貨補貨等常見疑問一覽。</p>
+  </a>
+  <a href="/wholesale" class="block rounded-xl border border-ink-600 bg-ink-800 p-5 transition hover:border-gold/50 hover:shadow-card">
+    <h3 class="mt-0 text-gold-light">🏢 批發分銷</h3>
+    <p class="text-sm text-gray-400">零售店舖、網店及合資格商戶批發合作，BR 審批後享批發價；首次合作 50% 訂金、貨到香港收餘額。</p>
+  </a>
+  <a href="/contact" class="block rounded-xl border border-ink-600 bg-ink-800 p-5 transition hover:border-gold/50 hover:shadow-card">
+    <h3 class="mt-0 text-gold-light">💬 聯絡我們</h3>
+    <p class="text-sm text-gray-400">WhatsApp <%= store.contact.whatsappDisplay %>｜<%= store.contact.email %></p>
+  </a>
+</div>
+
+<h2>落單流程（4 步）</h2>
+<ol>
+  <li>將商品加入購物車並前往結帳，填寫收件資料。</li>
+  <li>選擇 FPS 或銀行轉帳，按<a href="/payment">付款方式</a>頁資料過數。</li>
+  <li>於 <%= store.payment.proofWindowHours %> 小時內把付款截圖連訂單號碼 WhatsApp／電郵給我們。</li>
+  <li>確認收款後安排日本入口，到港後順豐到付派送，全程約 <%= store.shipping.etaDays %> 個工作天。</li>
+</ol>
+
+<h2>需要幫手？</h2>
+<p>WhatsApp：<a href="<%= store.contact.whatsappLink %>" target="_blank" rel="noopener"><%= store.contact.whatsappDisplay %></a>　｜　電郵：<a href="mailto:<%= store.contact.email %>"><%= store.contact.email %></a></p>
+
+<%- include('../partials/info-bottom') %>

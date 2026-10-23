@@ -1,0 +1,38 @@
+<div id="admin-operation-logs" class="space-y-3">
+  <div id="ol-error" class="admin-error hidden"></div>
+
+  <div class="admin-card space-y-2">
+    <div class="font-bold">管理員操作日誌</div>
+    <div class="text-sm opacity-70">只讀審計記錄，權限由後端 requireSuperAdmin 把關。</div>
+    <div class="flex flex-wrap gap-2 items-end">
+      <label class="text-sm">
+        <div class="mb-1">管理員 ID</div>
+        <input id="ol-admin-id" class="admin-input" placeholder="例如 1，可留空" inputmode="numeric" />
+      </label>
+      <button id="ol-search" class="admin-btn" type="button">查詢</button>
+      <button id="ol-clear" class="admin-btn-secondary" type="button">清空條件</button>
+      <button id="ol-refresh" class="admin-btn-secondary" type="button">刷新</button>
+    </div>
+  </div>
+
+  <div class="admin-card space-y-3">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>時間</th>
+          <th>管理員</th>
+          <th>動作</th>
+          <th>對象類型</th>
+          <th>對象 ID</th>
+          <th>IP</th>
+          <th>變更內容</th>
+        </tr>
+      </thead>
+      <tbody id="ol-tbody"></tbody>
+    </table>
+    <div id="ol-pagination" class="flex flex-wrap gap-2 items-center"></div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/operation-logs.js"></script>
+</div>

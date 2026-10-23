@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/mzakka-theme.css">
+  <link rel="stylesheet" href="/css/interactions.css">
+  <%- include('partials/theme-head') %>
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+    }
+    .jpn-bracket::before { content: '【'; }
+    .jpn-bracket::after { content: '】'; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .modal-animate {
+      animation: slideDown 0.3s ease-out;
+    }
+  </style>
+</head>
+<body class="mz-body min-h-screen text-gray-200">
+
+  <%- include('partials/age-modal') %>
+
+  <%- include('partials/header') %>
+
+  <div id="mz-wrapper" class="mz-wrapper max-w-7xl mx-auto px-2 mt-4 mb-4">
+    <div class="mz-3col">
+      <%- include('partials/sidebar-left') %>
+
+      <div id="wrap_center" class="min-w-0">
+  <div class="max-w-md mx-auto px-0 py-10">
+    <div class="bg-ink-850 rounded-xl shadow-lg p-8 border border-ink-600">
+      <h1 class="text-2xl font-bold text-center mb-8 jpn-bracket inline-block w-full">會員註冊</h1>
+      
+      <% if (error) { %>
+        <div class="bg-wine/15 border border-gold/40 text-gold px-4 py-3 rounded-lg mb-6 text-sm">
+          <%= error %>
+        </div>
+      <% } %>
+      
+      <% const registerFormData = typeof formData !== 'undefined' && formData ? formData : {}; %>
+      <form method="POST" action="/register">
+        <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-300 mb-2">用戶名</label>
+          <input type="text" name="username" value="<%= registerFormData.username || '' %>" required class="w-full border-2 border-gray-600 rounded-lg px-4 py-3 bg-ink-800 text-gray-100 placeholder-gray-500 focus:border-gold focus:outline-none transition" placeholder="您的用戶名">
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-300 mb-2">電郵地址</label>
+          <input type="email" name="email" value="<%= registerFormData.email || '' %>" required class="w-full border-2 border-gray-600 rounded-lg px-4 py-3 bg-ink-800 text-gray-100 placeholder-gray-500 focus:border-gold focus:outline-none transition" placeholder="your@email.com">
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-300 mb-2">密碼</label>
+          <input type="password" name="password" required class="w-full border-2 border-gray-600 rounded-lg px-4 py-3 bg-ink-800 text-gray-100 placeholder-gray-500 focus:border-gold focus:outline-none transition" placeholder="••••••••">
+        </div>
+        
+        <button type="submit" class="w-full bg-wine text-white py-3 rounded-lg font-bold hover:bg-wine transition text-lg">
+          註冊
+        </button>
+      </form>
+      
+      <div class="mt-6 text-center text-sm text-gray-400">
+        已經有帳戶？
+        <a href="/login" class="text-gold font-medium hover:underline">立即登入</a>
+      </div>
+    </div>
+  </div>
+
+      </div>
+
+      <%- include('partials/sidebar-right') %>
+    </div>
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <script>
+    // Age Verification
+    function checkAgeVerification() {
+      const verified = localStorage.getItem('ageVerified');
+      if (!verified) {
+        document.getElementById('ageModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function verifyAge(isAdult) {
+      if (isAdult) {
+        localStorage.setItem('ageVerified', 'true');
+        document.getElementById('ageModal').classList.add('hidden');
+        document.body.style.overflow = '';
+      } else {
+        window.location.href = 'https://www.google.com';
+      }
+    }
+
+    function toggleCategories() {
+      const list = document.getElementById('catList');
+      const toggle = document.getElementById('catToggle');
+      if (!list || !toggle) return;
+      const hidden = list.classList.contains('hidden');
+      if (hidden) {
+        list.classList.remove('hidden');
+        toggle.textContent = '▲';
+      } else {
+        list.classList.add('hidden');
+        toggle.textContent = '▼';
+      }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAgeVerification();
+    });
+  </script>
+</body>
+</html>

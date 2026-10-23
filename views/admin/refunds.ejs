@@ -1,0 +1,53 @@
+<div id="admin-refunds" class="space-y-3">
+  <div class="flex flex-wrap gap-2 items-end">
+    <label class="text-sm">
+      <div class="mb-1">狀態</div>
+      <select id="refunds-status" class="admin-input">
+        <option value="">全部</option>
+        <option value="pending">待審批</option>
+        <option value="approved">已批准</option>
+        <option value="completed">已完成</option>
+        <option value="rejected">已拒絕</option>
+      </select>
+    </label>
+    <label class="text-sm">
+      <div class="mb-1">搜尋（訂單號/ID）</div>
+      <input id="refunds-q" class="admin-input" placeholder="例如：HK2026... / 123" />
+    </label>
+    <button id="refunds-refresh" class="admin-btn">刷新</button>
+  </div>
+
+  <div id="refunds-error" class="admin-error hidden"></div>
+
+  <div class="admin-card">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>訂單</th>
+          <th>金額</th>
+          <th>狀態</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="refunds-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ============ 退款詳情彈窗 ============ -->
+  <div id="refund-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-3xl max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl">
+      <div class="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+        <div class="font-bold text-lg">退款詳情</div>
+        <button id="refund-modal-close" type="button" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-4">
+        <div id="refund-detail" class="text-sm text-gray-700">請喺列表揀一張退款單</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/refunds.js"></script>
+</div>
+

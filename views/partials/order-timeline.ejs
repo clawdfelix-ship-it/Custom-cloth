@@ -1,0 +1,17 @@
+<%# 訂單狀態時間軸 — 共用組件
+   必傳：timeline（lib/orderTimeline.buildTimeline 產出）
+   可選：compact=true 桌面橫向（4 節點並排），否則手機/桌面都用縱向
+-%>
+<% if (timeline) { %>
+<ol class="mz-timeline" role="list" aria-label="訂單進度時間軸">
+  <% timeline.steps.forEach(function(s){ %>
+    <li class="mz-timeline-step is-<%= s.status %>">
+      <span class="mz-timeline-dot <%= s.status === 'current' ? 'is-current' : '' %>" aria-hidden="true"></span>
+      <div class="mz-timeline-meta is-<%= s.status === 'pending' ? 'pending' : 'done' %>">
+        <div class="mz-timeline-meta-title"><%= s.label %></div>
+        <div class="mz-timeline-meta-time"><%= s.time %></div>
+      </div>
+    </li>
+  <% }) %>
+</ol>
+<% } %>

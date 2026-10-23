@@ -1,0 +1,67 @@
+<%- include('../partials/info-top') %>
+
+<h2>港澳成人用品批發 / 分銷</h2>
+<p><strong><%= store.company.nameZh %></strong>（<%= store.company.nameEn %>）旗下 OHYA2.0，由日本引入多款正貨成人用品及生活雜貨，<strong>以批發分銷為主要業務</strong>。我們歡迎香港、澳門及各地嘅零售店舖、網店、以及合資格商戶查詢批發分銷安排；審批通過後，即可以更優惠嘅批發價採購產品。</p>
+
+<div class="grid gap-4 sm:grid-cols-3">
+  <div class="rounded-xl border border-ink-600 bg-ink-800 p-5">
+    <h3 class="mt-0 text-gold-light">產品種類</h3>
+    <p class="text-sm text-gray-300">男士用品、女士用品、情趣玩具、安全套、潤滑液、情趣內衣及個人護理用品等，貨源由日本入口。</p>
+  </div>
+  <div class="rounded-xl border border-ink-600 bg-ink-800 p-5">
+    <h3 class="mt-0 text-gold-light">申請資格</h3>
+    <p class="text-sm text-gray-300">須持有有效商業登記（如香港 BR），業務與成人用品、零售、藥房、網店或相關批發分銷有關。</p>
+  </div>
+  <div class="rounded-xl border border-ink-600 bg-ink-800 p-5">
+    <h3 class="mt-0 text-gold-light">100% 正品正貨</h3>
+    <p class="text-sm text-gray-300">由日本直接採購，嚴選貨源，確保商戶取得正貨，並可配合穩定補貨。</p>
+  </div>
+</div>
+
+<h2>批發付款條款</h2>
+<p>批發訂單與零售不同，採用<strong>訂金＋尾數</strong>方式，以配合由日本入口嘅貨期：</p>
+<table>
+  <thead>
+    <tr><th>階段</th><th>付款安排</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>首次合作・落單時</strong></td>
+      <td>先收 <strong>50% 訂金</strong>，確認訂單後開始由日本安排入口。</td>
+    </tr>
+    <tr>
+      <td><strong>貨到香港倉庫</strong></td>
+      <td>貨品抵港後通知客戶，<strong>收取其餘 50% 餘額</strong>。</td>
+    </tr>
+    <tr>
+      <td><strong>收款後</strong></td>
+      <td>確認尾數到帳後，再由香港以順豐寄出（本地運費到付），或安排送貨／自取。</td>
+    </tr>
+  </tbody>
+</table>
+<p class="text-sm text-gray-400">※ 付款方式為轉數快 FPS 或銀行轉帳（HSBC），收款資料可參考<a href="/payment">付款方式</a>。後續合作嘅付款安排可按雙方協議調整。</p>
+
+<h2>批發合作流程</h2>
+<ol>
+  <li>WhatsApp 或電郵聯絡我們，說明店舖／公司名稱及業務性質。</li>
+  <li>提供有效商業登記證（BR）或同等商業證明作審批。</li>
+  <li>審批通過後，我們提供批發價及產品目錄。</li>
+  <li>確認訂單，支付 50% 訂金，開始由日本入口。</li>
+  <li>貨到香港倉庫後通知你繳付餘下 50%，收款後隨即安排寄出。</li>
+</ol>
+
+<h2>申請所需資料</h2>
+<p>請將以下資料 WhatsApp 至 <a href="<%= store.contact.whatsappLink %>" target="_blank" rel="noopener"><%= store.contact.whatsappDisplay %></a>，或電郵 <a href="mailto:<%= store.contact.email %>"><%= store.contact.email %></a>。收到資料後，我們一般會於<strong>2 個工作天內</strong>與你聯絡：</p>
+<ul>
+  <li>公司／店舖名稱</li>
+  <li>公司聯絡地址、電話、公司網頁（如有）</li>
+  <li>業務類別（零售舖、網店、藥房、分銷等）</li>
+  <li>有效商業登記證（BR）副本</li>
+  <li>申請人／採購聯絡資料</li>
+</ul>
+
+<div class="rounded-lg border border-wine/40 bg-wine/10 p-4 text-sm text-gold-light">
+  查詢批發價及目錄，請直接 WhatsApp 聯絡：<a href="<%= store.contact.whatsappLink %>" target="_blank" rel="noopener"><%= store.contact.whatsappDisplay %></a>
+</div>
+
+<%- include('../partials/info-bottom') %>

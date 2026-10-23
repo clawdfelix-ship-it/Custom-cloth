@@ -1,0 +1,56 @@
+<div id="admin-suppliers" class="space-y-3">
+  <div id="sup-error" class="admin-error hidden"></div>
+
+  <div class="flex flex-wrap gap-2 items-center justify-between">
+    <div class="font-bold">供應商列表</div>
+    <button id="sup-create" class="admin-btn" type="button">新增供應商</button>
+  </div>
+
+  <div class="admin-card">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>名稱</th>
+          <th>聯絡</th>
+          <th>Email</th>
+          <th>狀態</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="sup-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ============ 新增 / 編輯供應商彈窗 ============ -->
+  <div id="sup-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl">
+      <div class="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+        <div class="font-bold text-lg" id="sup-modal-title">新增 / 編輯供應商</div>
+        <button id="sup-modal-close" type="button" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-4">
+        <div class="grid grid-cols-2 gap-2">
+          <input id="sup-id" class="admin-input hidden" />
+          <input id="sup-name" class="admin-input col-span-2" placeholder="供應商名稱" />
+          <input id="sup-contact-name" class="admin-input" placeholder="聯絡人" />
+          <input id="sup-contact-phone" class="admin-input" placeholder="電話" />
+          <input id="sup-email" class="admin-input" placeholder="Email" />
+          <input id="sup-payment-terms" class="admin-input" placeholder="付款條款" />
+          <input id="sup-address" class="admin-input col-span-2" placeholder="地址" />
+          <textarea id="sup-notes" class="admin-input col-span-2" rows="2" placeholder="備註"></textarea>
+          <label class="text-sm col-span-2 flex items-center gap-2">
+            <input id="sup-active" type="checkbox" />
+            <span>啟用</span>
+          </label>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button id="sup-save" class="admin-btn" type="button">儲存</button>
+          <button id="sup-reset" class="admin-btn-secondary" type="button">清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/suppliers.js"></script>
+</div>

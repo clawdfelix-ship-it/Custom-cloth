@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> · OHYA2.0 後台</title>
+  <meta name="csrf-token" content="<%= csrfToken || '' %>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/mzakka-theme.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/touch-ui.css">
+  <script src="/js/touch-ui.js" defer></script>
+</head>
+<body class="mz-body min-h-screen text-gray-900">
+  <%
+    const perms = (session && session.adminPermissions) ? session.adminPermissions : [];
+    const isSuperAdmin = !!(session && session.isAdmin);
+    function hasPerm(required) {
+      if (isSuperAdmin) return true;
+      if (!required) return true;
+      const reqs = Array.isArray(required) ? required : [required];
+      if (perms.includes('*')) return true;
+      return reqs.every((r) => {
+        if (perms.includes(r)) return true;
+        const idx = String(r).indexOf(':');
+        if (idx > 0) {
+          const prefix = String(r).slice(0, idx);
+          if (perms.includes(prefix + ':*')) return true;
+        }
+        return false;
+      });
+    }
+    const adminName = (session && (session.adminName || session.username)) || '管理員';
+
+    // 單線 SVG icon 庫（stroke 1.75，currentColor）— 對標 Polaris 線圖標
+    const I = (p) => `<svg class="ad-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${p}</svg>`;
+    const ICONS = {
+      dashboard: I('<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>'),
+      orders: I('<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/>'),
+      returns: I('<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/>'),
+      refunds: I('<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
+      products: I('<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>'),
+      categories: I('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'),
+      brands: I('<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 3 12V5a2 2 0 0 1 2-2h7a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.6z"/><circle cx="7.5" cy="7.5" r="1.2"/>'),
+      reviews: I('<path d="M12 2l3 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.9 21l1.2-6.8-5-4.9 6.9-1z"/>'),
+      coupons: I('<path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M13 7v10" stroke-dasharray="2 2"/>'),
+      flash: I('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+      affiliates: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+      cart: I('<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>'),
+      blog: I('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
+      inventory: I('<path d="M3 21h18M5 21V7l7-4 7 14"/><path d="M9 21v-6h6v6"/>'),
+      lowstock: I('<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>'),
+      warehouses: I('<path d="M3 21V8l9-5 9 5v13"/><path d="M3 21h18"/><path d="M9 21v-6h6v6"/>'),
+      suppliers: I('<path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="1.5"/><circle cx="18.5" cy="18.5" r="1.5"/>'),
+      purchaseorders: I('<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h3"/>'),
+      bulkskus: I('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+      users: I('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+      tags: I('<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 3 12V5a2 2 0 0 1 2-2h7a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.6z"/><circle cx="7.5" cy="7.5" r="1.2"/>'),
+      reconciliation: I('<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M12 10h2M16 10h.01M8 14h.01M12 14h2M16 14h.01M8 18h.01M12 18h2M16 18h.01"/>'),
+      reports: I('<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>'),
+      shippingmethods: I('<path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="1.5"/><circle cx="18.5" cy="18.5" r="1.5"/>'),
+      pickup: I('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
+      paymentmethods: I('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>'),
+      settings: I('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+      operationlogs: I('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>'),
+    };
+    // 用 key 對應 icon（容許 key 同 icon id 唔同，例如 flash-sales → flash）
+    const iconFor = (key) => {
+      const map = { 'flash-sales':'flash', 'abandoned-carts':'cart', 'low-stock':'lowstock', 'shipping-methods':'shippingmethods', 'payment-methods':'paymentmethods', 'purchase-orders':'purchaseorders', 'bulk-skus':'bulkskus', 'user-tags':'tags', 'operation-logs':'operationlogs' };
+      return ICONS[map[key] || key] || '';
+    };
+
+    const groups = [
+      { label: '概覽', items: [
+        { key: 'dashboard', href: '/admin', label: '總覽' },
+      ]},
+      { label: '銷售', perm: 'orders:read', items: [
+        { key: 'orders', href: '/admin/orders', label: '訂單', perm: 'orders:read' },
+        { key: 'returns', href: '/admin/returns', label: '售後', perm: 'returns:read' },
+        { key: 'refunds', href: '/admin/refunds', label: '退款', perm: 'refunds:read' },
+      ]},
+      { label: '商品', perm: 'catalog:read', items: [
+        { key: 'products', href: '/admin/products', label: '商品', perm: 'catalog:read' },
+        { key: 'categories', href: '/admin/categories', label: '分類', perm: 'catalog:read' },
+        { key: 'brands', href: '/admin/brands', label: '品牌', perm: 'catalog:read' },
+        { key: 'reviews', href: '/admin/reviews', label: '評論審核', perm: 'catalog:write' },
+      ]},
+      { label: '營銷', items: [
+        { key: 'coupons', href: '/admin/coupons', label: '優惠券' },
+        { key: 'flash-sales', href: '/admin/flash-sales', label: '閃購' },
+        { key: 'affiliates', href: '/admin/affiliates', label: '聯盟營銷' },
+        { key: 'abandoned-carts', href: '/admin/abandoned-carts', label: '遺棄購物車' },
+        { key: 'blog', href: '/admin/blog', label: '網誌' },
+      ]},
+      { label: '庫存與採購', perm: 'inventory:read', items: [
+        { key: 'inventory', href: '/admin/inventory', label: '庫存', perm: 'inventory:read' },
+        { key: 'low-stock', href: '/admin/low-stock', label: '低庫存', perm: 'inventory:read' },
+        { key: 'warehouses', href: '/admin/warehouses', label: '倉庫', perm: 'inventory:write' },
+        { key: 'suppliers', href: '/admin/suppliers', label: '供應商', perm: 'inventory:write' },
+        { key: 'purchase-orders', href: '/admin/purchase-orders', label: '採購單', perm: 'inventory:write' },
+        { key: 'bulk-skus', href: '/admin/bulk-skus', label: '批量更新', perm: 'inventory:bulk' },
+        { key: 'wholesale-match', href: '/admin/wholesale-match', label: '批發比對覆核', perm: 'catalog:read' },
+      ]},
+      { label: '客戶與財務', items: [
+        { key: 'users', href: '/admin/users', label: '用戶', perm: 'users:manage' },
+        { key: 'user-tags', href: '/admin/user-tags', label: '用戶標籤' },
+        { key: 'reconciliation', href: '/admin/reconciliation', label: '對賬', perm: 'reconciliation:read' },
+        { key: 'reports', href: '/admin/reports', label: '報表', perm: 'reports:read' },
+      ]},
+      { label: '配送與支付', items: [
+        { key: 'shipping-methods', href: '/admin/shipping-methods', label: '運送方式' },
+        { key: 'pickup-points', href: '/admin/pickup-points', label: '提貨點' },
+        { key: 'payment-methods', href: '/admin/payment-methods', label: '支付方式' },
+      ]},
+      { label: '系統', adminOnly: true, items: [
+        { key: 'settings', href: '/admin/settings', label: '系統設定' },
+        { key: 'operation-logs', href: '/admin/operation-logs', label: '操作日誌' },
+      ]},
+    ];
+  %>
+  <div class="mx-auto max-w-[1400px] px-2 pb-6 pt-3 sm:px-4">
+    <div class="admin-top flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <button type="button" id="admin-nav-toggle" class="admin-nav-toggle" aria-label="開啟選單" aria-expanded="false" aria-controls="admin-nav">
+          <svg class="ad-svg admin-burger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+            <path class="bg-top" d="M4 7h16"/>
+            <path class="bg-mid" d="M4 12h16"/>
+            <path class="bg-bot" d="M4 17h16"/>
+          </svg>
+        </button>
+        <div class="admin-brand">OHYA2.0 <small>商家管理後台</small></div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/" target="_blank" rel="noopener" class="hidden text-sm font-medium text-gray-500 hover:text-[#008060] sm:inline">查看前台 ↗</a>
+        <span class="hidden text-sm text-gray-500 md:inline"><%= adminName %></span>
+        <form method="POST" action="/admin/logout" class="m-0">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+          <button class="admin-btn-secondary !min-h-0 !py-1.5 text-xs">登出</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-shell">
+      <div id="admin-nav-backdrop" class="admin-nav-backdrop"></div>
+      <div class="admin-grid">
+        <nav id="admin-nav" class="admin-nav" aria-label="後台導航">
+          <% groups.forEach(group => {
+            const visible = group.items.filter(it => {
+              if (it.adminOnly || group.adminOnly) return isSuperAdmin;
+              return hasPerm(it.perm || group.perm);
+            });
+            if (!visible.length) return;
+          %>
+            <div class="admin-nav-group"><%= group.label %></div>
+            <% visible.forEach(it => { %>
+              <a class="admin-link <%= active === it.key ? 'active' : '' %>" href="<%= it.href %>">
+                <span class="admin-link-icon" aria-hidden="true"><%- iconFor(it.key) %></span><span><%= it.label %></span>
+              </a>
+            <% }); %>
+          <% }); %>
+        </nav>
+        <main class="admin-main">
+          <h1 class="admin-page-title"><%= title %></h1>
+          <%- include(content) %>
+        </main>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var btn = document.getElementById('admin-nav-toggle');
+    if (!btn) return;
+    var nav = document.getElementById('admin-nav');
+    var backdrop = document.getElementById('admin-nav-backdrop');
+    function setOpen(open) {
+      document.body.classList.toggle('admin-nav-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? '關閉選單' : '開啟選單');
+      document.body.style.overflow = open ? 'hidden' : '';
+    }
+    function isOpen() { return document.body.classList.contains('admin-nav-open'); }
+    btn.addEventListener('click', function () { setOpen(!isOpen()); });
+    backdrop.addEventListener('click', function () { setOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+    nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { setOpen(false); }); });
+
+    // 手機版：表格包一層橫向捲軸容器，避免溢出頁面（桌面版無影響）
+    document.querySelectorAll('.admin-main table').forEach(function (t) {
+      if (t.parentElement && t.parentElement.classList.contains('admin-table-wrap')) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'admin-table-wrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    });
+  })();
+  </script>
+</body>
+</html>

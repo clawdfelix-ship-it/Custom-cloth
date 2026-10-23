@@ -1,0 +1,15 @@
+<% const mobileSelectedName = typeof selectedCategorySlug === 'string' && selectedCategorySlug !== 'all' && Array.isArray(categories)
+  ? (categories.find((cat) => cat.slug === selectedCategorySlug)?.name || null)
+  : null; %>
+
+<div class="mb-4 lg:hidden" data-mobile-category-drawer>
+  <button type="button" class="flex w-full items-center justify-between rounded-2xl border border-ink-600 bg-ink-850 px-4 py-3 text-left shadow-card" data-category-sheet-open>
+    <span>
+      <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">商品分類</span>
+      <span class="mt-1 block text-sm font-bold text-gray-100"><%= mobileSelectedName || '展開全部分類' %></span>
+    </span>
+    <span class="rounded-full bg-wine/15 px-3 py-1 text-xs font-bold text-gold-light">篩選</span>
+  </button>
+  <%# 分類資料島已全頁統一放喺 partials/mobile-tabbar（[data-category-tree-json]）；
+      category-sheet.js 亦由 tabbar 全頁載入，呢度唔再重複，避免雙島/雙綁定。 %>
+</div>

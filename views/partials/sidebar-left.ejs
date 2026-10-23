@@ -1,0 +1,67 @@
+<% const categoryTreeData = Array.isArray(categoriesTree) ? categoriesTree : []; %>
+<% const specialEntries = Array.isArray(categorySpecials) ? categorySpecials : []; %>
+<% const activeSlug = typeof selectedCategorySlug === 'string' ? selectedCategorySlug : null; %>
+<%
+  function nodeContainsActive(node, slug) {
+    if (!node || !slug) return false;
+    if (node.slug === slug) return true;
+    return Array.isArray(node.children) && node.children.some((child) => nodeContainsActive(child, slug));
+  }
+%>
+<aside id="wrap_left" class="hidden lg:block lg:w-64 lg:flex-shrink-0">
+  <div class="sticky top-24">
+    <div class="overflow-hidden rounded-2xl border border-ink-600 bg-ink-850 shadow-card">
+      <div class="border-b border-ink-600 px-4 py-4">
+        <div class="mz-display text-sm font-black text-white">商品分類</div>
+        <p class="mt-1 text-xs text-gray-400">預設展開第一層，想再深入可以逐級展開。</p>
+      </div>
+
+      <div class="max-h-[calc(100vh-10rem)] overflow-y-auto px-3 py-3">
+        <a href="/products?page=1" class="<%= !activeSlug || activeSlug === 'all' ? 'bg-wine/15 text-gold-light border-gold/40' : 'border-transparent text-gray-300 hover:bg-ink-700' %> mb-2 flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-semibold transition">
+          <span>全部商品</span>
+          <span class="text-xs text-gray-500"><%= ((categories || [])[0] && categories[0].count) || 0 %></span>
+        </a>
+
+        <div class="space-y-2" data-sidebar-accordion>
+          <% categoryTreeData.forEach(cat => { %>
+            <%- include('category-tree-node', { node: cat, depth: 0, activeSlug, nodeContainsActive }) %>
+          <% }) %>
+        </div>
+
+        <% if (specialEntries.length) { %>
+          <div class="mb-2 mt-3 px-1 text-[11px] font-black uppercase tracking-wider text-gray-500">特別專區</div>
+          <div class="space-y-2">
+            <% specialEntries.forEach(sp => { %>
+              <a href="/products?category=<%= sp.slug %>&page=1" class="<%= activeSlug === sp.slug ? 'bg-wine/15 text-gold-light border-gold/40' : 'border-transparent text-gray-300 hover:bg-ink-700' %> flex items-center justify-between rounded-xl border px-3 py-2.5 text-sm font-semibold transition">
+                <span><%= sp.name %></span>
+                <span class="text-xs text-gray-500"><%= sp.count %></span>
+              </a>
+            <% }) %>
+          </div>
+          <p class="mt-2 px-1 text-[11px] leading-relaxed text-gray-600">專區商品會同上面分類重疊。</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<script>
+  (function initSidebarAccordion() {
+    const root = document.querySelector('[data-sidebar-accordion]');
+    if (!root) return;
+    const items = Array.from(root.querySelectorAll('[data-sidebar-root]'));
+    items.forEach((item) => {
+      item.addEventListener('toggle', () => {
+        if (!item.open) return;
+        const opened = items.filter((entry) => entry.open);
+        if (opened.length <= 2) return;
+        for (const entry of opened) {
+          if (entry !== item && opened.length > 2) {
+            entry.open = false;
+            opened.splice(opened.indexOf(entry), 1);
+          }
+        }
+      });
+    });
+  })();
+</script>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <%- include('../partials/head', { title }) %>
+  <link rel="stylesheet" href="/css/customizer.css">
+</head>
+<body class="min-h-screen text-zinc-100">
+  <%- include('../partials/header') %>
+
+  <main class="mx-auto max-w-7xl px-4 py-6">
+    <div id="customizer-app" class="customizer-shell">
+      <aside class="customizer-panel">
+        <div class="text-xs font-bold uppercase tracking-[0.18em] text-gold">Build</div>
+        <h1 class="mt-2 text-xl font-black text-white">模板玩法編輯器</h1>
+        <p class="mt-2 text-sm text-gray-400">載入模板家族、part variants 同 preview compositor 中。</p>
+      </aside>
+
+      <section class="customizer-preview">
+        <div class="customizer-preview__toolbar">
+          <div class="customizer-preview__status">
+            <span class="customizer-preview__status-label">Template Family</span>
+            <span class="customizer-preview__status-value">0</span>
+          </div>
+        </div>
+        <div class="customizer-preview__stage">
+          <canvas class="customizer-preview__canvas" aria-label="前幅 Preview"></canvas>
+          <div class="customizer-preview__overlay">
+            <div class="customizer-preview__title">前幅 Preview</div>
+            <div class="customizer-preview__meta">載入 catalog 同 session 中</div>
+            <div class="customizer-preview__hint">body / sleeve / collar 玩法會喺頁面初始化後接管。</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="customizer-panel">
+        <div class="text-xs font-bold uppercase tracking-[0.18em] text-gold">Finalize</div>
+        <div class="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-gray-300">
+          文字、logo、roster、pricing 同 submit 狀態會喺呢度顯示。
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script id="customizer-bootstrap" type="application/json"><%- JSON.stringify(customizerBootstrap || {}) %></script>
+  <script src="/js/customizer/api.js"></script>
+  <script src="/js/customizer/state.js"></script>
+  <script src="/js/customizer/catalog.js"></script>
+  <script src="/js/customizer/editor.js"></script>
+  <script src="/js/customizer/compositor.js"></script>
+  <script src="/js/customizer/app.js"></script>
+  <%- include('../partials/footer') %>
+</body>
+</html>

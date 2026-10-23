@@ -1,0 +1,61 @@
+<div id="admin-brands" class="space-y-3">
+  <div id="brand-error" class="admin-error hidden"></div>
+
+  <div class="flex flex-wrap gap-2 items-center justify-between">
+    <div class="font-bold">品牌列表</div>
+    <button id="brand-create" class="admin-btn" type="button">新增品牌</button>
+  </div>
+
+  <div class="admin-card">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>品牌</th>
+          <th>Slug</th>
+          <th>產品數</th>
+          <th>排序</th>
+          <th>狀態</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="brand-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ============ 新增 / 編輯品牌彈窗 ============ -->
+  <div id="brand-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl">
+      <div class="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+        <div class="font-bold text-lg" id="brand-modal-title">新增 / 編輯品牌</div>
+        <button id="brand-modal-close" type="button" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-4">
+        <div class="grid grid-cols-2 gap-2">
+          <input id="brand-id" class="admin-input hidden" />
+          <input id="brand-name" class="admin-input col-span-2" placeholder="品牌名稱（必填）" />
+          <input id="brand-slug" class="admin-input col-span-2" placeholder="Slug（英文網址代碼，必填，例如 brand-name）" />
+          <input id="brand-image-url" class="admin-input col-span-2" placeholder="品牌圖片網址" />
+          <input id="brand-website" class="admin-input col-span-2" placeholder="品牌官方網站網址" />
+          <textarea id="brand-description" class="admin-input col-span-2" rows="3" placeholder="品牌描述"></textarea>
+          <div class="col-span-2 flex items-center gap-2">
+            <label class="text-sm flex items-center gap-2">
+              <span>排序（數字越細越前）</span>
+            </label>
+            <input id="brand-sort-order" class="admin-input w-24" type="number" value="0" />
+          </div>
+          <label class="text-sm col-span-2 flex items-center gap-2">
+            <input id="brand-active" type="checkbox" />
+            <span>啟用</span>
+          </label>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button id="brand-save" class="admin-btn" type="button">儲存</button>
+          <button id="brand-reset" class="admin-btn-secondary" type="button">清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/brands.js"></script>
+</div>

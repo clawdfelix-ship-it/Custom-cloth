@@ -1,0 +1,52 @@
+  <div id="ageModal" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center hidden"
+       role="dialog" aria-modal="true" aria-labelledby="ageModalTitle" aria-describedby="ageModalDesc">
+    <div class="modal-animate rounded-lg border border-ink-600 bg-ink-850 p-8 max-w-md w-full mx-4 text-center shadow-luxe">
+      <div class="text-5xl mb-4">🔞</div>
+      <h2 id="ageModalTitle" class="mz-display text-2xl font-black mb-4 text-white"><%= t('age.title') %></h2>
+      <p id="ageModalDesc" class="text-gray-400 mb-6 whitespace-pre-line"><%= t('age.desc') %></p>
+      <div class="flex gap-4 justify-center">
+        <button type="button" onclick="verifyAge(true)" class="bg-wine hover:bg-wine-light text-white font-bold py-3 px-10 rounded-lg transition text-lg">
+          <%= t('common.yes') %>
+        </button>
+        <button type="button" onclick="verifyAge(false)" class="bg-ink-700 hover:bg-ink-600 text-gray-300 font-bold py-3 px-10 rounded-lg transition text-lg border border-ink-500">
+          <%= t('common.no') %>
+        </button>
+      </div>
+      <p class="text-xs text-gray-500 mt-6">選擇「否」將無法繼續瀏覽本網站。</p>
+    </div>
+  </div>
+  <script>
+    // P8：年齡 modal 鍵盤可達——Esc 等同「否」，打開時聚焦確認掣
+    (function () {
+      function initAgeModalKeys() {
+        var modal = document.getElementById('ageModal');
+        if (!modal || modal.dataset.keysBound === '1') return;
+        modal.dataset.keysBound = '1';
+        document.addEventListener('keydown', function (e) {
+          if (modal.classList.contains('hidden')) return;
+          if (e.key === 'Escape' && typeof window.verifyAge === 'function') {
+            window.verifyAge(false);
+          }
+        });
+        // modal 由隱藏→顯示果一下先聚焦「是」一次（用 MutationObserver 偵測 class，
+        // 唔再每 300ms 搶焦點，否則用戶 Tab 到「否」會被扯返）
+        var wasHidden = modal.classList.contains('hidden');
+        function syncFocus() {
+          var hidden = modal.classList.contains('hidden');
+          if (wasHidden && !hidden) {
+            var yes = modal.querySelector('button');
+            if (yes) yes.focus({ preventScroll: true });
+          }
+          wasHidden = hidden;
+        }
+        if (typeof MutationObserver !== 'undefined') {
+          new MutationObserver(syncFocus).observe(modal, { attributes: true, attributeFilter: ['class'] });
+        } else {
+          setInterval(syncFocus, 300); // 舊瀏覽器 fallback
+        }
+        syncFocus();
+      }
+      if (document.readyState !== 'loading') initAgeModalKeys();
+      else document.addEventListener('DOMContentLoaded', initAgeModalKeys);
+    })();
+  </script>

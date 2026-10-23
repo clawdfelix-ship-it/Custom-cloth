@@ -1,0 +1,40 @@
+{
+  "name": "mzakka-ecommerce",
+  "version": "1.0.0",
+  "description": "Full-featured Hong Kong e-commerce website",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "node --test ./test/*.test.js",
+    "crawl:mzakka:new": "node scripts/crawl-mzakka-new-items.js --pages 1 --out ./tmp/mzakka-new.jsonl",
+    "assets:download": "node scripts/download-mzakka-assets.js",
+    "assets:verify": "node scripts/verify-mzakka-assets.js",
+    "import:mzakka": "node scripts/import-mzakka-to-postgres.js --dry-run --limit 1",
+    "rebuild:categories": "node scripts/rebuild-categories-from-mzakka.js --limit 200 --concurrency 6 --delay-ms 150",
+    "rebuild:categories:by-category:dry": "node scripts/rebuild-categories-for-category.js --dry-run",
+    "rebuild:categories:by-category": "node scripts/rebuild-categories-for-category.js",
+    "gallery:cleanup:dry": "node scripts/cleanup-gallery-images.js --dry-run",
+    "gallery:cleanup": "node scripts/cleanup-gallery-images.js",
+    "products:deactivate-ended:dry": "node scripts/deactivate-ended-products.js --dry-run",
+    "products:deactivate-ended": "node scripts/deactivate-ended-products.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^9.0.1",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "dotenv": "^16.4.5",
+    "ejs": "^5.0.2",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.5.1",
+    "express-session": "^1.18.0",
+    "helmet": "^8.1.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^10.0.10",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

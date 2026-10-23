@@ -1,0 +1,32 @@
+<div id="admin-low-stock" class="space-y-3">
+  <div class="flex flex-wrap gap-2 items-end">
+    <label class="text-sm">
+      <div class="mb-1">低庫存門檻</div>
+      <input id="ls-threshold" class="admin-input" type="number" step="1" min="0" value="5" />
+    </label>
+    <button id="ls-refresh" class="admin-btn">刷新</button>
+    <button id="ls-export" class="admin-btn-secondary" type="button">匯出 CSV</button>
+  </div>
+
+  <div id="ls-error" class="admin-error hidden"></div>
+
+  <div class="admin-card">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>商品</th>
+          <th>SKU</th>
+          <th>條碼</th>
+          <th>庫存</th>
+          <th>更新時間</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="ls-tbody"></tbody>
+    </table>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/low-stock.js"></script>
+</div>
+

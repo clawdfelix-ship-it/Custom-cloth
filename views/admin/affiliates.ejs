@@ -1,0 +1,67 @@
+<div id="admin-affiliates" class="space-y-3">
+  <div id="af-error" class="admin-error hidden"></div>
+
+  <div class="flex flex-wrap gap-2 items-center justify-between">
+    <div class="font-bold">聯盟會員列表</div>
+    <button id="af-create" class="admin-btn" type="button">新增聯盟會員</button>
+  </div>
+
+  <!-- ============ 聯盟會員（KOL）新增彈窗 ============ -->
+  <div id="af-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl max-h-[90vh] overflow-auto rounded-xl bg-white shadow-2xl">
+      <div class="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+        <div class="font-bold text-lg" id="af-modal-title">新增聯盟會員（KOL）</div>
+        <button id="af-modal-close" type="button" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="p-4">
+        <div class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <input id="af-user-id" class="admin-input" type="number" min="1" placeholder="用戶 ID" />
+            <input id="af-code" class="admin-input" placeholder="聯盟追蹤碼（例如 KOLCHAN）" />
+            <input id="af-commission-rate" class="admin-input" type="number" step="0.01" min="0" placeholder="佣金百分比（%）" />
+            <select id="af-status" class="admin-input">
+              <option value="pending">待審核</option>
+              <option value="active">啟用</option>
+              <option value="suspended">暫停</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button id="af-save" class="admin-btn" type="button">建立</button>
+            <button id="af-reset" class="admin-btn-secondary" type="button">清空</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-card space-y-2">
+    <div class="flex items-center gap-2">
+      <label class="text-sm">篩選狀態：</label>
+      <select id="af-filter" class="admin-input" style="width:auto;">
+        <option value="">全部</option>
+        <option value="pending">待審核</option>
+        <option value="active">啟用</option>
+        <option value="suspended">暫停</option>
+      </select>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>追蹤碼</th>
+          <th>用戶</th>
+          <th>佣金率</th>
+          <th>轉換數</th>
+          <th>累計佣金</th>
+          <th>已付佣金</th>
+          <th>狀態</th>
+          <th>建立時間</th>
+        </tr>
+      </thead>
+      <tbody id="af-tbody"></tbody>
+    </table>
+  </div>
+
+  <script src="/js/admin/common.js"></script>
+  <script src="/js/admin/affiliates.js"></script>
+</div>

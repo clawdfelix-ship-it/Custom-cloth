@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/mzakka-theme.css">
+  <link rel="stylesheet" href="/css/interactions.css">
+  <link rel="stylesheet" href="/css/range-slider.css">
+  <%# bottom-sheet.css / bottom-sheet.js / category-sheet.js 已由 mobile-tabbar 全頁載入，呢度唔重複 %>
+  <%- include('partials/theme-head') %>
+  <meta name="csrf-token" content="<%= csrfToken || '' %>">
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    .jpn-bracket { position: relative; padding: 0 1em; }
+    .jpn-bracket::before, .jpn-bracket::after {
+      content: ''; position: absolute; top: 50%; width: 0.4em; height: 1em;
+      border: 2px solid #dc2626; transform: translateY(-50%);
+    }
+    .jpn-bracket::before { left: 0; border-right: none; }
+    .jpn-bracket::after { right: 0; border-left: none; }
+    .modal-animate { animation: modalPop 0.3s ease-out; }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="mz-body min-h-screen text-gray-200" data-logged-in="<%= user ? '1' : '0' %>">
+  <%- include('partials/age-modal') %>
+
+  <%- include('partials/header') %>
+
+  <div id="mz-wrapper" class="max-w-7xl mx-auto px-3 py-6">
+    <div class="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-6">
+      <%- include('partials/sidebar-left') %>
+
+      <div id="wrap_center" class="min-w-0">
+  <main class="px-0 py-0">
+    <section class="mb-6 rounded-3xl border border-ink-600 bg-ink-850 p-5 shadow-sm">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Product Listing</p>
+          <h1 class="mt-2 text-3xl font-black text-white"><%= selectedCategory && selectedCategory !== '全部商品' ? selectedCategory : '全部商品' %></h1>
+          <p class="mt-2 text-sm text-gray-500">齊全貨品任你揀，支援分類篩選同排序，輕鬆搵到心水商品。</p>
+        </div>
+        <div class="rounded-2xl bg-ink-800 px-4 py-3 text-sm text-gray-500">
+          已找到 <span class="font-black text-white"><%= (typeof total === 'number' ? total : products.length) %></span> 件商品
+        </div>
+      </div>
+    </section>
+
+    <%- include('partials/category-mobile-drawer') %>
+
+    <%# Facet 篩選：價格區間 + 現貨 %>
+    <form class="mb-6 rounded-2xl border border-ink-600 bg-ink-850 p-4 shadow-sm" data-facet-form>
+      <div class="flex flex-wrap items-end gap-4">
+        <div class="flex flex-col gap-3">
+          <label class="text-xs font-bold text-gray-400" for="facet-min">價格（HK$）
+            <span class="mt-1 flex items-center gap-2">
+              <input id="facet-min" name="min_price" type="number" min="0" inputmode="numeric" value="<%= minPrice != null ? minPrice : '' %>" placeholder="最低" class="w-24 rounded-full border border-ink-500 bg-ink-800 px-3 py-2 text-sm text-gray-200 focus:border-gold focus:outline-none">
+              <span class="text-gray-500">–</span>
+              <input id="facet-max" name="max_price" type="number" min="0" inputmode="numeric" value="<%= maxPrice != null ? maxPrice : '' %>" placeholder="最高" class="w-24 rounded-full border border-ink-500 bg-ink-800 px-3 py-2 text-sm text-gray-200 focus:border-gold focus:outline-none">
+            </span>
+          </label>
+          <%# 叨叨 #2：雙滑桿價格區間。按住變粗、填充跟手、拖過端點橡皮筋拉伸。 %>
+          <div class="mz-range" data-price-range
+               data-bound-min="<%= priceBounds.min %>"
+               data-bound-max="<%= priceBounds.max %>"
+               data-init-min="<%= minPrice != null ? minPrice : priceBounds.min %>"
+               data-init-max="<%= maxPrice != null ? maxPrice : priceBounds.max %>">
+            <div class="mz-range__track">
+              <div class="mz-range__fill"></div>
+              <div class="mz-range__thumb mz-range__thumb--lo" data-range-thumb="lo" role="slider" tabindex="0" aria-label="最低價格" aria-valuemin="<%= priceBounds.min %>" aria-valuemax="<%= priceBounds.max %>"></div>
+              <div class="mz-range__thumb mz-range__thumb--hi" data-range-thumb="hi" role="slider" tabindex="0" aria-label="最高價格" aria-valuemin="<%= priceBounds.min %>" aria-valuemax="<%= priceBounds.max %>"></div>
+            </div>
+            <div class="mz-range__ends text-[10px] text-gray-500">
+              <span>HK$<%= priceBounds.min %></span>
+              <span>HK$<%= priceBounds.max %>+</span>
+            </div>
+          </div>
+        </div>
+        <label class="flex items-center gap-2 pb-2 text-sm text-gray-300">
+          <input type="checkbox" name="in_stock" value="1" <%= inStockOnly ? 'checked' : '' %> class="h-4 w-4 accent-wine">
+          只睇有現貨
+        </label>
+        <div class="flex items-center gap-2 pb-1">
+          <button type="submit" class="rounded-full bg-wine px-5 py-2 text-sm font-bold text-white transition hover:bg-wine-light active:scale-[0.98]">套用篩選</button>
+          <a href="/products?page=1" class="rounded-full border border-ink-500 px-4 py-2 text-sm text-gray-400 hover:text-gold-light">清除</a>
+        </div>
+        <% if (minPrice != null || maxPrice != null || inStockOnly) { %>
+          <div class="pb-2 text-xs text-gray-500">已套用篩選</div>
+        <% } %>
+      </div>
+    </form>
+
+    <!-- 排序 -->
+    <div class="mb-6 flex items-center justify-between rounded-2xl border border-ink-600 bg-ink-850 p-4 shadow-sm">
+      <% const sortLabels = { recommend: '推介排序', price_asc: '價格由低至高', price_desc: '價格由高至低', newest: '最新上架', popular: '人氣排序' }; %>
+      <div class="text-sm text-gray-500">目前排序：<span class="font-bold text-white"><%= sortLabels[sort] || '推介排序' %></span></div>
+      <div class="flex gap-2">
+        <select id="mz-sort" class="hidden rounded-full border border-gray-600 bg-ink-800 text-gray-200 px-3 py-2 text-sm focus:border-gold focus:outline-none sm:block">
+          <option value="recommend" <%= (typeof sort === 'string' ? sort : 'newest') === 'recommend' ? 'selected' : '' %>>推介排序</option>
+          <option value="price_asc" <%= (typeof sort === 'string' ? sort : 'newest') === 'price_asc' ? 'selected' : '' %>>價格由低至高</option>
+          <option value="price_desc" <%= (typeof sort === 'string' ? sort : 'newest') === 'price_desc' ? 'selected' : '' %>>價格由高至低</option>
+          <option value="newest" <%= (typeof sort === 'string' ? sort : 'newest') === 'newest' ? 'selected' : '' %>>最新上架</option>
+          <option value="popular" <%= (typeof sort === 'string' ? sort : 'newest') === 'popular' ? 'selected' : '' %>>人氣排序</option>
+        </select>
+        <%# 手機：排序 Action sheet 觸發掣（sm 以上隱藏）%>
+        <button type="button" id="mz-sort-sheet-open" class="rounded-full border border-ink-500 bg-ink-800 px-4 py-2 text-sm font-bold text-gold-light sm:hidden" aria-haspopup="dialog" aria-controls="mz-sort-sheet">
+          ⇅ 排序
+        </button>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="text-sm text-gray-500">密度</div>
+        <div class="data-density-control" data-density-control data-target="#product-grid" role="group" aria-label="商品密度">
+          <button type="button" data-density-set="cozy">大圖</button>
+          <button type="button" data-density-set="standard">標準</button>
+          <button type="button" data-density-set="compact">文字行</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 產品列表 -->
+    <% if (products && products.length > 0) { %>
+      <div id="product-grid" class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4" data-focus-group data-motion-blur>
+        <% products.forEach((product, cardIdx) => { %>
+          <div data-focus-item class="mz-card-enter group flex flex-col overflow-hidden rounded-2xl border border-ink-600 bg-ink-850 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-lg" style="--stagger-i: <%= Math.min(cardIdx, 11) %>">
+            <a href="/product/<%= product.id %>" class="relative block aspect-square overflow-hidden bg-ink-800" aria-label="<%= product.name %>">
+              <div class="absolute left-2 top-2 z-10 flex flex-col gap-1">
+                <% const _discPct = product.originalPrice && product.originalPrice > product.price
+                  ? Math.round((1 - product.price / product.originalPrice) * 100) : 0; %>
+                <% if (_discPct >= 1) { %>
+                  <span class="rounded-full bg-orange-500 px-2 py-1 text-xs font-bold text-white shadow">-<%= _discPct %>%OFF</span>
+                <% } %>
+                <%# 預購模式：不追蹤庫存，不顯示缺貨/存貨徽章 %>
+              </div>
+              <% if (product.image) { %>
+                <img src="<%= product.image %>" alt="" draggable="false" loading="lazy" decoding="async" class="h-full w-full object-contain p-2 transition duration-300 group-hover:scale-[1.03]">
+              <% } else { %>
+                <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-6xl">📦</div>
+              <% } %>
+            </a>
+            <div class="flex flex-1 flex-col p-4">
+              <span class="w-fit max-w-full truncate rounded-full bg-wine/15 px-2 py-1 text-xs font-bold text-gold"><%= product.category %></span>
+              <h3 class="mt-3 mb-2 h-10 line-clamp-2 text-sm font-medium leading-tight">
+                <a href="/product/<%= product.id %>" class="text-white transition hover:text-wine-light"><%= product.name %></a>
+              </h3>
+              <div class="mb-3">
+                <span class="text-xl font-black text-gold"><%= formatPrice(product.price) %></span>
+                <% if (_discPct >= 1) { %>
+                  <span class="ml-1 text-xs text-gray-500 line-through"><%= formatPrice(product.originalPrice) %></span>
+                <% } %>
+              </div>
+              <div class="mb-3 text-xs">
+                <span class="font-bold text-gold">賺 <%= pointsForDisplay(product.price) %> 積分</span>
+              </div>
+              <div class="mt-auto flex gap-2">
+                <a href="/product/<%= product.id %>" class="flex min-h-[44px] flex-1 items-center justify-center rounded-full bg-wine px-3 text-center text-xs font-bold text-white transition hover:bg-wine active:scale-[0.98]"><%= t('product.cta.details') %></a>
+                <%# 預購模式：商品一律可加購，不顯示缺貨掣 %>
+                <button type="button" data-add-to-cart data-product-id="<%= product.id %>" data-quantity="1" aria-label="加入購物車" class="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-orange-500 px-3 text-xs font-bold text-white transition hover:bg-orange-600 active:scale-95"><span class="mzc-label">🛒</span></button>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+      <nav class="mt-8 max-w-full overflow-x-auto" aria-label="分頁導覽">
+        <% 
+          const currentPage = typeof page === 'number' ? page : 1;
+          const pages = typeof totalPages === 'number' ? totalPages : 1;
+          const qParam = (typeof q === 'string' && q.trim()) ? ('&q=' + encodeURIComponent(q.trim())) : '';
+          const sortParam = (typeof sort === 'string' && sort) ? ('&sort=' + encodeURIComponent(sort)) : '';
+          const facetParams =
+            (minPrice != null ? '&min_price=' + encodeURIComponent(minPrice) : '') +
+            (maxPrice != null ? '&max_price=' + encodeURIComponent(maxPrice) : '') +
+            (inStockOnly ? '&in_stock=1' : '');
+          const base = selectedCategorySlug && selectedCategorySlug !== 'all'
+            ? ('/products?category=' + encodeURIComponent(selectedCategorySlug) + qParam + sortParam + facetParams + '&page=')
+            : ('/products?' + (qParam ? qParam.slice(1) + '&' : '') + (sortParam ? sortParam.slice(1) + '&' : '') + (facetParams ? facetParams.slice(1) + '&' : '') + 'page=');
+          const startPage = Math.max(1, currentPage - 2);
+          const endPage = Math.min(pages, currentPage + 2);
+        %>
+        <div class="mx-auto flex w-fit gap-1.5">
+          <% if (currentPage <= 1) { %>
+            <button disabled aria-disabled="true" aria-label="第一頁" class="flex h-11 w-11 items-center justify-center rounded-lg border border-ink-600 font-bold text-gray-300 cursor-not-allowed">«</button>
+          <% } else { %>
+            <a href="<%= base + (currentPage - 1) %>" aria-label="上一頁" class="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 font-bold hover:border-gold/50 hover:bg-wine/15 hover:text-wine-light transition active:scale-95">«</a>
+          <% } %>
+
+          <% if (startPage > 1) { %>
+            <a href="<%= base + 1 %>" aria-label="第 1 頁" class="flex h-11 min-w-[44px] items-center justify-center rounded-lg border border-gray-300 px-2 font-bold hover:border-gold/50 hover:bg-wine/15 hover:text-wine-light transition">1</a>
+            <% if (startPage > 2) { %>
+              <span aria-hidden="true" class="flex h-11 w-9 items-center justify-center text-gray-400">…</span>
+            <% } %>
+          <% } %>
+
+          <% for (let i = startPage; i <= endPage; i++) { %>
+            <% if (i === currentPage) { %>
+              <span aria-current="page" class="flex h-11 min-w-[44px] items-center justify-center rounded-lg bg-wine px-2 font-bold text-white"><%= i %></span>
+            <% } else { %>
+              <a href="<%= base + i %>" aria-label="第 <%= i %> 頁" class="flex h-11 min-w-[44px] items-center justify-center rounded-lg border border-gray-300 px-2 font-bold hover:border-gold/50 hover:bg-wine/15 hover:text-wine-light transition"><%= i %></a>
+            <% } %>
+          <% } %>
+
+          <% if (endPage < pages) { %>
+            <% if (endPage < pages - 1) { %>
+              <span aria-hidden="true" class="flex h-11 w-9 items-center justify-center text-gray-400">…</span>
+            <% } %>
+            <a href="<%= base + pages %>" aria-label="第 <%= pages %> 頁" class="flex h-11 min-w-[44px] items-center justify-center rounded-lg border border-gray-300 px-2 font-bold hover:border-gold/50 hover:bg-wine/15 hover:text-wine-light transition"><%= pages %></a>
+          <% } %>
+
+          <% if (currentPage >= pages) { %>
+            <button disabled aria-disabled="true" aria-label="最後一頁" class="flex h-11 w-11 items-center justify-center rounded-lg border border-ink-600 font-bold text-gray-300 cursor-not-allowed">»</button>
+          <% } else { %>
+            <a href="<%= base + (currentPage + 1) %>" aria-label="下一頁" class="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 font-bold hover:border-gold/50 hover:bg-wine/15 hover:text-wine-light transition active:scale-95">»</a>
+          <% } %>
+        </div>
+      </nav>
+    <% } else { %>
+      <div class="rounded-2xl border border-ink-600 bg-ink-850 py-20 text-center shadow-sm">
+        <lord-icon
+          src="https://media.lordicon.com/icons/wired/outline/19-magnifier.li"
+          trigger="in"
+          colors="primary:#c8a45d"
+          style="width:120px;height:120px"
+          aria-label="搵唔到結果">
+        </lord-icon>
+        <p class="text-gray-500 mb-4 mt-2">未找到相關商品</p>
+        <a href="/products" class="inline-block rounded-full bg-wine px-8 py-2 text-white font-bold transition hover:bg-wine">查看全部商品</a>
+      </div>
+    <% } %>
+  </main>
+      </div>
+    </div>
+  </div>
+
+  <%- include('partials/footer') %>
+
+  <script id="mz-products" type="application/json"><%- JSON.stringify(products || []) %></script>
+  <script src="/js/cart-client.js"></script>
+  <script src="/js/range-slider.js"></script>
+  <%# bottom-sheet.js + category-sheet.js 已由 mobile-tabbar 全頁載入，呢度唔重複 %>
+
+  <script>
+    function verifyAge(isAdult) {
+      if (isAdult) {
+        document.getElementById('ageModal').classList.add('hidden');
+        localStorage.setItem('ageVerified', 'true');
+      } else {
+        window.location.href = 'https://www.google.com.hk/';
+      }
+    }
+    if (!localStorage.getItem('ageVerified')) {
+      document.getElementById('ageModal').classList.remove('hidden');
+    }
+
+    function toggleCategories() {
+      const list = document.getElementById('catList');
+      const toggle = document.getElementById('catToggle');
+      if (!list || !toggle) return;
+      const hidden = list.classList.contains('hidden');
+      if (hidden) {
+        list.classList.remove('hidden');
+        toggle.textContent = '▲';
+      } else {
+        list.classList.add('hidden');
+        toggle.textContent = '▼';
+      }
+    }
+
+    (function initSort() {
+      const sel = document.getElementById('mz-sort');
+      if (!sel) return;
+      sel.addEventListener('change', function () {
+        const params = new URLSearchParams(window.location.search);
+        params.set('sort', String(sel.value || 'newest'));
+        params.set('page', '1');
+        const next = window.location.pathname + '?' + params.toString();
+        window.location.href = next;
+      });
+    })();
+
+    // Facet 表單：保留目前分類/搜尋/排序，提交時回到第 1 頁
+    (function initFacets() {
+      const form = document.querySelector('[data-facet-form]');
+      if (!form) return;
+      form.addEventListener('submit', function () {
+        const cur = new URLSearchParams(window.location.search);
+        ['category', 'q', 'sort'].forEach(function (k) {
+          const v = cur.get(k);
+          if (v && !form.querySelector('[name="' + k + '"]')) {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden'; hidden.name = k; hidden.value = v;
+            form.appendChild(hidden);
+          }
+        });
+      });
+    })();
+    // 手機排序 BottomSheet（新引擎：half/full detents、拖拽關閉/吸附、彈性進入）
+    (function initSortSheet() {
+      const openBtn = document.getElementById('mz-sort-sheet-open');
+      if (!openBtn || typeof BottomSheet === 'undefined') return;
+
+      const sortOptions = [
+        ['recommend', '推介排序'],
+        ['price_asc', '價格由低至高'],
+        ['price_desc', '價格由高至低'],
+        ['newest', '最新上架'],
+        ['popular', '人氣排序'],
+      ];
+      const current = new URLSearchParams(window.location.search).get('sort') || 'newest';
+
+      function go(val) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('sort', val);
+        params.set('page', '1');
+        window.location.href = window.location.pathname + '?' + params.toString();
+      }
+
+      openBtn.addEventListener('click', function () {
+        const content =
+          '<div class="space-y-2">' +
+          sortOptions.map(function (o) {
+            const active = o[0] === current;
+            return '<button type="button" data-val="' + o[0] + '" ' +
+              'class="flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left font-bold transition ' +
+              (active ? 'bg-wine/25 text-gold' : 'bg-white/5 text-gray-100 active:bg-wine/20') + '">' +
+              '<span>' + o[1] + '</span>' + (active ? '<span class="text-gold">✓</span>' : '') +
+              '</button>';
+          }).join('') +
+          '</div>';
+
+        const sheet = BottomSheet.open({
+          title: '選擇排序方式',
+          content: content,
+          detents: ['half', 'full'],
+          startDetent: 'half',
+          spring: true,
+        });
+        sheet.bodyEl.querySelectorAll('[data-val]').forEach(function (b) {
+          b.addEventListener('click', function () { go(b.dataset.val); });
+        });
+      });
+    })();
+  </script>
+  <script src="https://cdn.lordicon.com/lordicon.js" defer></script>
+</body>
+</html>
