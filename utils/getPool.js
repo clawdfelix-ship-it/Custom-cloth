@@ -39,6 +39,11 @@ function getPool() {
     max: 1,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+    // Cap how long a single query may run. Without this a stalled database
+    // leaves the request hanging until the platform timeout, which is far
+    // longer than any interactive page should wait.
+    statement_timeout: 10000,
+    query_timeout: 15000,
   });
 
   return cachedPool;

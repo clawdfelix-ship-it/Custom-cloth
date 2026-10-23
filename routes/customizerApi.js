@@ -112,17 +112,27 @@ module.exports = function registerCustomizerApi(app, pool) {
 
   app.get('/api/customizer/catalog', async (req, res) => {
     if (!pool) return res.status(500).json({ error: 'Database not configured' });
-    const [productTypes, templateFamilies, assets] = await Promise.all([
-      catalogModel.listProductTypes(),
-      catalogModel.listAllTemplates(),
-      catalogModel.listAssets(),
-    ]);
-    res.json({
-      productTypes,
-      templateFamilies,
-      templates: templateFamilies,
-      assets,
-    });
+    try {
+      // The pool runs with max:1, so the three catalog reads queue behind each
+      // other. Catching here means a stalled database surfaces as a clear 503
+      // instead of an unhandled rejection that never reaches the client.
+      const [productTypes, templateFamilies, assets] = await Promise.all([
+        catalogModel.listProductTypes(),
+        catalogModel.listAllTemplates(),
+        catalogModel.listAssets(),
+      ]);
+      res.json({
+        productTypes,
+        templateFamilies,
+        templates: templateFamilies,
+        assets,
+      });
+    } catch (error) {
+      res.status(503).json({
+        error: 'Catalog unavailable',
+        message: error && error.message ? error.message : 'Unknown error',
+      });
+    }
   });
 
   app.get('/api/customizer/product-types/:id/templates', async (req, res) => {
