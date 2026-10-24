@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #16181d;
+  --color-surface-raised: #1e2128;
+  --color-surface-sunken: #101216;
+  --color-line: #2a2e37;
+  --color-line-strong: #3a3f4b;
+  --color-ink: #e8eaee;
+  --color-ink-muted: #9aa1ae;
+  --color-ink-faint: #6b7280;
+  --color-accent: #22c55e;
+  --color-accent-strong: #16a34a;
+  --color-accent-ink: #04150b;
+  --color-warn: #f59e0b;
+  --color-danger: #ef4444;
+
+  --radius-panel: 10px;
+  --radius-control: 8px;
+  --radius-chip: 999px;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface-sunken);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars inside the editor panels. */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 4px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: 1px solid var(--color-line-strong);
+  border-radius: 6px;
+}

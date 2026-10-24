@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// User account. tier drives feature gating:
+/// tier 0 = free, 1 = tier1, 2 = tier2. premium is a legacy boolean flag.
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String    @unique
+  passwordHash  String
+  tier          Int       @default(0)
+  premium       Boolean   @default(false)
+  twoFactorOn   Boolean   @default(false)
+  twoFactorSecret String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  kits       SavedKit[]
+  presets    Preset[]
+  sessions   Session[]
+  twoFactors TwoFactorCode[]
+
+  @@index([email])
+}
+
+/// Saved kit (a designed jersey/kit configuration).
+model SavedKit {
+  id        String   @id @default(cuid())
+  name      String
+  game      String   @default("FIFA")
+  template  String   @default("eafc-regular")
+  settings  Json
+  preview   String?
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, game])
+}
+
+/// Reusable colour/pattern presets.
+model Preset {
+  id        String   @id @default(cuid())
+  name      String
+  game      String   @default("FIFA")
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Pending 2FA verification codes (emailed).
+model TwoFactorCode {
+  id        String   @id @default(cuid())
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, used])
+}
+
+/// Server-side session records for the credentials provider.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Public showcase entries (kits published to the community gallery).
+model Showcase {
+  id        String   @id @default(cuid())
+  kitId     String   @unique
+  slug      String   @unique
+  title     String
+  game      String
+  settings  Json
+  preview   String?
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([game])
+}

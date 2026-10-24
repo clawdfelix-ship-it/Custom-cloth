@@ -1,83 +1,74 @@
-# Mzakka Hong Kong E-Commerce
+# Zenex Sports Custom
 
-A complete full-featured e-commerce website built specifically for the Hong Kong market, with full compliance with local regulations.
+A browser-based football kit creator: design shirts, shorts and socks in a
+3D preview, then export texture-ready kit archives.
 
 ## Features
 
-### Core Hong Kong E-Commerce Requirements
+- **3D preview** — procedural garment geometry (torso, sleeves, 26 collar
+  variants) rendered with Three.js.
+- **Layered 2D renderer** — produces the colour, normal, coefficient and TAA
+  maps for shirt, shorts and socks.
+- **ZIP export** — exports the same file set the game texture pipeline
+  expects: `<area>_color.png`, `<area>_normal.png`, `<area>_coeff.png`,
+  `<area>_taa.png`, `settings.json` and (for paid members)
+  `hotspots.hotspot`.
+- **Hotspot editor** — place crest, sponsor and brand markers by clicking the
+  garment in the 3D view.
+- **Saved kits** — persist kits, colour presets, and publish to the public
+  showcase.
+- **Membership tiers** — free, tier 1 and tier 2 gate the paid features.
 
-✅ **Customer Management**
-- Member registration and profile management
-- Member levels with points multiplier and discounts
-- Points earning and reward system
-- Saved address book for multiple shipping addresses
+## Stack
 
-✅ **Product & Inventory**
-- Full multi-SKU (multi-specification) support
-- Inventory transaction logging
-- Multi-warehouse inventory management
-- Low stock alerts
+| Layer      | Choice                                       |
+| ---------- | -------------------------------------------- |
+| Framework  | Next.js 16 (App Router), React 19, TypeScript |
+| Styling    | Tailwind CSS v4                               |
+| 3D         | Three.js                                      |
+| Export     | Canvas 2D + JSZip                             |
+| Database   | PostgreSQL (Neon in production, local Postgres in dev) |
+| ORM        | Prisma 7 with a driver adapter                |
+| Auth       | Self-contained JWT session (jose) + bcrypt     |
 
-✅ **Marketing & Promotion**
-- Coupon and discount code system
-- Flash sales/time-limited promotions
-- KOL affiliate marketing with commission tracking
-- Abandoned cart recovery emails
-- SEO-friendly blog content management
+## Getting started
 
-✅ **Shipping & Delivery (HK Local)**
-- Hong Kong district-based shipping pricing
-- Multiple shipping methods (SF Express, Speedpost, locker pickup)
-- Pickup point management
-- Full ShipAny logistics API integration for automated label generation
+```bash
+npm install
+cp .env.example .env    # fill in DATABASE_URL and SESSION_SECRET
+npx prisma migrate dev  # create the schema
+npm run dev
+```
 
-✅ **Payment (HK Local)**
-- FPS transfer with QR code support
-- PayMe with QR code
-- AlipayHK
-- WeChat Pay HK
-- Manual bank transfer with custom instructions
-- Payment gateway webhook handling
+The database driver is chosen from the connection string host: `*.neon.tech`
+uses the Neon serverless driver, anything else uses `node-postgres`. That
+means local development works against a Homebrew Postgres without extra
+configuration while production uses Neon.
 
-✅ **Operations & Compliance**
-- Return/refund RMA ticket system
-- Supplier and purchase order management
-- Admin roles with action logging for audit
-- Sales reports and CSV export for tax filing
-- **7-year invoice retention** (complies with Hong Kong Inland Revenue Department requirements)
-- **Full PDPO (Personal Data (Privacy) Ordinance) compliance**
+## Environment
 
-## Tech Stack
+| Variable            | Purpose                                            |
+| ------------------- | -------------------------------------------------- |
+| `DATABASE_URL`      | PostgreSQL connection string                       |
+| `SESSION_SECRET`    | Signing key for the session cookie (32+ chars)     |
+| `NEXT_PUBLIC_APP_URL` | Public origin, used for absolute URLs            |
+| `RESEND_API_KEY`    | Optional. Without it, 2FA codes log to the console |
+| `MAIL_FROM`         | Sender address for 2FA emails                      |
+| `PLATFORM_ADMIN_EMAILS` | Comma list allowed to change member tiers       |
 
-- **Backend:** Node.js + Express.js
-- **Frontend:** Vue 3 + Vite (SPA)
-- **Database:** PostgreSQL
-- **Authentication:** express-session with PostgreSQL store
-- **Password Security:** BCrypt password hashing
+## Scripts
 
-## Compliance
+```bash
+npm run dev        # development server
+npm run build      # production build
+npm run typecheck  # tsc --noEmit
+npm run db:migrate # apply migrations
+npm run db:push    # push schema without a migration
+```
 
-This project is built with full compliance for Hong Kong e-commerce operations:
+## Export format
 
-- **PDPO (Personal Data (Privacy) Ordinance):** Privacy policy included, with clear user rights and data collection statements. See [privacy-policy.md](./privacy-policy.md) for details.
-- **Tax Retention:** 7-year retention policy for transaction records and invoices, as required by the Hong Kong Inland Revenue Department.
-- **Local Payment Methods:** Native support for all popular Hong Kong payment options.
-- **Local Shipping:** Pre-seeded Hong Kong districts for accurate shipping pricing.
-
-## Getting Started
-
-1. Clone the repository
-2. Copy `.env.example` to `.env` and configure your environment variables
-3. Create PostgreSQL database and run `schema-full.sql` to create tables
-4. (Optional) Load seed data with `seed-data.sql` for default districts and payment methods
-5. Install dependencies: `npm install`
-6. Start backend: `npm start`
-7. Build and run frontend from the `frontend/` directory
-
-## Deployment
-
-Ready for deployment to Vercel with `vercel.json` configuration. Set the required environment variables in your Vercel project settings.
-
-## License
-
-MIT
+`settings.json` carries the garment colours, fit, shorts style and number
+layout. `hotspots.hotspot` carries the crest/sponsor/brand markers with their
+bounds and rotation. Both are plain JSON so they can be inspected and
+diffed.
