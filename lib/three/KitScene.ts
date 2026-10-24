@@ -160,11 +160,22 @@ export class KitScene {
    * The reference meshes are authored in the game's body coordinate space
    * (the shirt spans y 162..298, the shorts 112..206 and the socks 13..96),
    * so centring the combined bounding box gives a player wearing the kit.
+   *
+   * The bounds are measured in the group's OWN space (not world space) so
+   * repeated calls stay idempotent; measuring in world space would include
+   * the offset applied by a previous call and undo it.
    */
   private frameKit() {
     if (this.meshes.length === 0) return;
+
     const box = new THREE.Box3();
-    for (const mesh of this.meshes) box.expandByObject(mesh);
+    for (const mesh of this.meshes) {
+      const geometry = mesh.geometry;
+      if (!geometry.boundingBox) geometry.computeBoundingBox();
+      const local = geometry.boundingBox;
+      if (!local) continue;
+      box.union(local);
+    }
     if (box.isEmpty()) return;
 
     const size = box.getSize(new THREE.Vector3());
