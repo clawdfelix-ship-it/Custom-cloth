@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Badge, Button } from "@/components/ui/Panel";
 import { TIER_LIMITS } from "@/types/kit";
+import { readJsonSafe } from "@/lib/api-client";
 
 const TIER_COPY: Record<number, { name: string; blurb: string }> = {
   0: {
@@ -41,11 +42,13 @@ export function AccountView({
     setStatus("Sending code…");
     try {
       const response = await fetch("/api/auth/two-factor", { method: "POST" });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Failed to send code.");
+      const result = await readJsonSafe<{ error?: string; devCode?: string }>(
+        response,
+      );
+      if (!result.ok) throw new Error(result.error ?? "Failed to send code.");
       setStatus(
-        body.devCode
-          ? `Development code: ${body.devCode}`
+        result.data?.devCode
+          ? `Development code: ${result.data.devCode}`
           : "Code sent to your email.",
       );
     } catch (error) {
@@ -61,8 +64,8 @@ export function AccountView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Verification failed.");
+      const result = await readJsonSafe<{ error?: string }>(response);
+      if (!result.ok) throw new Error(result.error ?? "Verification failed.");
       setTwoFactorOn(true);
       setStatus("Two-factor protection is now on.");
       setCode("");

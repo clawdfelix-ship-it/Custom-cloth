@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { getSession } from "@/lib/auth/session";
 import { TIER_LIMITS } from "@/types/kit";
+import { apiHandler } from "@/lib/api";
 
 /**
  * Custom image uploads.
@@ -22,14 +23,15 @@ const ALLOWED = new Set([
   "image/svg+xml",
 ]);
 
-export async function POST(request: Request) {
+export const POST = apiHandler("uploads", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const limits = TIER_LIMITS[session.tier] ?? TIER_LIMITS[0];
-  const maxImages = session.premium && session.tier === 0 ? 50 : limits.maxCustomImages;
+  const maxImages =
+    session.premium && session.tier === 0 ? 50 : limits.maxCustomImages;
   if (maxImages === 0) {
     return NextResponse.json(
       { error: "uploads_require_membership" },
@@ -37,7 +39,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const formData = await request.formData();
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json({ error: "invalid_form" }, { status: 400 });
+  }
+
   const file = formData.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "missing_file" }, { status: 400 });
@@ -86,4 +94,4 @@ export async function POST(request: Request) {
     name: file.name,
     size: file.size,
   });
-}
+});

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Select } from "@/components/ui/Panel";
+import { readJsonSafe } from "@/lib/api-client";
 
 interface KitRow {
   id: string;
@@ -44,9 +45,9 @@ export function SavedKitsView({
       if (filter) params.set("filter", filter);
       if (game) params.set("game", game);
       const response = await fetch(`/api/saved?${params.toString()}`);
-      if (!response.ok) throw new Error(`Request failed (${response.status})`);
-      const body = await response.json();
-      setKits(body.kits ?? []);
+      const result = await readJsonSafe<{ kits?: KitRow[] }>(response);
+      if (!result.ok) throw new Error(result.error ?? "Failed to load kits.");
+      setKits(result.data?.kits ?? []);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to load kits.");
     } finally {
@@ -66,8 +67,8 @@ export function SavedKitsView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ kitId: kit.id, title: kit.name }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Publish failed.");
+      const result = await readJsonSafe<{ error?: string }>(response);
+      if (!result.ok) throw new Error(result.error ?? "Publish failed.");
       setStatus(`Published "${kit.name}" to the showcase.`);
       await load();
     } catch (error) {
@@ -89,8 +90,8 @@ export function SavedKitsView({
         );
         if (!retry.ok) throw new Error("Verification failed.");
       } else if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error ?? "Delete failed.");
+        const result = await readJsonSafe<{ error?: string }>(response);
+        throw new Error(result.error ?? "Delete failed.");
       }
       setStatus("Kit deleted.");
       await load();

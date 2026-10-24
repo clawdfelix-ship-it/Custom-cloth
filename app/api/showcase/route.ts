@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { z } from "zod";
+import { apiHandler, readJson } from "@/lib/api";
 
 /**
  * Public showcase gallery.
@@ -24,7 +25,7 @@ function slugify(value: string): string {
     .slice(0, 60);
 }
 
-export async function GET(request: Request) {
+export const GET = apiHandler("showcase", async (request: Request) => {
   const url = new URL(request.url);
   const game = url.searchParams.get("game");
   const take = Math.min(Number(url.searchParams.get("take") ?? 48), 96);
@@ -36,22 +37,19 @@ export async function GET(request: Request) {
   });
 
   return NextResponse.json({ entries, count: entries.length });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler("showcase", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const parsedBody = await readJson(request);
+  if (!parsedBody.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-
-  const parsed = publishSchema.safeParse(body);
+  const parsed = publishSchema.safeParse(parsedBody.value);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
@@ -93,9 +91,9 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ entry }, { status: 201 });
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = apiHandler("showcase", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -127,4 +125,4 @@ export async function DELETE(request: Request) {
   });
 
   return NextResponse.json({ ok: true });
-}
+});

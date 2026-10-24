@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
 import { setSessionCookie } from "@/lib/auth/session";
+import { apiHandler, readJson } from "@/lib/api";
 
-export async function POST(request: Request) {
-  let body: { username?: string; password?: string };
-  try {
-    body = await request.json();
-  } catch {
+export const POST = apiHandler("auth/login", async (request: Request) => {
+  const parsed = await readJson(request);
+  if (!parsed.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
+  const body = (parsed.value ?? {}) as { username?: string; password?: string };
 
   const { username, password } = body;
   if (!username || !password) {
@@ -53,4 +53,4 @@ export async function POST(request: Request) {
       premium: user.premium,
     },
   });
-}
+});

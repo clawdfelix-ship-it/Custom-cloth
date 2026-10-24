@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Panel";
+import { readJsonSafe } from "@/lib/api-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,8 +22,8 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Sign in failed.");
+      const result = await readJsonSafe<{ error?: string }>(response);
+      if (!result.ok) throw new Error(result.error ?? "Sign in failed.");
       router.push("/editor");
       router.refresh();
     } catch (err) {

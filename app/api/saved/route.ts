@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { z } from "zod";
+import { apiHandler, readJson } from "@/lib/api";
 
 /**
  * Saved kits API.
@@ -23,7 +24,11 @@ const createSchema = z.object({
   preview: z.string().max(2_000_000).optional(),
 });
 
-export async function GET(request: Request) {
+function maxKitsForTier(tier: number): number {
+  return tier === 2 ? 1000 : tier === 1 ? 100 : 3;
+}
+
+export const GET = apiHandler("saved", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -72,22 +77,34 @@ export async function GET(request: Request) {
     take: 96,
   });
 
+  // Report the limit the signed-in user actually has, so the client does
+  // not have to duplicate the tier table.
+  const user = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { tier: true, premium: true },
+  });
+  const tier = user?.tier ?? 0;
+  const effectiveTier = tier === 0 && user?.premium ? 1 : tier;
+
   return NextResponse.json({
     kits,
     mode,
     count: kits.length,
-    tiers: { maxSavedKits: 0 },
+    tiers: { maxSavedKits: maxKitsForTier(effectiveTier) },
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler("saved", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const parsed = createSchema.safeParse(body);
+  const parsedBody = await readJson(request);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  const parsed = createSchema.safeParse(parsedBody.value);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid_body", issues: parsed.error.issues },
@@ -103,7 +120,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const maxKits = user.tier === 2 ? 1000 : user.tier === 1 ? 100 : 3;
+  const effectiveTier = user.tier === 0 && user.premium ? 1 : user.tier;
+  const maxKits = maxKitsForTier(effectiveTier);
   const existing = await prisma.savedKit.count({
     where: { userId: session.id },
   });
@@ -126,9 +144,9 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ kit }, { status: 201 });
-}
+});
 
-export async function PATCH(request: Request) {
+export const PATCH = apiHandler("saved", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -140,8 +158,11 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "missing_id" }, { status: 400 });
   }
 
-  const body = await request.json();
-  const parsed = createSchema.partial().safeParse(body);
+  const parsedBody = await readJson(request);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  const parsed = createSchema.partial().safeParse(parsedBody.value);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
@@ -167,9 +188,9 @@ export async function PATCH(request: Request) {
   });
 
   return NextResponse.json({ kit });
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = apiHandler("saved", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -215,7 +236,7 @@ export async function DELETE(request: Request) {
 
   await prisma.savedKit.delete({ where: { id } });
   return NextResponse.json({ ok: true });
-}
+});
 
 /** Validate a one-time emailed code. */
 async function verifyTwoFactorCode(

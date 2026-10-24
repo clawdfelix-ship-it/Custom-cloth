@@ -13,6 +13,7 @@ import { TIER_LIMITS, type KitLogo, type KitState, type UserTierLimits } from "@
 import { Badge, Button, ColorInput, Field, NumberInput, Panel, Select } from "@/components/ui/Panel";
 import { HotspotEditor } from "@/components/editor/HotspotEditor";
 import { LogoImageUpload } from "@/components/editor/LogoImageUpload";
+import { readJsonSafe } from "@/lib/api-client";
 
 const PATTERNS = [
   { value: "none", label: "Solid" },
@@ -243,9 +244,9 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
           },
         }),
       });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error ?? `Request failed (${response.status})`);
+      const result = await readJsonSafe<{ error?: string }>(response);
+      if (!result.ok) {
+        throw new Error(result.error ?? `Request failed (${response.status})`);
       }
       setStatus("Kit saved.");
     } catch (error) {

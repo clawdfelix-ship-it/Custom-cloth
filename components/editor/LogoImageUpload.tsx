@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Panel";
+import { readJsonSafe } from "@/lib/api-client";
 
 /**
  * Logo image upload.
@@ -32,11 +33,11 @@ export function LogoImageUpload({
         method: "POST",
         body: formData,
       });
-      const body = await response.json();
-      if (!response.ok) {
-        throw new Error(body.error ?? `Upload failed (${response.status})`);
+      const result = await readJsonSafe<{ url?: string; name?: string }>(response);
+      if (!result.ok) {
+        throw new Error(result.error ?? `Upload failed (${response.status})`);
       }
-      onUploaded(body.url, body.name ?? file.name);
+      onUploaded(result.data?.url ?? "", result.data?.name ?? file.name);
       setStatus("Uploaded.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Upload failed.");

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { apiHandler, readJson } from "@/lib/api";
 
 /**
  * Membership tier.
@@ -20,7 +21,7 @@ const ADMIN_EMAILS = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
 
 const TIERS = [0, 1, 2];
 
-export async function GET() {
+export const GET = apiHandler("account/tier", async () => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -31,9 +32,9 @@ export async function GET() {
     email: session.email,
     isAdmin: ADMIN_EMAILS.includes(session.email.toLowerCase()),
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler("account/tier", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -44,12 +45,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
-  let body: { tier?: number; email?: string };
-  try {
-    body = await request.json();
-  } catch {
+  const parsed = await readJson(request);
+  if (!parsed.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
+  const body = (parsed.value ?? {}) as { tier?: number; email?: string };
 
   const targetEmail = (body.email ?? session.email).toLowerCase();
   const tier = body.tier;
@@ -68,4 +68,4 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ user });
-}
+});

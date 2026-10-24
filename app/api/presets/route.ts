@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
+import { apiHandler, readJson } from "@/lib/api";
 
 /**
  * Colour/pattern presets.
@@ -17,7 +18,7 @@ const presetSchema = z.object({
   data: z.record(z.string(), z.unknown()),
 });
 
-export async function GET(request: Request) {
+export const GET = apiHandler("presets", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -29,20 +30,18 @@ export async function GET(request: Request) {
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json({ presets });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler("presets", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const parsedBody = await readJson(request);
+  if (!parsedBody.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const parsed = presetSchema.safeParse(body);
+  const parsed = presetSchema.safeParse(parsedBody.value);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
@@ -55,9 +54,9 @@ export async function POST(request: Request) {
     },
   });
   return NextResponse.json({ preset }, { status: 201 });
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = apiHandler("presets", async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -75,4 +74,4 @@ export async function DELETE(request: Request) {
   }
   await prisma.preset.delete({ where: { id } });
   return NextResponse.json({ ok: true });
-}
+});

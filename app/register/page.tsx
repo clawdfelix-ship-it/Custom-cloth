@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Panel";
+import { readJsonSafe } from "@/lib/api-client";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -28,11 +29,15 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      const body = await response.json();
-      if (!response.ok) {
-        const detail = Array.isArray(body.issues)
-          ? body.issues.map((i: { message: string }) => i.message).join(" ")
-          : body.error;
+      const result = await readJsonSafe<{
+        error?: string;
+        issues?: { message: string }[];
+      }>(response);
+      if (!result.ok) {
+        const body = result.data;
+        const detail = Array.isArray(body?.issues)
+          ? body.issues.map((i) => i.message).join(" ")
+          : result.error;
         throw new Error(detail ?? "Registration failed.");
       }
       router.push("/editor");
