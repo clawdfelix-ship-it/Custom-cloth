@@ -9,9 +9,17 @@ export const POST = apiHandler("auth/login", async (request: Request) => {
   if (!parsed.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const body = (parsed.value ?? {}) as { username?: string; password?: string };
+  const body = (parsed.value ?? {}) as { username?: unknown; password?: unknown };
 
+  // Both fields are user input: reject non-strings instead of handing them
+  // to Prisma, which throws on an invalid `where` value.
   const { username, password } = body;
+  if (typeof username !== "string" || typeof password !== "string") {
+    return NextResponse.json(
+      { error: "missing_credentials" },
+      { status: 400 },
+    );
+  }
   if (!username || !password) {
     return NextResponse.json(
       { error: "missing_credentials" },
