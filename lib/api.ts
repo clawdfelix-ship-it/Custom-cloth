@@ -32,6 +32,16 @@ export function apiHandler(name: string, handler: RouteHandler): RouteHandler {
         `[api:${name}] ${request.method} ${request.url} failed:`,
         error,
       );
+      const status = prismaStatus(error);
+      if (status === 404) {
+        return NextResponse.json({ error: "not_found" }, { status: 404 });
+      }
+      if (status === 409) {
+        return NextResponse.json(
+          { error: "already_exists" },
+          { status: 409 },
+        );
+      }
       return NextResponse.json(
         {
           error: "server_error",
@@ -53,6 +63,20 @@ export type JsonBody =
  * Returns `{ ok: false }` for an empty or malformed body instead of
  * throwing, so callers can answer with a 400.
  */
+/**
+ * Translate a Prisma error into a status a client can act on.
+ *
+ * Without this, "record not found" (P2025) and "unique constraint" (P2002)
+ * surface as 500s even though they are ordinary client mistakes.
+ */
+function prismaStatus(error: unknown): number | null {
+  if (!error || typeof error !== "object") return null;
+  const code = (error as { code?: unknown }).code;
+  if (code === "P2025") return 404;
+  if (code === "P2002") return 409;
+  return null;
+}
+
 export async function readJson(request: Request): Promise<JsonBody> {
   let text: string;
   try {

@@ -48,9 +48,19 @@ export const POST = apiHandler("auth/two-factor", async (request: Request) => {
   if (!parsed.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const body = (parsed.value ?? {}) as { code?: string };
 
-  const code = (body.code ?? "").trim();
+  // The code is user input, so it can arrive as any JSON type. Only a
+  // string can be compared against the stored code; anything else is a
+  // malformed request, not a server fault.
+  const body = (parsed.value ?? {}) as { code?: unknown };
+  const rawCode = body.code;
+  if (rawCode === undefined || rawCode === null || rawCode === "") {
+    return NextResponse.json({ error: "missing_code" }, { status: 400 });
+  }
+  if (typeof rawCode !== "string") {
+    return NextResponse.json({ error: "invalid_code" }, { status: 400 });
+  }
+  const code = rawCode.trim();
   if (!code) {
     return NextResponse.json({ error: "missing_code" }, { status: 400 });
   }

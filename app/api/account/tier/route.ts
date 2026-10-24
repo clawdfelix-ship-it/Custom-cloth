@@ -49,12 +49,27 @@ export const POST = apiHandler("account/tier", async (request: Request) => {
   if (!parsed.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const body = (parsed.value ?? {}) as { tier?: number; email?: string };
+  const body = (parsed.value ?? {}) as { tier?: unknown; email?: unknown };
 
-  const targetEmail = (body.email ?? session.email).toLowerCase();
-  const tier = body.tier;
+  // `email` is user input: only accept a string, otherwise fall back to the
+  // signed-in user instead of calling a string method on a number.
+  const rawEmail = body.email;
+  const targetEmail =
+    typeof rawEmail === "string" && rawEmail.trim()
+      ? rawEmail.trim().toLowerCase()
+      : session.email.toLowerCase();
 
-  if (tier === undefined || !TIERS.includes(tier)) {
+  // `tier` is user input: accept a number or a numeric string, reject
+  // anything else instead of letting it reach Prisma.
+  const rawTier = body.tier;
+  const tier =
+    typeof rawTier === "number"
+      ? rawTier
+      : typeof rawTier === "string" && rawTier.trim() !== ""
+        ? Number(rawTier)
+        : Number.NaN;
+
+  if (!Number.isInteger(tier) || !TIERS.includes(tier)) {
     return NextResponse.json(
       { error: "invalid_tier", allowed: TIERS },
       { status: 400 },
