@@ -83,8 +83,12 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
 
   // --- re-render texture and push into the 3D preview ---------------------
   useEffect(() => {
-    const textures = renderArea("shirt", { kit });
-    sceneRef.current?.setTexture(textures.color);
+    // Each garment area has its own texture; the scene keeps them apart so
+    // the shorts do not show the shirt artwork.
+    for (const area of ["shirt", "shorts", "socks"] as const) {
+      const textures = renderArea(area, { kit });
+      sceneRef.current?.setTexture(area, textures.color);
+    }
     setTextureVersion((v) => v + 1);
   }, [kit]);
 
@@ -198,7 +202,8 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
       templateId,
       game: template.game,
     }));
-    sceneRef.current?.buildGarment(template);
+    // buildGarment loads the OBJ meshes asynchronously.
+    void sceneRef.current?.buildGarment(template);
   }, []);
 
   const switchGame = useCallback((game: string) => {

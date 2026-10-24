@@ -1,19 +1,16 @@
 import * as THREE from "three";
 import type { KitState, KitTemplate } from "@/types/kit";
-import { buildGarment, type GarmentParts } from "./buildGeometry";
+import { loadGarmentModels } from "./loadGarment";
 
 /**
  * Three.js scene manager for the kit preview.
  *
- * Responsibilities:
- * - own the renderer / camera / lights
- * - rebuild garment meshes when the template changes
- * - apply kit colours to the garment materials
- * - expose a raycast helper so the hotspot editor can pick a logo anchor
+ * The garment geometry comes from the reference kit creator (FIFA / EAFC):
+ * the same .obj meshes the original app ships. Their UVs are the game's own
+ * UVs, so the preview and the exported texture can never drift apart.
  *
- * The texture itself is produced by the 2D renderer (`lib/render`), which
- * writes to a canvas; the 3D layer consumes that canvas as a texture so the
- * preview and the export always agree.
+ * Every piece lives under one group so the turntable spins the whole kit,
+ * and the camera auto-frames whatever was loaded.
  */
 
 export interface KitSceneOptions {
@@ -23,14 +20,25 @@ export interface KitSceneOptions {
   onResize?: (width: number, height: number) => void;
 }
 
+type Area = "shirt" | "shorts" | "socks";
+
 export class KitScene {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private container: HTMLElement;
-  private parts: GarmentParts | null = null;
+  private group: THREE.Group;
   private meshes: THREE.Mesh[] = [];
-  private textureCanvas: HTMLCanvasElement | null = null;
+  private areaMeshes: Record<Area, THREE.Mesh[]> = {
+    shirt: [],
+    shorts: [],
+    socks: [],
+  };
+  private textureCanvas: Record<Area, HTMLCanvasElement | null> = {
+    shirt: null,
+    shorts: null,
+    socks: null,
+  };
   private garmentMaterial: THREE.MeshStandardMaterial;
   private shortsMaterial: THREE.MeshStandardMaterial;
   private socksMaterial: THREE.MeshStandardMaterial;
@@ -38,6 +46,7 @@ export class KitScene {
   private disposed = false;
   private rotationSpeed = 0.15;
   private autoRotate = true;
+  private loadToken = 0;
 
   constructor(options: KitSceneOptions) {
     this.container = options.container;
@@ -58,13 +67,16 @@ export class KitScene {
       35,
       options.container.clientWidth / Math.max(1, options.container.clientHeight),
       0.1,
-      100,
+      2000,
     );
-    this.camera.position.set(0, 0.1, options.template.cameraPositionZ.reg / 90);
+    this.camera.position.set(0, 0, 450);
     this.camera.lookAt(0, 0, 0);
 
     this.setupLights();
 
+    // Materials stay white: the per-area texture already carries the kit
+    // colour. Tinting the material as well would multiply the two and make
+    // the whole garment black.
     this.garmentMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.78,
@@ -74,7 +86,10 @@ export class KitScene {
     this.shortsMaterial = this.garmentMaterial.clone();
     this.socksMaterial = this.garmentMaterial.clone();
 
-    this.buildGarment(options.template);
+    this.group = new THREE.Group();
+    this.scene.add(this.group);
+
+    void this.buildGarment(options.template);
 
     this.handleResize = this.handleResize.bind(this);
     window.addEventListener("resize", this.handleResize);
@@ -90,6 +105,7 @@ export class KitScene {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+    this.frameKit();
   };
 
   private setupLights() {
@@ -111,107 +127,125 @@ export class KitScene {
   }
 
   /** Rebuild all garment meshes for a template. */
-  buildGarment(template: KitTemplate) {
+  async buildGarment(template: KitTemplate) {
+    const token = ++this.loadToken;
     this.clearGarment();
 
-    const parts = buildGarment(template.body);
-    this.parts = parts;
+    const { shirt, shorts, socks } = await loadGarmentModels(template);
+    // A newer template started loading while we were waiting; drop this result.
+    if (token !== this.loadToken) return;
 
-    const body = new THREE.Mesh(parts.body, this.garmentMaterial);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    this.scene.add(body);
-    this.meshes.push(body);
+    const shirtMesh = new THREE.Mesh(shirt, this.garmentMaterial);
+    shirtMesh.castShadow = true;
+    shirtMesh.receiveShadow = true;
+    this.addMesh(shirtMesh, "shirt");
 
-    const sleeves = new THREE.Mesh(parts.sleeves, this.garmentMaterial);
-    sleeves.castShadow = true;
-    this.scene.add(sleeves);
-    this.meshes.push(sleeves);
+    const shortsMesh = new THREE.Mesh(shorts, this.shortsMaterial);
+    shortsMesh.castShadow = true;
+    this.addMesh(shortsMesh, "shorts");
 
-    const neck = new THREE.Mesh(parts.neck, this.shortsMaterial);
-    this.scene.add(neck);
-    this.meshes.push(neck);
+    const socksMesh = new THREE.Mesh(socks, this.socksMaterial);
+    socksMesh.castShadow = true;
+    this.addMesh(socksMesh, "socks");
 
-    const collarIndex = Math.min(
-      Math.max(0, template.body.collarCount - 1),
-      parts.collars.length - 1,
-    );
-    const collar = new THREE.Mesh(parts.collars[collarIndex], this.shortsMaterial);
-    this.scene.add(collar);
-    this.meshes.push(collar);
-
-    this.buildShorts(template);
-    this.buildSocks(template);
+    // The meshes load asynchronously, so any texture that arrived before
+    // them has to be re-applied.
+    this.applyStoredTextures();
+    this.frameKit();
   }
 
-  private buildShorts(template: KitTemplate) {
-    const { waistWidth, length } = template.body;
-    const geometry = new THREE.CylinderGeometry(
-      waistWidth * 1.06,
-      waistWidth * 1.14,
-      length * 0.34,
-      28,
-      1,
-      false,
-    );
-    geometry.scale(1, 1, 0.86);
-    geometry.translate(0, -length * 0.52, 0);
-    const mesh = new THREE.Mesh(geometry, this.shortsMaterial);
-    mesh.castShadow = true;
-    this.scene.add(mesh);
+  /**
+   * Centre the loaded kit and pull the camera back far enough to fit it.
+   *
+   * The reference meshes are authored in the game's body coordinate space
+   * (the shirt spans y 162..298, the shorts 112..206 and the socks 13..96),
+   * so centring the combined bounding box gives a player wearing the kit.
+   */
+  private frameKit() {
+    if (this.meshes.length === 0) return;
+    const box = new THREE.Box3();
+    for (const mesh of this.meshes) box.expandByObject(mesh);
+    if (box.isEmpty()) return;
+
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    this.group.position.set(-center.x, -center.y, -center.z);
+
+    const fov = (this.camera.fov * Math.PI) / 180;
+    const aspect = Math.max(0.2, this.camera.aspect);
+    const distanceForHeight = size.y / 2 / Math.tan(fov / 2);
+    const distanceForWidth = size.x / 2 / Math.tan(fov / 2) / aspect;
+    const distance = Math.max(distanceForHeight, distanceForWidth) * 1.25;
+    this.camera.position.set(0, 0, distance);
+    this.camera.lookAt(0, 0, 0);
+  }
+
+  private addMesh(mesh: THREE.Mesh, area: Area) {
+    this.group.add(mesh);
     this.meshes.push(mesh);
-  }
-
-  private buildSocks(template: KitTemplate) {
-    const { waistWidth } = template.body;
-    const height = template.body.length * 0.42;
-    for (const side of [-1, 1]) {
-      const geometry = new THREE.CylinderGeometry(
-        waistWidth * 0.3,
-        waistWidth * 0.34,
-        height,
-        20,
-        1,
-      );
-      geometry.translate(side * waistWidth * 0.42, -length0(template) - height * 0.5, 0);
-      const mesh = new THREE.Mesh(geometry, this.socksMaterial);
-      mesh.castShadow = true;
-      this.scene.add(mesh);
-      this.meshes.push(mesh);
-    }
+    this.areaMeshes[area].push(mesh);
   }
 
   private clearGarment() {
     for (const mesh of this.meshes) {
-      this.scene.remove(mesh);
+      this.group.remove(mesh);
       mesh.geometry.dispose();
     }
     this.meshes = [];
-    this.parts = null;
+    this.areaMeshes = { shirt: [], shorts: [], socks: [] };
   }
 
-  /** Push kit colours into the garment materials. */
+  /**
+   * Push kit colours into the garment materials.
+   *
+   * The colour is only used when no texture is attached; once a texture is
+   * present the material must stay white or the two multiply together and
+   * the kit renders black.
+   */
   applyKit(kit: KitState) {
     const { settings } = kit;
-    this.garmentMaterial.color.set(settings.primary);
-    this.shortsMaterial.color.set(settings.shorts);
-    this.socksMaterial.color.set(settings.socks);
-    this.garmentMaterial.needsUpdate = true;
-    this.shortsMaterial.needsUpdate = true;
-    this.socksMaterial.needsUpdate = true;
+    const targets: [THREE.MeshStandardMaterial, string][] = [
+      [this.garmentMaterial, settings.primary],
+      [this.shortsMaterial, settings.shorts],
+      [this.socksMaterial, settings.socks],
+    ];
+    for (const [material, colour] of targets) {
+      if (!material.map) material.color.set(colour);
+      material.needsUpdate = true;
+    }
   }
 
-  /** Attach the 2D-rendered garment texture. */
-  setTexture(canvas: HTMLCanvasElement) {
-    this.textureCanvas = canvas;
+  /** Attach the 2D-rendered garment texture for one area. */
+  setTexture(area: Area, canvas: HTMLCanvasElement) {
+    this.textureCanvas[area] = canvas;
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
 
-    for (const mesh of this.meshes) {
+    for (const mesh of this.areaMeshes[area]) {
       const material = mesh.material as THREE.MeshStandardMaterial;
-      if (!material.map) {
+      // The renderer hands over a fresh canvas each time, so the previous
+      // texture has to be released explicitly.
+      if (material.map) material.map.dispose();
+      material.map = texture;
+      material.color.set(0xffffff);
+      material.needsUpdate = true;
+    }
+  }
+
+  /** Re-apply the stored canvases to meshes that were created after them. */
+  private applyStoredTextures() {
+    for (const area of ["shirt", "shorts", "socks"] as Area[]) {
+      const canvas = this.textureCanvas[area];
+      if (!canvas) continue;
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      for (const mesh of this.areaMeshes[area]) {
+        const material = mesh.material as THREE.MeshStandardMaterial;
+        if (material.map) material.map.dispose();
         material.map = texture;
+        material.color.set(0xffffff);
         material.needsUpdate = true;
       }
     }
@@ -219,11 +253,14 @@ export class KitScene {
 
   /** Refresh the attached texture after the 2D renderer changed. */
   refreshTexture() {
-    if (!this.textureCanvas) return;
-    for (const mesh of this.meshes) {
-      const material = mesh.material as THREE.MeshStandardMaterial;
-      if (material.map) {
-        (material.map as THREE.CanvasTexture).needsUpdate = true;
+    for (const area of ["shirt", "shorts", "socks"] as Area[]) {
+      const canvas = this.textureCanvas[area];
+      if (!canvas) continue;
+      for (const mesh of this.areaMeshes[area]) {
+        const material = mesh.material as THREE.MeshStandardMaterial;
+        if (material.map) {
+          (material.map as THREE.CanvasTexture).needsUpdate = true;
+        }
       }
     }
   }
@@ -241,7 +278,7 @@ export class KitScene {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(ndc, this.camera);
 
-    const bodyMesh = this.meshes.find((m) => m.geometry === this.parts?.body);
+    const bodyMesh = this.areaMeshes.shirt[0];
     if (!bodyMesh) return null;
 
     const hits = raycaster.intersectObject(bodyMesh, false);
@@ -260,8 +297,8 @@ export class KitScene {
   }
 
   resetCamera(template: KitTemplate) {
-    this.camera.position.set(0, 0.1, template.cameraPositionZ.reg / 90);
-    this.camera.lookAt(0, 0, 0);
+    void template;
+    this.frameKit();
   }
 
   private loop = () => {
@@ -269,8 +306,7 @@ export class KitScene {
     this.animationFrame = requestAnimationFrame(this.loop);
 
     if (this.autoRotate) {
-      const pivot = this.meshes[0];
-      if (pivot) pivot.rotation.y += this.rotationSpeed * 0.01;
+      this.group.rotation.y += this.rotationSpeed * 0.01;
     }
 
     this.renderer.render(this.scene, this.camera);
@@ -289,8 +325,4 @@ export class KitScene {
       this.container.removeChild(this.renderer.domElement);
     }
   }
-}
-
-function length0(template: KitTemplate) {
-  return template.body.length * 0.62;
 }

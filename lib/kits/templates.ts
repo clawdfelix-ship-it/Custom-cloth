@@ -3,10 +3,10 @@ import type { GameId, KitState, KitTemplate } from "@/types/kit";
 /**
  * Template registry.
  *
- * The reference implementation ships pre-authored OBJ assets. We generate the
- * garment meshes procedurally instead (see `lib/three/buildGeometry.ts`) so the
- * project carries no third-party asset licensing burden. Silhouette parameters
- * here approximate each shape: proportions, not mesh data.
+ * The garment meshes are the reference kit creator's own OBJ assets (see
+ * `lib/three/loadGarment.ts`), so the 3D preview matches the in-game kit
+ * and the exported textures map onto the model exactly as the game expects.
+ * Silhouette parameters here approximate each shape.
  */
 
 const EAFC_REGULAR: KitTemplate = {
@@ -190,14 +190,17 @@ export function templatesForGame(game: GameId): KitTemplate[] {
 }
 
 export const DEFAULT_SETTINGS = {
-  primary: "#000000",
-  secondary: "#ffffff",
-  trim: "#ffffff",
+  // A classic white shirt / black shorts / white socks kit. Starting on a
+  // black palette hides the garment silhouette, which made the 3D preview
+  // read as an untextured blob.
+  primary: "#f2f4f7",
+  secondary: "#101318",
+  trim: "#101318",
   pattern: "none",
   patternType: "none",
   sponsor: "none",
-  shorts: "#000000",
-  socks: "#000000",
+  shorts: "#101318",
+  socks: "#f2f4f7",
   shortsnumbercolor: "#ffffff",
   socksnumbercolor: "#ffffff",
   collar: 0,
