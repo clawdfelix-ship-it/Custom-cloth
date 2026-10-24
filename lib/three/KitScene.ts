@@ -47,6 +47,8 @@ export class KitScene {
   private rotationSpeed = 0.15;
   private autoRotate = true;
   private loadToken = 0;
+  private collarMeshes: THREE.Mesh[] = [];
+  private collarMaterial: THREE.MeshStandardMaterial | null = null;
 
   constructor(options: KitSceneOptions) {
     this.container = options.container;
@@ -131,7 +133,7 @@ export class KitScene {
     const token = ++this.loadToken;
     this.clearGarment();
 
-    const { shirt, shorts, socks } = await loadGarmentModels(template);
+    const { shirt, shorts, socks, collars } = await loadGarmentModels(template);
     // A newer template started loading while we were waiting; drop this result.
     if (token !== this.loadToken) return;
 
@@ -147,6 +149,16 @@ export class KitScene {
     const socksMesh = new THREE.Mesh(socks, this.socksMaterial);
     socksMesh.castShadow = true;
     this.addMesh(socksMesh, "socks");
+
+    // The collar is a separate mesh (one variant per collar number). It sits
+    // on top of the shirt neck in the same body space, so it needs no offset.
+    this.collarMeshes = collars.map((g) => {
+      const mesh = new THREE.Mesh(g, this.garmentMaterial);
+      mesh.visible = false;
+      this.group.add(mesh);
+      return mesh;
+    });
+    this.showCollar(0);
 
     // The meshes load asynchronously, so any texture that arrived before
     // them has to be re-applied.
@@ -202,8 +214,25 @@ export class KitScene {
       this.group.remove(mesh);
       mesh.geometry.dispose();
     }
+    for (const mesh of this.collarMeshes) {
+      this.group.remove(mesh);
+      mesh.geometry.dispose();
+    }
+    this.collarMeshes = [];
     this.meshes = [];
     this.areaMeshes = { shirt: [], shorts: [], socks: [] };
+  }
+
+  /** Show one collar variant and hide the rest. */
+  private showCollar(index: number) {
+    for (let i = 0; i < this.collarMeshes.length; i++) {
+      this.collarMeshes[i].visible = i === index;
+    }
+  }
+
+  /** Switch the visible collar variant. */
+  setCollar(index: number) {
+    this.showCollar(index);
   }
 
   /**

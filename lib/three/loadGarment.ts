@@ -21,7 +21,11 @@ export interface GarmentModels {
   shirt: THREE.BufferGeometry;
   shorts: THREE.BufferGeometry;
   socks: THREE.BufferGeometry;
+  /** Collar variants, indexed by collar number. */
+  collars: THREE.BufferGeometry[];
 }
+
+const MODELS_BASE = "/models/eafc";
 
 /** Which mesh files a template uses. */
 export function modelUrls(template: KitTemplate): {
@@ -29,7 +33,7 @@ export function modelUrls(template: KitTemplate): {
   shorts: string;
   socks: string;
 } {
-  const base = "/models/eafc";
+  const base = MODELS_BASE;
   const id = template.id;
 
   // The reference app only ships the EAFC body meshes; the FIFA 21-23,
@@ -74,16 +78,24 @@ export async function loadGarmentModels(
   const urls = modelUrls(template);
   const loader = new OBJLoader();
 
-  const [shirtObj, shortsObj, socksObj] = await Promise.all([
+  // Collars live in a shared directory, indexed 0..collarCount-1.
+  const collarUrls: string[] = [];
+  for (let i = 0; i < template.body.collarCount; i++) {
+    collarUrls.push(`${MODELS_BASE}/collars/collar_${i}.obj`);
+  }
+
+  const [shirtObj, shortsObj, socksObj, ...collarObjs] = await Promise.all([
     loader.loadAsync(urls.shirt),
     loader.loadAsync(urls.shorts),
     loader.loadAsync(urls.socks),
+    ...collarUrls.map((u) => loader.loadAsync(u)),
   ]);
 
   return {
     shirt: firstGeometry(shirtObj, urls.shirt),
     shorts: firstGeometry(shortsObj, urls.shorts),
     socks: firstGeometry(socksObj, urls.socks),
+    collars: collarObjs.map((g, i) => firstGeometry(g, collarUrls[i])),
   };
 }
 
