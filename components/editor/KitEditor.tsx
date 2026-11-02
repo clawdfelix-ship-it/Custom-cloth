@@ -266,15 +266,15 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
   const socks = kit.layers.filter((l) => l.kind === "socks");
 
   return (
-    <div className="flex h-dvh flex-col bg-[var(--color-surface-sunken)]">
-      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-line)] bg-[var(--color-surface)] px-4">
+    <div className="flex h-dvh min-w-0 flex-col overflow-x-hidden bg-[var(--color-surface-sunken)]">
+      <header className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 overflow-x-hidden border-b border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2 sm:px-4">
         <span className="text-[13px] font-semibold">Zenex Sports Custom</span>
-        <nav className="flex items-center gap-1">
+        <nav aria-label="Editor sections" className="flex min-w-0 flex-wrap items-center gap-1">
           {(["colors", "logos", "hotspots", "export", "settings"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`h-7 rounded-[var(--radius-control)] px-2.5 text-[12px] font-medium capitalize transition-colors ${
+              className={`editor-tab h-7 rounded-[var(--radius-control)] px-2.5 text-[12px] font-medium capitalize transition-colors ${
                 activeTab === tab
                   ? "bg-[var(--color-surface-raised)] text-[var(--color-ink)]"
                   : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
@@ -284,8 +284,8 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
             </button>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-[12px] text-[var(--color-ink-muted)]">
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+          <span aria-live="polite" className="max-w-full text-[12px] break-words text-[var(--color-ink-muted)]">
             {status}
           </span>
           {username ? (
@@ -302,10 +302,24 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        {/* Left rail: garment options */}
-        <aside className="scroll-thin w-[300px] shrink-0 overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-surface)] p-3">
-          <div className="flex flex-col gap-3">
+      <div data-editor-workspace className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+        {/* Centre first on mobile; the original two-rail order returns at lg. */}
+        <main data-editor-preview className="relative order-1 min-h-[20rem] w-full min-w-0 shrink-0 flex-1 lg:order-1 lg:min-h-0">
+          <div ref={containerRef} className="absolute inset-0" />
+          <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-2">
+            <Badge>3D preview</Badge>
+            <Badge tone="neutral">
+              texture v{textureVersion}
+            </Badge>
+          </div>
+        </main>
+
+        {/* Left rail: garment options, collapsed into a reachable mobile section. */}
+        <details data-editor-options open className="editor-disclosure group order-2 w-full min-w-0 shrink-0 border-t border-[var(--color-line)] bg-[var(--color-surface)] lg:order-2 lg:flex lg:w-[300px] lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:border-t-0 lg:border-r">
+          <summary aria-label="Garment options" className="editor-summary cursor-pointer list-none px-4 py-3 text-[13px] font-semibold lg:hidden">
+            Garment options
+          </summary>
+          <div className="scroll-thin flex min-w-0 flex-col gap-3 p-3 lg:min-h-0">
             <Panel title="Template">
               <div className="flex flex-col gap-2">
                 <Field label="Game">
@@ -338,7 +352,7 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
                     onChange={(event) =>
                       setSetting("collar", Number(event.target.value))
                     }
-                    className="w-full accent-[var(--color-accent)]"
+                    className="editor-control w-full accent-[var(--color-accent)]"
                   />
                 </Field>
               </div>
@@ -396,12 +410,14 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
                         onChange={(value) => setSetting("socksnumbercolor", value)}
                       />
                     </Field>
-                    <Field label="Number layout">
-                      <NumberInput
+                    <Field label="Back name layout">
+                      <Select
                         value={kit.settings.jerseynamelayouttype}
-                        min={0}
-                        max={1}
-                        onChange={(value) => setSetting("jerseynamelayouttype", value)}
+                        options={[
+                          { value: 0, label: "Straight" },
+                          { value: 1, label: "Curved" },
+                        ]}
+                        onChange={(value) => setSetting("jerseynamelayouttype", Number(value))}
                       />
                     </Field>
                   </div>
@@ -437,7 +453,7 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
                             onChange={(event) =>
                               updateLogo(logo.id, { name: event.target.value })
                             }
-                            className="h-7 flex-1 rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 text-[12px] outline-none focus:border-[var(--color-line-strong)]"
+                            className="editor-control h-7 min-w-0 flex-1 rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 text-[12px] outline-none focus:border-[var(--color-line-strong)]"
                           />
                           <Button variant="danger" onClick={() => removeLogo(logo.id)}>
                             Remove
@@ -515,6 +531,7 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
                           <label className="flex items-center gap-1.5 text-[11px] text-[var(--color-ink-muted)]">
                             <input
                               type="checkbox"
+                              className="editor-control"
                               checked={logo.renderedSeparately}
                               disabled={!limits.canRenderLogosSeparately}
                               onChange={(event) =>
@@ -605,16 +622,24 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
                     />
                   </Field>
                   <Field label="Shorts style">
-                    <NumberInput
+                    <Select
                       value={kit.settings.shortstyle}
-                      min={0}
-                      max={6}
-                      onChange={(value) => setSetting("shortstyle", value)}
+                      options={[
+                        { value: 0, label: "Standard (model 0)" },
+                        { value: 1, label: "Model 1" },
+                        { value: 2, label: "Model 2" },
+                        { value: 3, label: "Model 3" },
+                        { value: 4, label: "Model 4" },
+                        { value: 5, label: "Model 5" },
+                        { value: 6, label: "Model 6" },
+                      ]}
+                      onChange={(value) => setSetting("shortstyle", Number(value))}
                     />
                   </Field>
                   <label className="flex items-center gap-2 text-[12px] text-[var(--color-ink-muted)]">
                     <input
                       type="checkbox"
+                      className="editor-control"
                       checked={kit.settings.isCreateAClub}
                       onChange={(event) =>
                         setSetting("isCreateAClub", event.target.checked)
@@ -626,21 +651,10 @@ export function KitEditor({ tier, premium, username }: KitEditorProps) {
               </Panel>
             ) : null}
           </div>
-        </aside>
-
-        {/* Centre: 3D preview */}
-        <main className="relative min-w-0 flex-1">
-          <div ref={containerRef} className="absolute inset-0" />
-          <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-2">
-            <Badge>3D preview</Badge>
-            <Badge tone="neutral">
-              texture v{textureVersion}
-            </Badge>
-          </div>
-        </main>
+        </details>
 
         {/* Right rail: texture preview */}
-        <aside className="scroll-thin w-[280px] shrink-0 overflow-y-auto border-l border-[var(--color-line)] bg-[var(--color-surface)] p-3">
+        <aside data-editor-textures aria-label="Texture preview" className="scroll-thin order-3 w-full min-w-0 shrink-0 overflow-y-auto border-t border-[var(--color-line)] bg-[var(--color-surface)] p-3 lg:order-3 lg:w-[280px] lg:border-t-0 lg:border-l">
           <Panel title="Texture preview">
             <div className="flex flex-col gap-3">
               <TexturePreview area="shirt" kit={kit} />

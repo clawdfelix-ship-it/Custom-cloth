@@ -68,7 +68,7 @@ export function ColorInput({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="h-8 w-9 shrink-0 disabled:opacity-40"
+        className="editor-control h-8 w-9 shrink-0 disabled:opacity-40"
       />
       <input
         type="text"
@@ -76,7 +76,7 @@ export function ColorInput({
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         spellCheck={false}
-        className="h-8 w-full rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 font-mono text-[12px] uppercase text-[var(--color-ink)] outline-none focus:border-[var(--color-line-strong)] disabled:opacity-40"
+        className="editor-control h-8 w-full rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 font-mono text-[12px] uppercase text-[var(--color-ink)] outline-none focus:border-[var(--color-line-strong)] disabled:opacity-40"
       />
     </span>
   );
@@ -98,7 +98,7 @@ export function Select({
       value={String(value)}
       disabled={disabled}
       onChange={(event) => onChange(event.target.value)}
-      className="h-8 w-full rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 text-[12px] text-[var(--color-ink)] outline-none focus:border-[var(--color-line-strong)] disabled:opacity-40"
+      className="editor-control h-8 w-full rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 text-[12px] text-[var(--color-ink)] outline-none focus:border-[var(--color-line-strong)] disabled:opacity-40"
     >
       {options.map((option) => (
         <option key={option.value} value={String(option.value)}>
@@ -136,7 +136,7 @@ export function NumberInput({
         const next = Number(event.target.value);
         if (Number.isFinite(next)) onChange(next);
       }}
-      className="h-8 w-full rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 text-[12px] text-[var(--color-ink)] outline-none focus:border-[var(--color-line-strong)] disabled:opacity-40"
+      className="editor-control h-8 w-full rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-surface-sunken)] px-2 text-[12px] text-[var(--color-ink)] outline-none focus:border-[var(--color-line-strong)] disabled:opacity-40"
     />
   );
 }
@@ -157,7 +157,7 @@ export function Button({
   className?: string;
 }) {
   const base =
-    "inline-flex h-8 items-center justify-center gap-1.5 rounded-[var(--radius-control)] px-3 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40";
+    "editor-control inline-flex h-8 items-center justify-center gap-1.5 rounded-[var(--radius-control)] px-3 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40";
   const styles: Record<string, string> = {
     default:
       "border border-[var(--color-line)] bg-[var(--color-surface-raised)] text-[var(--color-ink)] hover:border-[var(--color-line-strong)]",

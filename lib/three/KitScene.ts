@@ -49,6 +49,7 @@ export class KitScene {
   private loadToken = 0;
   private collarMeshes: THREE.Mesh[] = [];
   private collarMaterial: THREE.MeshStandardMaterial | null = null;
+  private resizeObserver: ResizeObserver;
 
   constructor(options: KitSceneOptions) {
     this.container = options.container;
@@ -95,6 +96,8 @@ export class KitScene {
 
     this.handleResize = this.handleResize.bind(this);
     window.addEventListener("resize", this.handleResize);
+    this.resizeObserver = new ResizeObserver(this.handleResize);
+    this.resizeObserver.observe(this.container);
 
     this.loop();
   }
@@ -356,6 +359,7 @@ export class KitScene {
     this.disposed = true;
     cancelAnimationFrame(this.animationFrame);
     window.removeEventListener("resize", this.handleResize);
+    this.resizeObserver.disconnect();
     this.clearGarment();
     this.garmentMaterial.dispose();
     this.shortsMaterial.dispose();
